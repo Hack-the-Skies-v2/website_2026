@@ -1,0 +1,13 @@
+# Keep local scratch / HEIC sources out of git
+.tmp-frames/
+*.HEIC
+*.heic
+
+# Ignore root-level dumps; site assets under hts-website/public are allowed
+/*.jpg
+/*.jpeg
+/*.png
+/*.webp
+/*.JPG
+/*.JPEG
+/*.gif

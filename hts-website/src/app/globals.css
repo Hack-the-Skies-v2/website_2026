@@ -1,0 +1,192 @@
+@import "tailwindcss";
+
+:root {
+	--background: #ffffff;
+	--foreground: #171717;
+
+    --primary: #C1B9F2;
+    --button: #6B579B;
+}
+
+@theme inline {
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--font-sans: var(--font-geist-sans);
+	--font-mono: var(--font-geist-mono);
+	--font-outfit: var(--font-outfit);
+	--font-libre: var(--font-libre);
+	--font-pixel: var(--font-pixel);
+	--color-primary: var(--primary);
+	--color-button: var(--button);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: url("/BackgroundStar.png");
+  background-repeat: repeat;
+  background-size: 1000px 1000px;
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+body::after {
+	content: "";
+	position: fixed;
+	inset: 0;
+	background:
+		radial-gradient(circle at 20% 20%, rgba(45, 55, 95, 0.18), transparent 12%),
+		radial-gradient(circle at 80% 35%, rgba(40, 50, 90, 0.15), transparent 10%),
+		radial-gradient(circle at 60% 80%, rgba(55, 45, 90, 0.12), transparent 14%);
+	pointer-events: none;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+	background: #141123;
+	color: var(--foreground);
+	font-family: Arial, Helvetica, sans-serif;
+}
+
+::-webkit-scrollbar {
+	width: 10px;
+}
+
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+	background: rgba(180, 180, 180, 0.35);
+	border-radius: 0px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: rgba(200, 200, 200, 0.5);
+}
+
+@keyframes constellation-glow {
+	0%, 100% {
+		filter: drop-shadow(0 0 15px rgba(248, 212, 114, 0.65));
+		opacity: 0.85;
+	}
+
+	50% {
+		filter: drop-shadow(0 0 45px rgba(248, 212, 114, 1));
+		opacity: 1;
+	}
+}
+
+.constellation-glow {
+	animation: constellation-glow 3s ease-in-out infinite;
+}
+
+@keyframes nebula-glow {
+	0%, 100% {
+		filter: drop-shadow(0 0 25px rgba(255, 255, 255, 0.25));
+		opacity: 0.5;
+	}
+
+	50% {
+		filter: drop-shadow(0 0 65px rgba(255, 255, 255, 0.6));
+		opacity: 0.7;
+	}
+}
+
+.nebula-glow {
+	animation: nebula-glow 5s ease-in-out infinite;
+}
+
+@keyframes gold-planet-glow {
+	0%, 100% {
+		filter: drop-shadow(0 0 20px rgba(248, 212, 114, 0.45));
+	}
+
+	50% {
+		filter: drop-shadow(0 0 55px rgba(248, 212, 114, 0.9));
+	}
+}
+
+.gold-planet-glow {
+	animation: gold-planet-glow 5s ease-in-out infinite;
+}
+
+@keyframes magenta-planet-glow {
+	0%, 100% {
+		filter: drop-shadow(0 0 20px rgba(166, 31, 98, 0.5));
+	}
+
+	50% {
+		filter: drop-shadow(0 0 50px rgba(220, 80, 150, 0.8));
+	}
+}
+
+.magenta-planet-glow {
+	animation: magenta-planet-glow 5s ease-in-out infinite;
+}
+
+@keyframes star-glow {
+	0%, 100% {
+		filter: drop-shadow(0 0 10px rgba(248,212,114,0.4));
+		opacity: 0.7;
+	}
+
+	50% {
+		filter: drop-shadow(0 0 35px rgba(248,212,114,1));
+		opacity: 1;
+	}
+}
+
+.star-glow {
+	animation: star-glow 3s ease-in-out infinite;
+}
+
+@keyframes cloud-drift {
+	0%, 100% {
+		transform: translateX(-50%) translateY(0px);
+	}
+
+	50% {
+		transform: translateX(-50%) translateY(-12px);
+	}
+}
+
+.cloud-drift {
+	animation: cloud-drift 8s ease-in-out infinite;
+}
+
+@keyframes cloud-frame-float {
+	0%, 100% {
+		translate: 0 0;
+	}
+	50% {
+		translate: 0 -10px;
+	}
+}
+
+.cloud-frame-float {
+	animation: cloud-frame-float 7s ease-in-out infinite;
+}
+
+.cloud-frame-float-delayed {
+	animation: cloud-frame-float 8.5s ease-in-out infinite;
+	animation-delay: -2.5s;
+}
+
+@keyframes polaroid-sway {
+	0%, 100% {
+		rotate: var(--polaroid-tilt, 0deg);
+	}
+	50% {
+		rotate: calc(var(--polaroid-tilt, 0deg) + 1.2deg);
+	}
+}
+
+.polaroid-sway {
+	animation: polaroid-sway 5s ease-in-out infinite;
+	transform-origin: top center;
+}
