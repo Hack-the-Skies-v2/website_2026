@@ -54,8 +54,12 @@ export default function TopBar() {
 					Meet the Team
 				</NavItem>
 
-                <NavItem id="contact" active={active}>
+				<NavItem id="contact" active={active}>
 					Contact Us
+				</NavItem>
+
+				<NavItem id="downloads" active={active}>
+					Resources
 				</NavItem>
 			</div>
 		</nav>

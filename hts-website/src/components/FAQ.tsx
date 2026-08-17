@@ -1,5 +1,6 @@
 "use client";
 
+import ParallaxLayer from "@/components/ParallaxLayer";
 import { useState } from "react";
 
 const faqs = [
@@ -44,15 +45,15 @@ export default function FAQ() {
 			id="faq"
 			className="
                 relative
-				min-h-screen
+				min-h-[74vh]
 				flex
 				flex-col
-				pt-32
-                md:pt-40
-                lg:pt-48
+				pt-16
+                md:pt-20
+                lg:pt-24
 				items-center
 				px-6
-				py-24
+				py-16
 			"
 		>
 			{/* <img
@@ -75,9 +76,8 @@ export default function FAQ() {
                     select-none
                 "
 			/> */}
-			<img
-				src="/Planet2.webp"
-				alt=""
+			<ParallaxLayer
+				speed={0.45}
 				className="
                     pointer-events-none
                     absolute
@@ -91,12 +91,14 @@ export default function FAQ() {
                     opacity-80
                     gold-planet-glow
                     select-none
+                    planet-float
                 "
-			/>
-			<img
-                src="/RandomStars.webp"
-                alt=""
-                className="
+			>
+				<img src="/Planet2.webp" alt="" className="h-full w-full" />
+			</ParallaxLayer>
+			<ParallaxLayer
+				speed={0.7}
+				className="
                     pointer-events-none
                     absolute
                     right-[35%]
@@ -107,8 +109,11 @@ export default function FAQ() {
                     opacity-90
                     star-glow
                     select-none
+                    planet-float-delayed
                 "
-            />
+			>
+				<img src="/RandomStars.webp" alt="" className="h-full w-full" />
+			</ParallaxLayer>
 			<h2
 				className="
 					font-outfit
@@ -130,12 +135,13 @@ export default function FAQ() {
                     flex
                     w-full
                     max-w-5xl
-                    gap-5
+                    justify-center
+                    gap-7
                     flex-col
 		            md:flex-row
                 "
 			>
-				<div className="flex flex-1 flex-col gap-5">
+				<div className="flex w-full max-w-[26rem] flex-col gap-7">
 					{leftFaqs.map((faq, index) => (
 						<FAQCard
 							key={index}
@@ -147,7 +153,7 @@ export default function FAQ() {
 					))}
 				</div>
 
-				<div className="flex flex-1 flex-col gap-5">
+				<div className="flex w-full max-w-[26rem] flex-col gap-7">
 					{rightFaqs.map((faq, index) => (
 						<FAQCard
 							key={index}

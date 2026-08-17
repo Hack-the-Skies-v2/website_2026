@@ -1,4 +1,5 @@
 import Contact from "@/components/Contact";
+import Downloads from "@/components/Downloads";
 import FAQ from "@/components/FAQ";
 import Hero from "@/components/Hero";
 import JoinUs from "@/components/JoinUs";
@@ -14,6 +15,7 @@ export default function Home() {
 			<FAQ />
 			<Team />
 			<Contact />
+			<Downloads />
 		</main>
 	);
 }

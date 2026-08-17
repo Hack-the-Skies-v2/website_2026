@@ -1,5 +1,6 @@
 "use client";
 
+import ParallaxLayer from "@/components/ParallaxLayer";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
@@ -145,9 +146,19 @@ const TEAM = [
 	},
 ] as const;
 
-function SoftCloud({ className }: { className?: string }) {
+function SoftCloud({
+	className,
+	speed = 0.12,
+}: {
+	className?: string;
+	speed?: number;
+}) {
 	return (
-		<div className={`pointer-events-none absolute ${className ?? ""}`} aria-hidden>
+		<ParallaxLayer
+			className={`pointer-events-none absolute ${className ?? ""}`}
+			speed={speed}
+			aria-hidden
+		>
 			<svg viewBox="0 0 200 100" className="h-full w-full opacity-55">
 				<circle cx="40" cy="55" r="28" fill="white" />
 				<circle cx="75" cy="40" r="34" fill="white" />
@@ -155,7 +166,7 @@ function SoftCloud({ className }: { className?: string }) {
 				<circle cx="150" cy="58" r="24" fill="white" />
 				<circle cx="95" cy="65" r="26" fill="white" />
 			</svg>
-		</div>
+		</ParallaxLayer>
 	);
 }
 
@@ -309,7 +320,7 @@ export default function Team() {
 		<section
 			ref={sectionRef}
 			id="team"
-			className="relative flex min-h-screen flex-col items-center overflow-hidden pt-28 pb-16 md:pt-36"
+			className="relative flex min-h-[74vh] flex-col items-center overflow-hidden pt-16 pb-12 md:pt-20"
 		>
 			<div className="pointer-events-none absolute inset-0 opacity-70">
 				{Array.from({ length: 40 }).map((_, i) => (
@@ -327,10 +338,10 @@ export default function Team() {
 				))}
 			</div>
 
-			<SoftCloud className="left-[-4%] top-[8%] h-28 w-56 md:h-36 md:w-72" />
-			<SoftCloud className="right-[-6%] top-[12%] h-24 w-48 scale-x-[-1] md:h-32 md:w-64" />
-			<SoftCloud className="bottom-[6%] left-[-2%] h-32 w-64 md:h-40 md:w-80" />
-			<SoftCloud className="right-[-4%] bottom-[10%] h-28 w-56 scale-x-[-1] md:h-36 md:w-72" />
+			<SoftCloud speed={0.28} className="left-[-4%] top-[8%] h-28 w-56 md:h-36 md:w-72" />
+			<SoftCloud speed={0.38} className="right-[-6%] top-[12%] h-24 w-48 scale-x-[-1] md:h-32 md:w-64" />
+			<SoftCloud speed={0.42} className="bottom-[6%] left-[-2%] h-32 w-64 md:h-40 md:w-80" />
+			<SoftCloud speed={0.48} className="right-[-4%] bottom-[10%] h-28 w-56 scale-x-[-1] md:h-36 md:w-72" />
 
 			<h2 className="relative z-10 mb-8 px-4 text-center font-pixel text-xl tracking-wider text-primary drop-shadow-[0_0_12px_rgba(193,185,242,0.5)] sm:text-2xl md:mb-14 md:text-3xl">
 				Meet the Team

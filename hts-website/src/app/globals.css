@@ -4,8 +4,8 @@
 	--background: #ffffff;
 	--foreground: #171717;
 
-    --primary: #C1B9F2;
-    --button: #6B579B;
+	--primary: #C1B9F2;
+	--button: #6B579B;
 }
 
 @theme inline {
@@ -21,14 +21,14 @@
 }
 
 body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background-image: url("/BackgroundStar.png");
-  background-repeat: repeat;
-  background-size: 1000px 1000px;
-  opacity: 0.25;
-  pointer-events: none;
+	content: "";
+	position: fixed;
+	inset: 0;
+	background-image: url("/BackgroundStar.png");
+	background-repeat: repeat;
+	background-size: 1000px 1000px;
+	opacity: 0.25;
+	pointer-events: none;
 }
 
 body::after {
@@ -43,7 +43,7 @@ body::after {
 }
 
 html {
-    scroll-behavior: smooth;
+	scroll-behavior: smooth;
 }
 
 body {
@@ -70,7 +70,9 @@ body {
 }
 
 @keyframes constellation-glow {
-	0%, 100% {
+
+	0%,
+	100% {
 		filter: drop-shadow(0 0 15px rgba(248, 212, 114, 0.65));
 		opacity: 0.85;
 	}
@@ -86,7 +88,9 @@ body {
 }
 
 @keyframes nebula-glow {
-	0%, 100% {
+
+	0%,
+	100% {
 		filter: drop-shadow(0 0 25px rgba(255, 255, 255, 0.25));
 		opacity: 0.5;
 	}
@@ -102,7 +106,9 @@ body {
 }
 
 @keyframes gold-planet-glow {
-	0%, 100% {
+
+	0%,
+	100% {
 		filter: drop-shadow(0 0 20px rgba(248, 212, 114, 0.45));
 	}
 
@@ -116,7 +122,9 @@ body {
 }
 
 @keyframes magenta-planet-glow {
-	0%, 100% {
+
+	0%,
+	100% {
 		filter: drop-shadow(0 0 20px rgba(166, 31, 98, 0.5));
 	}
 
@@ -130,13 +138,15 @@ body {
 }
 
 @keyframes star-glow {
-	0%, 100% {
-		filter: drop-shadow(0 0 10px rgba(248,212,114,0.4));
+
+	0%,
+	100% {
+		filter: drop-shadow(0 0 10px rgba(248, 212, 114, 0.4));
 		opacity: 0.7;
 	}
 
 	50% {
-		filter: drop-shadow(0 0 35px rgba(248,212,114,1));
+		filter: drop-shadow(0 0 35px rgba(248, 212, 114, 1));
 		opacity: 1;
 	}
 }
@@ -146,7 +156,9 @@ body {
 }
 
 @keyframes cloud-drift {
-	0%, 100% {
+
+	0%,
+	100% {
 		transform: translateX(-50%) translateY(0px);
 	}
 
@@ -155,14 +167,38 @@ body {
 	}
 }
 
+@keyframes planet-float {
+
+	0%,
+	100% {
+		transform: translateY(0px);
+	}
+
+	50% {
+		transform: translateY(-8px);
+	}
+}
+
 .cloud-drift {
 	animation: cloud-drift 8s ease-in-out infinite;
 }
 
+.planet-float {
+	animation: planet-float 9s ease-in-out infinite;
+}
+
+.planet-float-delayed {
+	animation: planet-float 10s ease-in-out infinite;
+	animation-delay: -2.5s;
+}
+
 @keyframes cloud-frame-float {
-	0%, 100% {
+
+	0%,
+	100% {
 		translate: 0 0;
 	}
+
 	50% {
 		translate: 0 -10px;
 	}
@@ -178,9 +214,12 @@ body {
 }
 
 @keyframes polaroid-sway {
-	0%, 100% {
+
+	0%,
+	100% {
 		rotate: var(--polaroid-tilt, 0deg);
 	}
+
 	50% {
 		rotate: calc(var(--polaroid-tilt, 0deg) + 1.2deg);
 	}

@@ -1,9 +1,10 @@
+import ParallaxLayer from "@/components/ParallaxLayer";
+
 export default function Hero() {
 	return (
-		<section id="home" className="min-h-screen text-center justify-center content-center -translate-y-2 md:-translate-y-4 lg:-translate-y-6 pt-20 md:pt-24">
-            <img
-                src="/Constellation.png"
-                alt=""
+		<section id="home" className="min-h-screen text-center justify-center content-center -translate-y-2 md:-translate-y-4 lg:-translate-y-6 pt-20 md:pt-24 [overflow-x:clip]">
+            <ParallaxLayer
+                speed={0.35}
                 className="
                     pointer-events-none
                     absolute
@@ -20,8 +21,11 @@ export default function Hero() {
                     constellation-glow
                     select-none
                     opacity-90
+                    planet-float
                 "
-            />
+            >
+                <img src="/Constellation.png" alt="" className="h-full w-full" />
+            </ParallaxLayer>
             {/* <img
                 src="/StarryCloud.webp"
                 alt=""
@@ -41,9 +45,8 @@ export default function Hero() {
                     select-none
                 "
             /> */}
-            <img
-                src="/Planet1.webp"
-                alt=""
+            <ParallaxLayer
+                speed={0.45}
                 className="
                     pointer-events-none
                     absolute
@@ -59,8 +62,11 @@ export default function Hero() {
                     opacity-80
                     magenta-planet-glow
                     select-none
+                    planet-float-delayed
                 "
-            />
+            >
+                <img src="/Planet1.webp" alt="" className="h-full w-full" />
+            </ParallaxLayer>
 			<h1 className="font-outfit text-5xl md:text-5xl lg:text-7xl font-semibold text-primary select-none">
 				Hack the Skies
 			</h1>
@@ -94,26 +100,42 @@ export default function Hero() {
 				</span>
 				for high school students.
 			</h1>
-			<button
-				className="
-                    mt-2
-                    lg:mt-4
-                    rounded-full
-                    bg-button
-                    px-6 py-2
-                    font-outfit
-                    md:px-8 md:py-3
-		            text-base md:text-lg
-                    text-white
-                    shadow-[0_0_20px_rgba(130,104,180,0.45)]
-                    cursor-pointer
-                    transition-all duration-150
-                    hover:bg-[#8268B4]
-                    hover:scale-110
-	            "
-			>
-				Apply Now
-			</button>
+			<div className="mt-4 flex flex-col items-center justify-center gap-3 sm:flex-row">
+				<button
+					type="button"
+					className="
+						rounded-full
+						bg-button
+						px-6 py-2
+						font-outfit
+						text-base text-white
+						shadow-[0_0_20px_rgba(130,104,180,0.45)]
+						transition-all duration-150
+						md:px-8 md:py-3 md:text-lg
+						cursor-default opacity-80
+					"
+				>
+					Applications Coming Soon
+				</button>
+
+				<a
+					href="#downloads"
+					className="
+						rounded-full
+						bg-button
+						px-6 py-2
+						font-outfit
+						text-base text-white
+						shadow-[0_0_20px_rgba(130,104,180,0.45)]
+						transition-all duration-150
+						md:px-8 md:py-3 md:text-lg
+						hover:bg-[#8268B4]
+						hover:scale-105
+					"
+				>
+					Sponsor Us
+				</a>
+			</div>
 		</section>
 	);
 }

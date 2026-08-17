@@ -1,25 +1,26 @@
+import ParallaxLayer from "@/components/ParallaxLayer";
+
 export default function Contact() {
 	return (
 		<section
 			id="contact"
 			className="
-				min-h-screen
+				min-h-[72vh]
 				flex
 				items-center
 				justify-center
 				px-6
-				py-24
+				py-16
                 relative
 			"
 		>
-            <img
-                src="/Cloud1.webp"
-                alt=""
+            <ParallaxLayer
+                speed={0.4}
                 className="
                     pointer-events-none
                     absolute
                     top-[-100px]
-                    left-1/2    
+                    left-1/2
                     w-[1000px]
                     -translate-x-1/2
                     opacity-35
@@ -27,7 +28,9 @@ export default function Contact() {
                     cloud-drift
                     select-none
                 "
-            />
+            >
+                <img src="/Cloud1.webp" alt="" className="h-full w-full" />
+            </ParallaxLayer>
 			<div
 				className="
 					w-full
