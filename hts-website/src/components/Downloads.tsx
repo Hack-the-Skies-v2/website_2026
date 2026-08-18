@@ -22,7 +22,7 @@ export default function Downloads() {
 						Download the latest updates
 					</h2>
 					<p className="mt-4 font-outfit text-base leading-relaxed text-primary/80 md:text-lg">
-						For sponsors, partners, and supporters, these materials offer a quick look at who we are and what we’re building.
+						For sponsors, partners, and supporters, these materials offer a quick look at who we are and what we’re building. Contact us at sponsor@hacktheskies.com.
 					</p>
 				</div>
 
