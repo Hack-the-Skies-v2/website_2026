@@ -24,6 +24,24 @@ export default function Downloads() {
 					<p className="mt-4 font-outfit text-base leading-relaxed text-primary/80 md:text-lg">
 						For sponsors, partners, and supporters, these materials offer a quick look at who we are and what we’re building. Contact us at sponsor@hacktheskies.com.
 					</p>
+					<div className="mt-6 flex flex-wrap items-center gap-4">
+						<a
+							href="https://hcb.hackclub.com/donations/start/hack-the-skies"
+							target="_blank"
+							rel="noopener noreferrer"
+							className="group inline-flex items-center gap-3 rounded-full bg-button px-6 py-3 font-outfit text-base font-semibold text-white shadow-[0_0_20px_rgba(130,104,180,0.45)] transition-all duration-150 hover:bg-[#8268B4] hover:scale-105 active:scale-95"
+						>
+							<img
+								src="/hackclub-icon.svg"
+								alt="Hack Club Logo"
+								className="h-6 w-6 object-contain transition-transform group-hover:scale-110"
+							/>
+							<span>Donate via Hack Club</span>
+							<span aria-hidden className="text-lg transition-transform duration-200 group-hover:translate-x-1">
+								→
+							</span>
+						</a>
+					</div>
 				</div>
 
 				<div className="grid gap-5 md:grid-cols-2">
