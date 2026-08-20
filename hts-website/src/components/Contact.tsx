@@ -53,11 +53,21 @@ export default function Contact() {
 						font-semibold
 						text-primary
 						drop-shadow-[0_0_12px_rgba(193,185,242,0.5)]
-						mb-8
+						mb-3
 					"
 				>
 					Contact Us
 				</h2>
+				<p className="font-outfit text-base md:text-lg text-primary/80 mb-8">
+					Send us a message below, or you can email us at{" "}
+					<a
+						href="mailto:hello@hacktheskies.com"
+						className="text-white underline underline-offset-4 transition-colors duration-150 hover:text-primary"
+					>
+						hello@hacktheskies.com
+					</a>
+					.
+				</p>
 
 				<form className="flex flex-col gap-6">
 					<input
