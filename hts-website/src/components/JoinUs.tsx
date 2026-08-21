@@ -2,11 +2,6 @@
 
 import PlanetFrame from "@/components/CloudFrame";
 import { useEffect, useMemo, useRef, useState } from "react";
-
-/**
- * Percentage layout — scales correctly at any viewport / fullscreen size.
- * Positions are centers; sizes are % of the gallery stage width.
- */
 const CLOUDS = [
 	{
 		id: "a",
@@ -56,7 +51,6 @@ const CLOUDS = [
 ] as const;
 
 const TRAIL_ORDER = ["a", "b", "hero", "c", "d"] as const;
-/** Fraction along full path where the rocket parks (matches prior static spot). */
 const ROCKET_END_T = 0.9;
 const FLIGHT_MS = 2800;
 
@@ -186,7 +180,6 @@ function RocketTrail({ active }: { active: boolean }) {
 					</filter>
 				</defs>
 
-				{/* Hidden measure path */}
 				<path ref={measureRef} d={pathD} fill="none" stroke="none" />
 
 				<path

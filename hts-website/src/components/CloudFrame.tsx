@@ -10,11 +10,6 @@ type PlanetFrameProps = {
 	rotate?: number;
 };
 
-/**
- * Planet frame — circular photo as the planet body (edge-to-edge, no gap),
- * with a tilted orbital ring that matches the Hack the Skies space look.
- * Rings split behind/in front of the globe for a simple 3D read.
- */
 export default function PlanetFrame({
 	size,
 	className = "",
@@ -39,7 +34,6 @@ export default function PlanetFrame({
 				...style,
 			}}
 		>
-			{/* Atmospheric glow */}
 			<div
 				className="pointer-events-none absolute rounded-full"
 				style={{
@@ -50,7 +44,6 @@ export default function PlanetFrame({
 				}}
 			/>
 
-			{/* Ring — back half (behind the planet) */}
 			<svg
 				viewBox="0 0 100 108"
 				className="pointer-events-none absolute inset-0 z-[1] h-full w-full overflow-visible"
@@ -65,7 +58,6 @@ export default function PlanetFrame({
 					</linearGradient>
 				</defs>
 				<g transform="rotate(-26 50 54)">
-					{/* Outer band */}
 					<ellipse
 						cx="50"
 						cy="54"
@@ -77,7 +69,6 @@ export default function PlanetFrame({
 						opacity="0.5"
 						strokeLinecap="round"
 					/>
-					{/* Inner band — sits closer to the globe */}
 					<ellipse
 						cx="50"
 						cy="54"
@@ -91,7 +82,6 @@ export default function PlanetFrame({
 				</g>
 			</svg>
 
-			{/* Planet body — photo fills the disc completely */}
 			<div
 				className="absolute z-[2] overflow-hidden rounded-full"
 				style={{
@@ -110,7 +100,6 @@ export default function PlanetFrame({
 				<div className="relative z-0 h-full w-full">{children}</div>
 			</div>
 
-			{/* Ring — front half arcs across the planet */}
 			<svg
 				viewBox="0 0 100 108"
 				className="pointer-events-none absolute inset-0 z-[3] h-full w-full overflow-visible"

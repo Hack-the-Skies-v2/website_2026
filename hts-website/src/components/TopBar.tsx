@@ -46,7 +46,6 @@ export default function TopBar() {
 
 	return (
 		<header className="fixed top-0 left-0 z-50 w-full px-4 py-3 md:py-6">
-			{/* Desktop Navigation - Floating Pill Menu */}
 			<div className="hidden md:flex justify-center w-full">
 				<nav
 					className="
@@ -67,9 +66,7 @@ export default function TopBar() {
 				</nav>
 			</div>
 
-			{/* Mobile Header Bar */}
 			<div className="flex md:hidden items-center justify-between w-full max-w-md mx-auto rounded-full bg-[#141123]/85 backdrop-blur-md border border-white/20 px-4 py-2.5 shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
-				{/* Logo / Brand Name */}
 				<a
 					href="#home"
 					onClick={() => setIsOpen(false)}
@@ -83,7 +80,6 @@ export default function TopBar() {
 					<span>Hack the Skies</span>
 				</a>
 
-				{/* Hamburger Button */}
 				<button
 					type="button"
 					onClick={() => setIsOpen((prev) => !prev)}
@@ -112,7 +108,6 @@ export default function TopBar() {
 				</button>
 			</div>
 
-			{/* Mobile Dropdown Navigation Menu */}
 			<div
 				className={`
 					md:hidden fixed inset-x-4 top-16 z-40 max-w-md mx-auto

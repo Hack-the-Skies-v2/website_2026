@@ -2,11 +2,6 @@
 
 import ParallaxLayer from "@/components/ParallaxLayer";
 import { useCallback, useEffect, useRef, useState } from "react";
-
-/**
- * Roster from organizer sheet + local headshots in /public/team/members.
- * Order: chairs → devops → remaining members.
- */
 const TEAM = [
 	{
 		name: "Gloria Baril",
@@ -241,12 +236,11 @@ export default function Team() {
 		}, ms);
 	}, []);
 
-	/** Slow auto-scroll to the end, then reverse (ping-pong). */
 	useEffect(() => {
 		if (maxOffset <= 0) return;
 		let frame = 0;
 		let last = performance.now();
-		const speed = 32; // px / second
+		const speed = 32;
 
 		const tick = (now: number) => {
 			const dt = Math.min(0.05, (now - last) / 1000);
@@ -271,7 +265,6 @@ export default function Team() {
 		return () => cancelAnimationFrame(frame);
 	}, [maxOffset]);
 
-	/** Trackpad / mouse wheel → horizontal pan across the full roster */
 	useEffect(() => {
 		const viewport = viewportRef.current;
 		if (!viewport) return;
@@ -290,7 +283,6 @@ export default function Team() {
 		return () => viewport.removeEventListener("wheel", onWheel);
 	}, [clampOffset, maxOffset, pauseAuto]);
 
-	/** Click-drag to scrub through everyone */
 	useEffect(() => {
 		const onMove = (e: PointerEvent) => {
 			if (!dragRef.current.active) return;
@@ -437,7 +429,6 @@ export default function Team() {
 				</button>
 			</div>
 
-			{/* Progress — shows there are more members off-screen */}
 			<div className="relative z-10 mt-6 h-1 w-40 overflow-hidden rounded-full bg-primary/15 md:w-56">
 				<div
 					className="h-full rounded-full bg-primary/55 transition-[width] duration-150"

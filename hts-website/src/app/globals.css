@@ -229,3 +229,19 @@ body {
 	animation: polaroid-sway 5s ease-in-out infinite;
 	transform-origin: top center;
 }
+
+@keyframes toast-slide-up {
+	0% {
+		opacity: 0;
+		transform: translateY(16px) scale(0.96);
+	}
+	100% {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+}
+
+.toast-slide-up {
+	animation: toast-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+

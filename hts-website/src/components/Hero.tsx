@@ -3,9 +3,9 @@ import ParallaxLayer from "@/components/ParallaxLayer";
 export default function Hero() {
 	return (
 		<section id="home" className="min-h-screen text-center justify-center content-center -translate-y-2 md:-translate-y-4 lg:-translate-y-6 pt-20 md:pt-24 [overflow-x:clip]">
-            <ParallaxLayer
-                speed={0.35}
-                className="
+			<ParallaxLayer
+				speed={0.35}
+				className="
                     pointer-events-none
                     absolute
                     right-2
@@ -23,10 +23,10 @@ export default function Hero() {
                     opacity-90
                     planet-float
                 "
-            >
-                <img src="/Constellation.png" alt="" className="h-full w-full" />
-            </ParallaxLayer>
-            {/* <img
+			>
+				<img src="/Constellation.png" alt="" className="h-full w-full" />
+			</ParallaxLayer>
+			{/* <img
                 src="/StarryCloud.webp"
                 alt=""
                 className="
@@ -45,9 +45,9 @@ export default function Hero() {
                     select-none
                 "
             /> */}
-            <ParallaxLayer
-                speed={0.45}
-                className="
+			<ParallaxLayer
+				speed={0.45}
+				className="
                     pointer-events-none
                     absolute
                     left-4
@@ -64,9 +64,9 @@ export default function Hero() {
                     select-none
                     planet-float-delayed
                 "
-            >
-                <img src="/Planet1.webp" alt="" className="h-full w-full" />
-            </ParallaxLayer>
+			>
+				<img src="/Planet1.webp" alt="" className="h-full w-full" />
+			</ParallaxLayer>
 			<h1 className="font-outfit text-5xl md:text-5xl lg:text-7xl font-semibold text-primary select-none">
 				Hack the Skies
 			</h1>
