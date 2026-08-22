@@ -1,3 +1,4 @@
+import BackNavigationReload from "@/components/BackNavigationReload";
 import Contact from "@/components/Contact";
 import Downloads from "@/components/Downloads";
 import FAQ from "@/components/FAQ";

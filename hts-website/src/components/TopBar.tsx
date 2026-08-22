@@ -37,6 +37,30 @@ export default function TopBar() {
 	}, []);
 
 	useEffect(() => {
+		if ("scrollRestoration" in history) {
+			history.scrollRestoration = "manual";
+		}
+
+		const scrollToHash = () => {
+			const hash = window.location.hash.slice(1);
+			if (hash) {
+				const el = document.getElementById(hash);
+				if (el) el.scrollIntoView({ behavior: "smooth" });
+			} else {
+				window.scrollTo({ top: 0, behavior: "smooth" });
+			}
+		};
+
+		window.addEventListener("popstate", scrollToHash);
+
+		scrollToHash();
+
+		return () => {
+			window.removeEventListener("popstate", scrollToHash);
+		};
+	}, []);
+
+	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.key === "Escape") setIsOpen(false);
 		};
