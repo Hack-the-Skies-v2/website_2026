@@ -256,7 +256,7 @@ export default function JoinUs() {
 			<div className="relative z-10 mx-auto grid w-full max-w-[90rem] items-center gap-10 px-6 md:gap-12 md:px-10 lg:grid-cols-[0.9fr_1.15fr] lg:gap-8 lg:px-12 xl:gap-12 xl:px-16">
 				<div className="relative z-20 max-w-xl">
 					<h2 className="font-outfit mb-6 text-4xl font-semibold text-primary drop-shadow-[0_0_12px_rgba(193,185,242,0.5)] md:text-5xl lg:text-6xl">
-						Join us
+						Join Us
 					</h2>
 					<p className="font-outfit text-lg leading-relaxed text-primary drop-shadow-[0_0_8px_rgba(193,185,242,0.45)] md:text-xl lg:text-2xl">
 						A hackathon founded by high school students,{" "}

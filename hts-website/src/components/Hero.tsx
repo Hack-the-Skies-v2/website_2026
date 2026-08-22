@@ -1,4 +1,5 @@
 import ParallaxLayer from "@/components/ParallaxLayer";
+import Link from "next/link";
 
 export default function Hero() {
 	return (
@@ -101,22 +102,24 @@ export default function Hero() {
 				for high school students.
 			</h1>
 			<div className="mt-4 flex flex-col items-center justify-center gap-3 sm:flex-row">
-				<button
-					type="button"
-					className="
-						rounded-full
-						bg-button
-						px-6 py-2
-						font-outfit
-						text-base text-white
-						shadow-[0_0_20px_rgba(130,104,180,0.45)]
-						transition-all duration-150
-						md:px-8 md:py-3 md:text-lg
-						cursor-default opacity-80
-					"
-				>
-					Applications Coming Soon
-				</button>
+				<Link href="/apply">
+					<button
+						type="button"
+						className="
+							rounded-full
+							bg-button
+							px-6 py-2
+							font-outfit
+							text-base text-white
+							shadow-[0_0_20px_rgba(130,104,180,0.45)]
+							transition-all duration-150
+							md:px-8 md:py-3 md:text-lg
+							hover:bg-[#8268B4]
+							hover:scale-105
+						"
+					>Apply Now!
+					</button>
+				</Link>
 
 				<a
 					href="#downloads"
