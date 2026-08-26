@@ -247,3 +247,20 @@ body {
 	animation: toast-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+@keyframes sponsor-drift {
+	0%, 100% {
+		transform: translate(0, 0);
+	}
+	50% {
+		transform: translate(3%, -14px);
+	}
+}
+
+@keyframes sponsor-twinkle {
+	0%, 100% {
+		opacity: 0.2;
+	}
+	50% {
+		opacity: 0.75;
+	}
+}

@@ -255,15 +255,20 @@ export default function JoinUs() {
         >
             <div className="relative z-10 mx-auto grid w-full max-w-[90rem] items-center gap-10 px-6 md:gap-12 md:px-10 lg:grid-cols-[0.9fr_1.15fr] lg:gap-8 lg:px-12 xl:gap-12 xl:px-16">
                 <div className="relative z-20 max-w-xl">
-                    <h2 className="font-outfit mb-6 text-4xl font-semibold text-primary drop-shadow-[0_0_12px_rgba(193,185,242,0.5)] md:text-5xl lg:text-6xl">
+                    <h2 className="font-outfit mb-4 text-4xl font-semibold text-primary drop-shadow-[0_0_12px_rgba(193,185,242,0.5)] md:text-5xl">
                         Join Us
                     </h2>
-                    <p className="font-outfit text-lg leading-relaxed text-primary drop-shadow-[0_0_8px_rgba(193,185,242,0.45)] md:text-xl lg:text-2xl">
-                        A hackathon founded by high school students,{" "}
-                        <span className="hidden md:inline">
-                            <br />
-                        </span>
-                        for high school students.
+
+                    <p className="font-outfit mb-4 text-lg leading-relaxed text-primary drop-shadow-[0_0_8px_rgba(193,185,242,0.45)] md:text-xl">
+                        A hackathon founded by high school students, for high school
+                        students.
+                    </p>
+
+                    <p className="font-outfit text-sm leading-relaxed text-primary/80 md:text-base">
+                        Over one weekend, you&apos;ll team up with other students to build
+                        something from scratch, no experience needed. Mentors and
+                        workshops will help you along the way, with prizes up for grabs
+                        when it&apos;s time to demo.
                     </p>
                 </div>
 
@@ -277,8 +282,8 @@ export default function JoinUs() {
                         <div
                             key={cloud.id}
                             className={`absolute z-[2] aspect-[100/108] ${cloud.delay
-                                    ? "cloud-frame-float-delayed"
-                                    : "cloud-frame-float"
+                                ? "cloud-frame-float-delayed"
+                                : "cloud-frame-float"
                                 }`}
                             style={{
                                 width: `${cloud.w}%`,

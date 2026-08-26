@@ -236,11 +236,12 @@ export default function Team() {
 		}, ms);
 	}, []);
 
+	/** Slow auto-scroll to the end, then reverse (ping-pong). */
 	useEffect(() => {
 		if (maxOffset <= 0) return;
 		let frame = 0;
 		let last = performance.now();
-		const speed = 32;
+		const speed = 32; // px / second
 
 		const tick = (now: number) => {
 			const dt = Math.min(0.05, (now - last) / 1000);
@@ -265,24 +266,27 @@ export default function Team() {
 		return () => cancelAnimationFrame(frame);
 	}, [maxOffset]);
 
+	/** Trackpad / mouse wheel → horizontal pan across the full roster */
 	useEffect(() => {
 		const viewport = viewportRef.current;
 		if (!viewport) return;
 
 		const onWheel = (e: WheelEvent) => {
 			if (maxOffset <= 0) return;
-			const delta =
-				Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-			if (delta === 0) return;
+			// Only hijack the wheel for genuinely horizontal gestures (trackpad
+			// swipes). Normal vertical mouse-wheel scrolling must pass through
+			// untouched so the page keeps scrolling past this section.
+			if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
 			e.preventDefault();
 			pauseAuto();
-			setOffset((o) => clampOffset(o + delta));
+			setOffset((o) => clampOffset(o + e.deltaX));
 		};
 
 		viewport.addEventListener("wheel", onWheel, { passive: false });
 		return () => viewport.removeEventListener("wheel", onWheel);
 	}, [clampOffset, maxOffset, pauseAuto]);
 
+	/** Click-drag to scrub through everyone */
 	useEffect(() => {
 		const onMove = (e: PointerEvent) => {
 			if (!dragRef.current.active) return;
@@ -429,23 +433,7 @@ export default function Team() {
 				</button>
 			</div>
 
-			<div className="relative z-10 mt-6 h-1 w-40 overflow-hidden rounded-full bg-primary/15 md:w-56">
-				<div
-					className="h-full rounded-full bg-primary/55 transition-[width] duration-150"
-					style={{
-						width:
-							maxOffset > 0
-								? `${Math.min(100, (offset / maxOffset) * 100)}%`
-								: "100%",
-					}}
-				/>
-			</div>
-
 			<Rocket className="absolute bottom-10 left-6 z-20 h-14 w-14 opacity-90 md:left-12 md:h-16 md:w-16" />
-
-			<p className="relative z-10 mt-6 font-outfit text-[10px] tracking-[0.2em] text-white/45 uppercase md:text-xs">
-				Auto-scrolls · drag or scroll to take over · {TEAM.length} members
-			</p>
 		</section>
 	);
 }
