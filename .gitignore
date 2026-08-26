@@ -2,6 +2,7 @@
 .tmp-frames/
 *.HEIC
 *.heic
+databaseplan.txt
 
 # Ignore root-level dumps; site assets under hts-website/public are allowed
 /*.jpg
