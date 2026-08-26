@@ -4,6 +4,7 @@ import Downloads from "@/components/Downloads";
 import FAQ from "@/components/FAQ";
 import Hero from "@/components/Hero";
 import JoinUs from "@/components/JoinUs";
+import Sponsors from "@/components/Sponsors";
 import Team from "@/components/Team";
 import TopBar from "@/components/TopBar";
 
@@ -13,10 +14,11 @@ export default function Home() {
 			<TopBar />
 			<Hero />
 			<JoinUs />
-			<FAQ />
+			<Sponsors />
+			<Downloads />
 			<Team />
 			<Contact />
-			<Downloads />
+			<FAQ />
 		</main>
 	);
 }

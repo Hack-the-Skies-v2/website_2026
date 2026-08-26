@@ -7,6 +7,7 @@ const NAV_ITEMS = [
 	{ id: "join", label: "Join Us" },
 	{ id: "faq", label: "FAQ" },
 	{ id: "team", label: "Meet the Team" },
+	{ id: "sponsors", label: "Sponsors" },
 	{ id: "contact", label: "Contact Us" },
 	{ id: "downloads", label: "Resources" },
 ];
