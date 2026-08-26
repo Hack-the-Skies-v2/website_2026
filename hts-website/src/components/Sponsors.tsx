@@ -59,14 +59,14 @@ const SPONSORS = [
 	},
 	{
 		name: "TT Math",
-		url: null,
+		url: "https://www.ttmath.ca/en/",
 		logo: "/sponsors/tt-math.png",
 		rel: undefined,
 		size: "sm",
 	},
 	{
 		name: "Jukebox",
-		url: null,
+		url: "https://www.jukeboxprint.com/",
 		logo: "/sponsors/jukebox.png",
 		rel: undefined,
 		size: "sm",
