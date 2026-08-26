@@ -12,6 +12,7 @@ const SPONSORS = [
 		name: "Siemens",
 		url: "https://www.siemens.com/",
 		logo: "/sponsors/siemens.svg",
+		rel: undefined,
 		size: "lg",
 	},
 	{
@@ -46,24 +47,28 @@ const SPONSORS = [
 		name: "Interview Cake",
 		url: "https://www.interviewcake.com/",
 		logo: "/sponsors/interview-cake.svg",
+		rel: undefined,
 		size: "md",
 	},
 	{
 		name: "Codecrafters",
 		url: "https://codecrafters.io/",
 		logo: "/sponsors/codecrafters.svg",
+		rel: undefined,
 		size: "sm",
 	},
 	{
 		name: "TT Math",
 		url: null,
 		logo: "/sponsors/tt-math.png",
+		rel: undefined,
 		size: "sm",
 	},
 	{
 		name: "Jukebox",
 		url: null,
 		logo: "/sponsors/jukebox.png",
+		rel: undefined,
 		size: "sm",
 	},
 ] as const;
