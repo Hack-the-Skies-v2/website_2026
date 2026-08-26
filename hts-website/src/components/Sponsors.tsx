@@ -8,19 +8,71 @@ import path from "node:path";
  * file never flashes a broken image in the browser.
  */
 const SPONSORS = [
-	{ name: "Siemens", url: "https://www.siemens.com/", logo: "/sponsors/siemens.svg", tier: "gold" },
-	{ name: "NordVPN", url: "https://nordvpn.com/", logo: "/sponsors/nordvpn.svg", tier: "silver" },
-	{ name: "Interview Cake", url: "https://www.interviewcake.com/", logo: "/sponsors/interview-cake.svg", tier: "silver" },
-	{ name: "Hero Cosmetics", url: "https://www.herocosmetics.us/", logo: "/sponsors/hero-cosmetics.svg", tier: "bronze" },
-	{ name: "Jiffy", url: "https://www.jiffyondemand.com/", logo: "/sponsors/jiffy.jpeg", tier: "bronze" },
-	{ name: "Pure Buttons", url: "https://www.purebuttons.com/", logo: "/sponsors/pure-buttons.png", tier: "bronze" },
+	{
+		name: "Siemens",
+		url: "https://www.siemens.com/",
+		logo: "/sponsors/siemens.svg",
+		size: "lg",
+	},
+	{
+		name: "NordVPN",
+		url: "https://nordvpn.com/hackathons",
+		logo: "/sponsors/nordvpn.svg",
+		rel: "sponsored nofollow noreferrer",
+		size: "lg",
+	},
+	{
+		name: "NordPass",
+		url: "https://nordpass.com/",
+		logo: "/sponsors/nordpass.svg",
+		rel: "sponsored nofollow noreferrer",
+		size: "md",
+	},
+	{
+		name: "Incogni",
+		url: "https://incogni.com/",
+		logo: "/sponsors/incogni.svg",
+		rel: "sponsored nofollow noreferrer",
+		size: "md",
+	},
+	{
+		name: "Saily",
+		url: "https://saily.com/",
+		logo: "/sponsors/saily.svg",
+		rel: "sponsored nofollow noreferrer",
+		size: "md",
+	},
+	{
+		name: "Interview Cake",
+		url: "https://www.interviewcake.com/",
+		logo: "/sponsors/interview-cake.svg",
+		size: "md",
+	},
+	{
+		name: "Codecrafters",
+		url: "https://codecrafters.io/",
+		logo: "/sponsors/codecrafters.svg",
+		size: "sm",
+	},
+	{
+		name: "TT Math",
+		url: null,
+		logo: "/sponsors/tt-math.png",
+		size: "sm",
+	},
+	{
+		name: "Jukebox",
+		url: null,
+		logo: "/sponsors/jukebox.png",
+		size: "sm",
+	},
 ] as const;
 
-const TIER_GROUPS = [
-	{ tier: "gold", cols: "grid-cols-1", height: "md:h-52 h-36" },
-	{ tier: "silver", cols: "grid-cols-1 sm:grid-cols-2", height: "md:h-40 h-28" },
-	{ tier: "bronze", cols: "grid-cols-2 sm:grid-cols-3", height: "md:h-32 h-24" },
-] as const;
+const SIZE_CLASSES = {
+	lg: "h-20 md:h-24 lg:col-span-2",
+	md: "h-16 md:h-20",
+	sm: "h-14 md:h-16",
+} as const;
 
 function hasLogoFile(logo: string): boolean {
 	return fs.existsSync(path.join(process.cwd(), "public", logo));
@@ -28,39 +80,39 @@ function hasLogoFile(logo: string): boolean {
 
 function SponsorMark({ name }: { name: string }) {
 	return (
-		<span className="px-3 text-center font-outfit text-lg font-semibold tracking-wide text-[#171426] md:text-2xl">
+		<span className="px-2 text-center font-outfit text-xs font-semibold tracking-wide text-[#171426] md:text-sm">
 			{name}
 		</span>
 	);
 }
 
-function SponsorCard({
-	sponsor,
-	heightClass,
-}: {
-	sponsor: (typeof SPONSORS)[number];
-	heightClass: string;
-}) {
+function SponsorCard({ sponsor }: { sponsor: (typeof SPONSORS)[number] }) {
 	const logoExists = hasLogoFile(sponsor.logo);
+	const cardClass = `group flex w-full items-center justify-center rounded-xl bg-white p-2.5 shadow-[0_6px_16px_rgba(0,0,0,0.3)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_10px_22px_rgba(0,0,0,0.4)] ${SIZE_CLASSES[sponsor.size]}`;
+	const content = logoExists ? (
+		// eslint-disable-next-line @next/next/no-img-element
+		<img
+			src={sponsor.logo}
+			alt={sponsor.name}
+			className="h-full w-full object-contain grayscale-[15%] transition duration-300 group-hover:grayscale-0"
+			draggable={false}
+		/>
+	) : (
+		<SponsorMark name={sponsor.name} />
+	);
+
+	if (!sponsor.url) {
+		return <div className={cardClass}>{content}</div>;
+	}
 
 	return (
 		<a
 			href={sponsor.url}
 			target="_blank"
-			rel="noreferrer"
-			className={`group flex w-full items-center justify-center rounded-2xl bg-white p-4 shadow-[0_10px_24px_rgba(0,0,0,0.35)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(0,0,0,0.45)] ${heightClass}`}
+			rel={sponsor.rel ?? "noreferrer"}
+			className={cardClass}
 		>
-			{logoExists ? (
-				// eslint-disable-next-line @next/next/no-img-element
-				<img
-					src={sponsor.logo}
-					alt={sponsor.name}
-					className="h-full w-full object-contain grayscale-[15%] transition duration-300 group-hover:grayscale-0"
-					draggable={false}
-				/>
-			) : (
-				<SponsorMark name={sponsor.name} />
-			)}
+			{content}
 		</a>
 	);
 }
@@ -120,18 +172,17 @@ export default function Sponsors() {
 				thanks to everyone below.
 			</p>
 
-			<div className="relative z-10 flex w-full max-w-5xl flex-col gap-4 md:gap-6">
-				{TIER_GROUPS.map(({ tier, cols, height }) => {
-					const group = SPONSORS.filter((s) => s.tier === tier);
-					if (group.length === 0) return null;
-					return (
-						<div key={tier} className={`grid w-full gap-4 md:gap-6 ${cols}`}>
-							{group.map((sponsor) => (
-								<SponsorCard key={sponsor.name} sponsor={sponsor} heightClass={height} />
-							))}
-						</div>
-					);
-				})}
+			<div className="relative z-10 flex w-full max-w-3xl flex-col gap-3 md:gap-4">
+				<div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-4">
+					{SPONSORS.filter((s) => s.size !== "sm").map((sponsor) => (
+						<SponsorCard key={sponsor.name} sponsor={sponsor} />
+					))}
+				</div>
+				<div className="grid grid-cols-3 gap-3 md:gap-4">
+					{SPONSORS.filter((s) => s.size === "sm").map((sponsor) => (
+						<SponsorCard key={sponsor.name} sponsor={sponsor} />
+					))}
+				</div>
 			</div>
 
 			<p className="relative z-10 mt-14 max-w-lg text-center font-outfit text-xs tracking-wide text-white/45 md:text-sm">

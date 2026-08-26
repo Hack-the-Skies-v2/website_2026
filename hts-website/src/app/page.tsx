@@ -14,9 +14,9 @@ export default function Home() {
 			<TopBar />
 			<Hero />
 			<JoinUs />
+			<Team />
 			<Sponsors />
 			<Downloads />
-			<Team />
 			<Contact />
 			<FAQ />
 		</main>

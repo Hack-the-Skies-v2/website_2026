@@ -5,11 +5,11 @@ import { useEffect, useState } from "react";
 const NAV_ITEMS = [
 	{ id: "home", label: "Home" },
 	{ id: "join", label: "Join Us" },
-	{ id: "faq", label: "FAQ" },
 	{ id: "team", label: "Meet the Team" },
 	{ id: "sponsors", label: "Sponsors" },
-	{ id: "contact", label: "Contact Us" },
 	{ id: "downloads", label: "Resources" },
+	{ id: "contact", label: "Contact Us" },
+	{ id: "faq", label: "FAQ" },
 ];
 
 export default function TopBar() {

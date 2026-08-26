@@ -273,12 +273,13 @@ export default function Team() {
 
 		const onWheel = (e: WheelEvent) => {
 			if (maxOffset <= 0) return;
-			const delta =
-				Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-			if (delta === 0) return;
+			// Only hijack the wheel for genuinely horizontal gestures (trackpad
+			// swipes). Normal vertical mouse-wheel scrolling must pass through
+			// untouched so the page keeps scrolling past this section.
+			if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
 			e.preventDefault();
 			pauseAuto();
-			setOffset((o) => clampOffset(o + delta));
+			setOffset((o) => clampOffset(o + e.deltaX));
 		};
 
 		viewport.addEventListener("wheel", onWheel, { passive: false });
