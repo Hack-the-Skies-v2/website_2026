@@ -71,6 +71,13 @@ const SPONSORS = [
 		rel: undefined,
 		size: "sm",
 	},
+	{
+		name: "O'Reilly",
+		url: "https://www.oreilly.com",
+		logo: "/sponsors/oreilly.png",
+		rel: undefined,
+		size: "sm",
+	},
 ] as const;
 
 const SIZE_CLASSES = {
