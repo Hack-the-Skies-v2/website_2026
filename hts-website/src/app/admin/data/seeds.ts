@@ -1,0 +1,362 @@
+import {
+  Application,
+  Attendance,
+  CustomEvent,
+  Referral,
+  Score,
+  Team,
+  Track,
+  Transaction,
+  User,
+} from "../types";
+
+export const applicationsSeed: Application[] = [
+  {
+    id: "a1",
+    name: "Ava Patel",
+    email: "ava@example.com",
+    role: "Hacker",
+    status: "Pending",
+    submitted: "Sep 08, 9:42 AM",
+    school: "Northview High",
+    grade: "11",
+    year: "2027",
+    city: "Seattle, WA",
+    experience: "Built a weather station with Arduino.",
+    question:
+      "I want to build tools that make climate data easier to understand.",
+  },
+  {
+    id: "a2",
+    name: "Marcus Chen",
+    email: "marcus@example.com",
+    role: "Hacker",
+    status: "Accepted",
+    submitted: "Sep 08, 8:17 AM",
+    school: "Roosevelt High",
+    grade: "12",
+    year: "2026",
+    city: "Portland, OR",
+    experience: "Two school hackathons and robotics team.",
+    question: "I am excited to learn from other student builders.",
+  },
+  {
+    id: "a3",
+    name: "Sofia Williams",
+    email: "sofia@example.com",
+    role: "Judge",
+    status: "Accepted",
+    submitted: "Sep 07, 4:23 PM",
+    company: "Orbital Systems",
+    specialty: "Aerospace software and embedded systems",
+    motivation:
+      "I want to help students turn ambitious ideas into working demos.",
+  },
+  {
+    id: "a4",
+    name: "Jordan Lee",
+    email: "jordan@example.com",
+    role: "Mentor",
+    status: "Waitlist",
+    submitted: "Sep 07, 1:08 PM",
+    company: "Launch Labs",
+    specialty: "Product design and developer experience",
+    motivation: "I enjoy making technical projects approachable.",
+  },
+  {
+    id: "a5",
+    name: "Noah Rivera",
+    email: "noah@example.com",
+    role: "Hacker",
+    status: "Rejected",
+    submitted: "Sep 06, 11:51 AM",
+    school: "Lincoln High",
+    grade: "10",
+    year: "2028",
+    city: "Tacoma, WA",
+    experience: "First hackathon.",
+    question: "I am curious about building with sensors.",
+  },
+  {
+    id: "a6",
+    name: "Priya Shah",
+    email: "priya@example.com",
+    role: "Judge",
+    status: "Pending",
+    submitted: "Sep 06, 9:32 AM",
+    company: "Skyline Ventures",
+    specialty: "AI safety and machine learning",
+    motivation: "I can bring a practical perspective to judging.",
+  },
+];
+
+export const usersSeed: User[] = [
+  {
+    id: "u1",
+    name: "Ava Patel",
+    email: "ava@example.com",
+    role: "Hacker",
+    checkedIn: false,
+    teamId: "t1",
+    points: 25,
+    qr: "HTS-AVA-001",
+  },
+  {
+    id: "u2",
+    name: "Marcus Chen",
+    email: "marcus@example.com",
+    role: "Hacker",
+    checkedIn: true,
+    teamId: "t1",
+    points: 40,
+    qr: "HTS-MAR-002",
+  },
+  {
+    id: "u3",
+    name: "Eli Thompson",
+    email: "eli@example.com",
+    role: "Hacker",
+    checkedIn: true,
+    teamId: "t2",
+    points: 15,
+    qr: "HTS-ELI-003",
+  },
+  {
+    id: "u4",
+    name: "Sofia Williams",
+    email: "sofia@example.com",
+    role: "Judge",
+    checkedIn: true,
+    teamId: null,
+    points: 0,
+    qr: "HTS-SOF-004",
+  },
+  {
+    id: "u5",
+    name: "Jordan Lee",
+    email: "jordan@example.com",
+    role: "Mentor",
+    checkedIn: false,
+    teamId: "t2",
+    points: 10,
+    qr: "HTS-JOR-005",
+  },
+  {
+    id: "u6",
+    name: "Theo Martin",
+    email: "theo@example.com",
+    role: "Hacker",
+    checkedIn: false,
+    teamId: "t3",
+    points: 30,
+    qr: "HTS-THE-006",
+  },
+  {
+    id: "u7",
+    name: "Riley Brooks",
+    email: "riley@example.com",
+    role: "Hacker",
+    checkedIn: true,
+    teamId: "t3",
+    points: 20,
+    qr: "HTS-RIL-007",
+  },
+  {
+    id: "u8",
+    name: "Casey Morgan",
+    email: "casey@example.com",
+    role: "Mentor",
+    checkedIn: true,
+    teamId: null,
+    admin: true,
+    points: 0,
+    qr: "HTS-CAS-008",
+  },
+];
+
+export const tracksSeed: Track[] = [
+  {
+    id: "tr1",
+    name: "Future of Flight",
+    description:
+      "Build an idea that changes how people move through the world.",
+    color: "#d8c8ff",
+  },
+  {
+    id: "tr2",
+    name: "Climate & Space",
+    description:
+      "Use technology to understand or protect our shared atmosphere.",
+    color: "#b8e3d0",
+  },
+  {
+    id: "tr3",
+    name: "Open Innovation",
+    description: "A home for ideas that do not fit neatly anywhere else.",
+    color: "#ffd985",
+  },
+];
+
+export const teamsSeed: Team[] = [
+  {
+    id: "t1",
+    name: "Starboard",
+    memberIds: ["u1", "u2"],
+    trackIds: ["tr1", "tr2"],
+  },
+  { id: "t2", name: "Altitude", memberIds: ["u3", "u5"], trackIds: ["tr1"] },
+  {
+    id: "t3",
+    name: "Cosmic Ray",
+    memberIds: ["u6", "u7"],
+    trackIds: ["tr2", "tr3"],
+  },
+];
+
+export const mealsSeed: Attendance[] = [
+  {
+    id: "m1",
+    name: "Saturday breakfast",
+    start: "09:00",
+    end: "10:30",
+    attendeeIds: ["u2", "u3", "u4"],
+  },
+  {
+    id: "m2",
+    name: "Saturday lunch",
+    start: "12:30",
+    end: "14:00",
+    attendeeIds: ["u2", "u3", "u5", "u7"],
+  },
+  {
+    id: "m3",
+    name: "Saturday dinner",
+    start: "18:00",
+    end: "19:30",
+    attendeeIds: [],
+  },
+];
+
+export const workshopsSeed: Attendance[] = [
+  {
+    id: "w1",
+    name: "Pitching your prototype",
+    start: "10:30",
+    end: "11:15",
+    room: "Hangar A",
+    description: "Turn a working demo into a clear three-minute story.",
+    attendeeIds: ["u1", "u2", "u7"],
+  },
+  {
+    id: "w2",
+    name: "Designing for zero gravity",
+    start: "14:30",
+    end: "15:30",
+    room: "Orbit Room",
+    description: "A practical design sprint for unusual constraints.",
+    attendeeIds: ["u3", "u5"],
+  },
+];
+
+export const customEventsSeed: CustomEvent[] = [
+  {
+    id: "ce1",
+    name: "Check-in & Doors Open",
+    start: "08:00",
+    end: "09:00",
+    location: "Main Lobby",
+    description: "Welcome hackers, distribute badges, and settle in.",
+  },
+  {
+    id: "ce2",
+    name: "Opening Ceremony",
+    start: "09:15",
+    end: "10:00",
+    location: "Main Auditorium",
+    description: "Keynote address, schedule overview, and sponsor announcements.",
+  },
+  {
+    id: "ce3",
+    name: "Hacking Starts",
+    start: "10:00",
+    end: "10:00",
+    location: "Hacking Hall",
+    description: "Teams begin brainstorming and coding.",
+  },
+  {
+    id: "ce4",
+    name: "Submissions Due",
+    start: "17:00",
+    end: "17:00",
+    location: "Online Portal",
+    description: "Devpost project submissions close strictly at 5:00 PM.",
+  },
+  {
+    id: "ce5",
+    name: "Closing Ceremony & Awards",
+    start: "19:30",
+    end: "20:30",
+    location: "Main Auditorium",
+    description: "Track winners, top overall projects, and farewell wrap-up.",
+  },
+];
+
+export const scoresSeed: Score[] = [
+  {
+    id: "s1",
+    judgeId: "u4",
+    teamId: "t1",
+    trackId: "tr1",
+    score: 86,
+    comments: "Strong prototype and a clear user story.",
+  },
+  {
+    id: "s2",
+    judgeId: "u4",
+    teamId: "t3",
+    trackId: "tr2",
+    score: 78,
+    comments: "Great technical ambition; polish the demo flow.",
+  },
+];
+
+export const transactionsSeed: Transaction[] = [
+  {
+    id: "p1",
+    userId: "u1",
+    type: "workshop",
+    amount: 10,
+    date: "Sep 08, 10:42 AM",
+    reference: "Pitching your prototype",
+  },
+  {
+    id: "p2",
+    userId: "u1",
+    type: "referral",
+    amount: 15,
+    date: "Sep 07, 3:12 PM",
+    reference: "Referred Eli Thompson",
+  },
+  {
+    id: "p3",
+    userId: "u2",
+    type: "admin",
+    amount: 10,
+    date: "Sep 08, 9:05 AM",
+    reference: "Welcome adjustment",
+    adminName: "Casey Morgan",
+  },
+  {
+    id: "p4",
+    userId: "u3",
+    type: "workshop",
+    amount: 15,
+    date: "Sep 08, 2:00 PM",
+    reference: "Designing for zero gravity",
+  },
+];
+
+export const referralsSeed: Referral[] = [
+  { referrerId: "u1", referredId: "u3", date: "Sep 07, 3:12 PM", points: 15 },
+  { referrerId: "u2", referredId: "u6", date: "Sep 07, 1:40 PM", points: 15 },
+];
