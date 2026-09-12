@@ -1,4 +1,4 @@
-import React, { FormEvent, useState } from "react";
+import React, { useState, type SubmitEvent } from "react";
 import { Attendance, User } from "../types";
 import { Header } from "../components/Common";
 
@@ -26,7 +26,7 @@ export default function AttendanceSection({
 
   const record = records.find((item) => item.id === active) || records[0];
 
-  const save = (event: FormEvent) => {
+  const save = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!name) return;
     const item: Attendance = {

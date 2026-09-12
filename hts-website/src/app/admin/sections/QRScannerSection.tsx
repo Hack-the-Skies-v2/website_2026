@@ -1,4 +1,4 @@
-import React, { FormEvent, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, type SubmitEvent } from "react";
 import { Attendance, Team, User } from "../types";
 import { Header, Stat } from "../components/Common";
 
@@ -214,7 +214,7 @@ export default function QRScannerSection({
     inputRef.current?.focus();
   };
 
-  const handleFormSubmit = (e: FormEvent) => {
+  const handleFormSubmit = (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     processCode(inputCode);
   };

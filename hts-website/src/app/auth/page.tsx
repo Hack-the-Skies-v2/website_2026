@@ -1,12 +1,25 @@
 "use client";
 
+import type { SubmitEvent } from "react";
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import ParallaxLayer from "@/components/ParallaxLayer";
 import Footer from "@/components/Footer";
+import {
+  resetPassword,
+  signInWithGoogle,
+  signInWithEmail,
+  signUpNewUser,
+} from "@/actions/auth";
 
 type AuthMode = "login" | "signup" | "forgot";
+
+function getAuthMode(value: string | null): AuthMode {
+  return value === "signup" || value === "forgot" || value === "login"
+    ? value
+    : "login";
+}
 
 function EyeIcon({ className }: { className?: string }) {
   return (
@@ -71,31 +84,12 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
-function GitHubIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className={className}
-      aria-hidden="true"
-    >
-      <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
-      />
-    </svg>
-  );
-}
-
 function AuthContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const initialMode = (searchParams.get("mode") as AuthMode) || "login";
-  const [mode, setMode] = useState<AuthMode>(
-    initialMode === "signup" ? "signup" : "login"
-  );
+  const initialMode = getAuthMode(searchParams.get("mode"));
+  const [mode, setMode] = useState<AuthMode>(initialMode);
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -114,13 +108,15 @@ function AuthContent() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    const urlMode = searchParams.get("mode");
-    if (urlMode === "signup" && mode !== "signup") {
-      setMode("signup");
-    } else if (urlMode === "login" && mode !== "login") {
-      setMode("login");
-    }
-  }, [searchParams, mode]);
+    setMode(getAuthMode(searchParams.get("mode")));
+  }, [searchParams]);
+
+  useEffect(() => {
+    const resetLoadingState = () => setIsLoading(false);
+
+    window.addEventListener("pageshow", resetLoadingState);
+    return () => window.removeEventListener("pageshow", resetLoadingState);
+  }, []);
 
   const switchMode = (newMode: AuthMode) => {
     setMode(newMode);
@@ -169,7 +165,7 @@ function AuthContent() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSignIn = async (e: React.FormEvent) => {
+  const handleSignIn = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!validateForm()) return;
 
@@ -177,13 +173,13 @@ function AuthContent() {
     setStatusMessage(null);
 
     try {
-      setTimeout(() => {
-        setIsLoading(false);
-        setStatusMessage({
-          type: "info",
-          text: `Frontend ready: Sign In submitted for ${email}.`,
-        });
-      }, 600);
+      const result = await signInWithEmail(email, password);
+      setIsLoading(false);
+      if (result.success) {
+        router.push("/apply");
+        return;
+      }
+      setStatusMessage({ type: "error", text: result.error });
     } catch {
       setIsLoading(false);
       setStatusMessage({
@@ -193,7 +189,7 @@ function AuthContent() {
     }
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!validateForm()) return;
 
@@ -201,13 +197,17 @@ function AuthContent() {
     setStatusMessage(null);
 
     try {
-      setTimeout(() => {
-        setIsLoading(false);
-        setStatusMessage({
-          type: "success",
-          text: `Frontend ready: Account creation submitted for ${email}.`,
-        });
-      }, 600);
+      const result = await signUpNewUser(
+        fullName,
+        email,
+        password,
+        confirmPassword,
+        termsAgreed,
+      );
+      setIsLoading(false);
+      setStatusMessage(result.success
+        ? { type: "success", text: "Check your email to confirm your account." }
+        : { type: "error", text: result.error });
     } catch {
       setIsLoading(false);
       setStatusMessage({
@@ -217,7 +217,7 @@ function AuthContent() {
     }
   };
 
-  const handleForgotPassword = async (e: React.FormEvent) => {
+  const handleForgotPassword = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!validateForm()) return;
 
@@ -225,13 +225,11 @@ function AuthContent() {
     setStatusMessage(null);
 
     try {
-      setTimeout(() => {
-        setIsLoading(false);
-        setStatusMessage({
-          type: "success",
-          text: `Reset link request sent for ${email}.`,
-        });
-      }, 600);
+      const result = await resetPassword(email);
+      setIsLoading(false);
+      setStatusMessage(result.success
+        ? { type: "success", text: "A reset link has been sent." }
+        : { type: "error", text: result.error });
     } catch {
       setIsLoading(false);
       setStatusMessage({
@@ -241,11 +239,27 @@ function AuthContent() {
     }
   };
 
-  const handleOAuthSignIn = (provider: "google" | "github") => {
-    setStatusMessage({
-      type: "info",
-      text: `${provider.toUpperCase()} authentication clicked.`,
-    });
+  const handleOAuthSignIn = async (provider: "google" | "github") => {
+    if (provider !== "google") return;
+
+    setIsLoading(true);
+    setStatusMessage(null);
+
+    try {
+      const result = await signInWithGoogle();
+      if (result.success) {
+        window.location.assign(result.url);
+        return;
+      }
+      setIsLoading(false);
+      setStatusMessage({ type: "error", text: result.error });
+    } catch {
+      setIsLoading(false);
+      setStatusMessage({
+        type: "error",
+        text: "Unable to sign in with Google.",
+      });
+    }
   };
 
   return (
@@ -373,6 +387,7 @@ function AuthContent() {
                 <button
                   type="button"
                   onClick={() => handleOAuthSignIn("google")}
+                  disabled={isLoading}
                   className="
                     w-full
                     flex items-center justify-center gap-3
@@ -520,20 +535,6 @@ function AuthContent() {
                       {errors.password}
                     </p>
                   )}
-                </div>
-
-                <div className="flex items-center justify-between pt-1">
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={rememberMe}
-                      onChange={(e) => setRememberMe(e.target.checked)}
-                      className="w-4 h-4 rounded accent-button cursor-pointer"
-                    />
-                    <span className="text-primary/80 font-outfit text-sm">
-                      Remember me
-                    </span>
-                  </label>
                 </div>
 
                 <button

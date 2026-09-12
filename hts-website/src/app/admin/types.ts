@@ -14,7 +14,7 @@ export type Section =
   | "Points";
 
 export type Role = "Hacker" | "Judge" | "Mentor";
-export type Status = "Pending" | "Accepted" | "Rejected" | "Waitlist";
+export type Status = "Draft" | "Pending" | "Accepted" | "Rejected" | "Waitlist";
 
 export type User = {
   id: string;

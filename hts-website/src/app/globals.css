@@ -157,6 +157,30 @@ body {
 	animation: star-glow 3s ease-in-out infinite;
 }
 
+form[data-validation-attempted="true"] input:invalid,
+form[data-validation-attempted="true"] select:invalid,
+form[data-validation-attempted="true"] textarea:invalid {
+	border-color: rgb(248 113 113);
+	box-shadow: 0 0 0 2px rgb(248 113 113 / 0.2);
+}
+
+@keyframes rocket-vibrate {
+	0%, 100% {
+		transform: translate(0, 0) rotate(0deg);
+	}
+	25% {
+		transform: translate(-0.2px, 0.2px) rotate(-0.15deg);
+	}
+	75% {
+		transform: translate(0.2px, -0.2px) rotate(0.15deg);
+	}
+}
+
+.rocket-vibrate {
+	animation: rocket-vibrate 0.32s linear infinite;
+	transform-origin: center;
+}
+
 @keyframes cloud-drift {
 
 	0%,

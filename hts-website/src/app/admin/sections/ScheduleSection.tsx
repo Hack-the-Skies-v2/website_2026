@@ -1,4 +1,4 @@
-import React, { FormEvent, useState } from "react";
+import React, { useState, type SubmitEvent } from "react";
 import { Attendance, CustomEvent, Section } from "../types";
 import { Header, Stat } from "../components/Common";
 
@@ -42,7 +42,7 @@ export default function ScheduleSection({
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
 
-  const handleCreate = (e: FormEvent) => {
+  const handleCreate = (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!name.trim()) return;
 

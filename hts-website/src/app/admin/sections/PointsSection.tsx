@@ -1,4 +1,4 @@
-import React, { FormEvent, useState } from "react";
+import React, { useState, type SubmitEvent } from "react";
 import { Transaction, User } from "../types";
 import { Header } from "../components/Common";
 
@@ -22,7 +22,7 @@ export default function PointsSection({
 
   const person = (id: string) => users.find((user) => user.id === id);
 
-  const adjust = (event: FormEvent) => {
+  const adjust = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     setTransactions((current) => [
       ...current,

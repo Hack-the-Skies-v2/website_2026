@@ -105,7 +105,7 @@ export default function Hero() {
                 for high school students.
             </h1>
             <div className="mt-4 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                {/* <Link href="/apply">
+                <Link href="/apply">
 					<button
 						type="button"
 						className="
@@ -123,8 +123,8 @@ export default function Hero() {
 						"
 					>Apply Now!
 					</button>
-				</Link> */}
-                <button
+				</Link>
+                {/* <button
                     type="button"
                     disabled
                     className="
@@ -139,7 +139,7 @@ export default function Hero() {
                     "
                 >
                     Apply Soon
-                </button>
+                </button> */}
 
                 <a
                     href="#downloads"

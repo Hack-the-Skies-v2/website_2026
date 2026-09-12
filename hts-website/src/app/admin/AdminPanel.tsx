@@ -60,11 +60,16 @@ export default function AdminPanel() {
   const [teamId, setTeamId] = useState<string | null>(null);
   const [toast, setToast] = useState("");
 
+  const reviewableApplications = applications.filter(
+    (application) => application.status !== "Draft",
+  );
   const checkedIn = users.filter((user) => user.checkedIn).length;
-  const accepted = applications.filter(
+  const accepted = reviewableApplications.filter(
     (app) => app.status === "Accepted",
   ).length;
-  const pending = applications.filter((app) => app.status === "Pending").length;
+  const pending = reviewableApplications.filter(
+    (app) => app.status === "Pending",
+  ).length;
   const judgingSlots = teams.reduce(
     (total, team) => total + team.trackIds.length,
     0,
@@ -105,7 +110,7 @@ export default function AdminPanel() {
       <section className="min-w-0 p-4 sm:p-6 lg:p-8 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-300 [&_input]:bg-white [&_input]:px-3 [&_input]:py-2 [&_input]:text-sm [&_input]:text-slate-900 [&_input]:shadow-sm [&_input]:outline-none [&_input]:focus:border-amber-400 [&_input]:focus:ring-2 [&_input]:focus:ring-amber-100 [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-300 [&_select]:bg-white [&_select]:px-3 [&_select]:py-2 [&_select]:text-sm [&_select]:text-slate-900 [&_select]:shadow-sm [&_textarea]:rounded-lg [&_textarea]:border [&_textarea]:border-slate-300 [&_textarea]:bg-white [&_textarea]:px-3 [&_textarea]:py-2 [&_textarea]:text-sm [&_textarea]:text-slate-900 [&_textarea]:shadow-sm [&_textarea]:outline-none [&_textarea]:focus:border-amber-400 [&_textarea]:focus:ring-2 [&_textarea]:focus:ring-amber-100 [&_table]:w-full [&_thead]:bg-slate-50 [&_th]:whitespace-nowrap [&_th]:border-b [&_th]:border-slate-200 [&_th]:px-4 [&_th]:py-3 [&_th]:text-left [&_th]:text-xs [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-wide [&_th]:text-slate-500 [&_td]:border-b [&_td]:border-slate-100 [&_td]:px-4 [&_td]:py-4 [&_td]:text-sm [&_td]:text-slate-700 [&_tbody_tr:hover]:bg-slate-50 [&_.bg-slate-900]:bg-white [&_.bg-slate-950]:bg-white [&_.border-slate-800]:border-slate-200 [&_.text-white]:text-slate-900 [&_.text-slate-100]:text-slate-700 [&_.text-slate-200]:text-slate-700 [&_.text-slate-300]:text-slate-600 [&_.text-slate-400]:text-slate-500">
         {section === "Dashboard" && (
           <DashboardSection
-            applications={applications}
+            applications={reviewableApplications}
             users={users}
             meals={meals}
             workshops={workshops}
@@ -144,7 +149,7 @@ export default function AdminPanel() {
 
         {section === "Applications" && (
           <ApplicationsSection
-            applications={applications}
+            applications={reviewableApplications}
             setApplications={setApplications}
             applicationId={applicationId}
             setApplicationId={setApplicationId}

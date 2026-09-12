@@ -24,6 +24,7 @@ const CANADIAN_PROVINCES = [
 
 interface ApplicationData {
     section1: {
+        role: "Hacker" | "Judge" | "Mentor" | "";
         firstName: string;
         lastName: string;
         preferredName: string;
@@ -43,7 +44,6 @@ interface ApplicationData {
         grade: string;
         graduationYear: string;
         schoolCity: string;
-        enrolledInHighSchool: string;
     };
     section3: {
         parentName: string;
@@ -60,7 +60,7 @@ interface ApplicationData {
         heardAboutHTSOther: string;
     };
     section5: {
-        applicationQuestion: string;
+        applicationQuestions: string[];
     };
     section6: {
         eligibilityConfirm: boolean;
@@ -72,6 +72,7 @@ interface ApplicationData {
 
 const EMPTY_DATA: ApplicationData = {
     section1: {
+        role: "",
         firstName: "",
         lastName: "",
         preferredName: "",
@@ -91,7 +92,6 @@ const EMPTY_DATA: ApplicationData = {
         grade: "",
         graduationYear: "",
         schoolCity: "",
-        enrolledInHighSchool: "",
     },
     section3: {
         parentName: "",
@@ -108,7 +108,7 @@ const EMPTY_DATA: ApplicationData = {
         heardAboutHTSOther: "",
     },
     section5: {
-        applicationQuestion: "",
+        applicationQuestions: ["", "", "", "", ""],
     },
     section6: {
         eligibilityConfirm: false,
@@ -130,7 +130,26 @@ function loadApplicationDraft(): ApplicationData {
     try {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
-            return JSON.parse(saved);
+            const parsed = JSON.parse(saved) as Partial<ApplicationData> & {
+                section1?: Partial<ApplicationData["section1"]>;
+                section5?: Partial<ApplicationData["section5"]> & {
+                    applicationQuestion?: string;
+                };
+            };
+            const previousAnswer = parsed.section5?.applicationQuestion ?? "";
+
+            return {
+                ...EMPTY_DATA,
+                ...parsed,
+                section1: { ...EMPTY_DATA.section1, ...parsed.section1 },
+                section5: {
+                    ...EMPTY_DATA.section5,
+                    ...parsed.section5,
+                    applicationQuestions: Array.isArray(parsed.section5?.applicationQuestions)
+                        ? parsed.section5.applicationQuestions
+                        : [previousAnswer, "", "", "", ""],
+                },
+            };
         }
     } catch (e) {
         console.error("Failed to load draft:", e);
@@ -147,17 +166,16 @@ function clearApplicationDraft() {
 }
 
 export default function ApplicationForm() {
-    const [currentSection, setCurrentSection] = useState(1);
+    const [currentSection, setCurrentSection] = useState(0);
     const [data, setData] = useState<ApplicationData>(EMPTY_DATA);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "">("");
     const [submitted, setSubmitted] = useState(false);
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    // TODO at the beginning add an option to choose between mentor, judge, and hacker, although mentor and judge might become the same thing
-
     useEffect(() => {
         const loaded = loadApplicationDraft();
         setData(loaded);
+        setCurrentSection(loaded.section1.role ? 1 : 0);
     }, []);
 
     const debouncedSave = useCallback((newData: ApplicationData) => {
@@ -242,8 +260,6 @@ export default function ApplicationForm() {
             newErrors.graduationYear = "Please select your graduation year.";
         if (!data.section2.schoolCity.trim())
             newErrors.schoolCity = "Please enter your school city.";
-        if (!data.section2.enrolledInHighSchool)
-            newErrors.enrolledInHighSchool = "Please answer this question.";
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -303,16 +319,11 @@ export default function ApplicationForm() {
 
     const validateSection5 = () => {
         const newErrors: Record<string, string> = {};
-        const wordCount = data.section5.applicationQuestion
-            .trim()
-            .split(/\s+/)
-            .filter((w) => w.length > 0).length;
-
-        if (!data.section5.applicationQuestion.trim())
-            newErrors.applicationQuestion = "Please answer the question.";
-        if (wordCount > 300)
-            newErrors.applicationQuestion =
-                "Your answer exceeds 300 words.";
+        data.section5.applicationQuestions.forEach((answer, index) => {
+            const wordCount = answer.trim().split(/\s+/).filter((word) => word.length > 0).length;
+            if (!answer.trim()) newErrors[`applicationQuestion${index}`] = "Please answer this question.";
+            if (wordCount > 300) newErrors[`applicationQuestion${index}`] = "Your answer exceeds 300 words.";
+        });
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -364,8 +375,21 @@ export default function ApplicationForm() {
         }
     };
 
+    const handleRoleContinue = () => {
+        if (!data.section1.role) {
+            setErrors({ role: "Please select your role." });
+            return;
+        }
+
+        setErrors({});
+        setCurrentSection(1);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
     const handleBack = () => {
-        if (currentSection > 1) {
+        if (currentSection === 1) {
+            setCurrentSection(0);
+        } else if (currentSection > 1) {
             setCurrentSection(currentSection - 1);
             window.scrollTo({ top: 0, behavior: "smooth" });
         }
@@ -393,13 +417,13 @@ export default function ApplicationForm() {
 
     const getProgress = () => {
         if (submitted) return 100;
-        return Math.round(((currentSection - 1) / 6) * 100);
+        return Math.round((currentSection / 6) * 100);
     };
 
-    const wordCount = data.section5.applicationQuestion
-        .trim()
-        .split(/\s+/)
-        .filter((w) => w.length > 0).length;
+    const wordCount = data.section5.applicationQuestions.reduce(
+        (total, answer) => total + answer.trim().split(/\s+/).filter((word) => word.length > 0).length,
+        0,
+    );
 
     if (submitted) {
         return (
@@ -470,6 +494,27 @@ export default function ApplicationForm() {
         );
     }
 
+    if (currentSection === 0) {
+        return (
+            <RoleSelection
+                role={data.section1.role}
+                error={errors.role}
+                onSelect={(role) =>
+                    updateData({ section1: { ...data.section1, role } })
+                }
+                onContinue={handleRoleContinue}
+            />
+        );
+    }
+
+    if (data.section1.role === "Judge") {
+        return <JudgeApplicationForm onBack={handleBack} />;
+    }
+
+    if (data.section1.role === "Mentor") {
+        return <MentorApplicationForm onBack={handleBack} />;
+    }
+
     return (
         <section className="relative min-h-screen bg-[#141123] px-6 py-12">
             <ParallaxLayer
@@ -538,7 +583,7 @@ export default function ApplicationForm() {
                     )}
 
                     <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-between">
-                        {currentSection > 1 && (
+                        {currentSection > 0 && (
                             <button
                                 onClick={handleBack}
                                 className="
@@ -615,30 +660,296 @@ export default function ApplicationForm() {
 }
 
 function RocketProgressIndicator({ progress }: { progress: number }) {
-    const rocketPosition = (progress / 100) * 400;
+    const rocketPosition = Math.min(Math.max((progress / 100) * 430, 0), 430);
+    const completedSteps = Math.max(1, Math.round(progress / 100 * 6));
 
     return (
-        <div className="fixed right-8 top-1/2 -translate-y-1/2 flex flex-col items-center">
-            <div className="text-primary font-outfit text-sm mb-4">Progress</div>
-            <div className="relative w-16 h-[500px]">
-                <div className="absolute inset-0 border-2 border-primary rounded-lg opacity-50" />
+        <div className="fixed right-8 top-1/2 flex -translate-y-1/2 flex-col items-center">
+            <div className="mb-4 font-outfit text-base font-semibold text-primary">
+                {completedSteps} of 6 sections
+            </div>
+            <div className="relative h-[500px] w-16 rounded-full border border-primary/30 bg-[#221c38]/80 p-1 shadow-[0_0_25px_rgba(193,185,242,0.12)]">
                 <div
-                    className="absolute top-0 left-0 right-0 bg-star rounded-lg transition-all duration-500"
-                    style={{ height: `${progress * 5}px` }}
+                    className="absolute inset-x-1 bottom-1 rounded-full bg-gradient-to-t from-[#f8d472] via-[#f3b7e5] to-primary transition-all duration-500"
+                    style={{ height: `calc(${progress}% - 8px)` }}
                 />
                 <div
-                    className="absolute left-1/2 -translate-x-1/2 transition-all duration-500"
-                    style={{ top: `${rocketPosition}px` }}
+                    className="absolute left-[calc(50%-4px)] z-10 -translate-x-1/2 transition-all duration-500"
+                    style={{ bottom: `${rocketPosition}px` }}
                 >
-                    <img
-                        src="/rocket.png"
-                        alt="Progress rocket"
-                        width={60}
-                        height={60}
-                        className="drop-shadow-lg"
-                    />
+                    <div className="rocket-vibrate relative h-20 w-20">
+                        <img
+                            src="/rocket.png"
+                            alt="Progress rocket"
+                            width={80}
+                            height={80}
+                            className="absolute inset-0 h-20 w-20 rotate-180 drop-shadow-[0_0_14px_rgba(248,212,114,0.7)]"
+                        />
+                    </div>
                 </div>
             </div>
+        </div>
+    );
+}
+
+function RoleSelection({
+    role,
+    error,
+    onSelect,
+    onContinue,
+}: {
+    role: ApplicationData["section1"]["role"];
+    error?: string;
+    onSelect: (role: "Hacker" | "Judge" | "Mentor") => void;
+    onContinue: () => void;
+}) {
+    return (
+        <section className="relative flex min-h-screen items-center justify-center bg-[#141123] px-6 py-12">
+            <ParallaxLayer
+                speed={0.4}
+                className="pointer-events-none absolute left-1/2 top-[-150px] w-[1000px] -translate-x-1/2 opacity-30 blur-[1px] cloud-drift select-none"
+            >
+                <img src="/Cloud1.webp" alt="" className="h-full w-full" />
+            </ParallaxLayer>
+            <div className="relative z-10 w-full max-w-6xl px-0 py-6 sm:px-6 sm:py-10">
+                <p className="font-outfit text-sm uppercase tracking-[0.2em] text-primary/60">
+                    Hack the Skies application
+                </p>
+                <h1 className="mt-3 font-outfit text-4xl font-semibold text-primary sm:text-5xl">
+                    Choose your application type
+                </h1>
+                <p className="mt-3 font-outfit text-primary/70">
+                    Select the role that best describes how you want to take part.
+                </p>
+                <div className="mt-8 grid gap-4 md:grid-cols-3">
+                    {[
+                        { value: "Hacker" },
+                        { value: "Judge" },
+                        { value: "Mentor" },
+                    ].map((option) => (
+                        <label
+                            key={option.value}
+                            className={`cursor-pointer rounded-2xl border p-5 transition ${role === option.value
+                                ? "border-primary bg-primary/15 shadow-[0_0_22px_rgba(193,185,242,0.2)]"
+                                : "border-primary/25 bg-[#221c38]/60 hover:border-primary/60"
+                                }`}
+                        >
+                            <input
+                                type="radio"
+                                name="application-role"
+                                value={option.value}
+                                checked={role === option.value}
+                                onChange={() =>
+                                    onSelect(option.value as "Hacker" | "Judge" | "Mentor")
+                                }
+                                className="sr-only"
+                            />
+                            <span className="block font-outfit text-xl font-semibold text-primary">
+                                {option.value}
+                            </span>
+                        </label>
+                    ))}
+                </div>
+                {error && <p className="mt-3 font-outfit text-sm text-red-400">{error}</p>}
+                <button
+                    type="button"
+                    onClick={onContinue}
+                    className="mt-8 ml-auto block rounded-full bg-button px-7 py-3 font-outfit font-semibold text-white shadow-[0_0_20px_rgba(130,104,180,0.45)] transition hover:scale-105 hover:bg-[#8268B4]"
+                >
+                    Continue
+                </button>
+            </div>
+        </section>
+    );
+}
+
+function RoleApplicationShell({
+    title,
+    eyebrow,
+    children,
+    onBack,
+}: {
+    title: string;
+    eyebrow: string;
+    children: React.ReactNode;
+    onBack: () => void;
+}) {
+    return (
+        <section className="relative min-h-screen bg-[#141123] px-6 py-12">
+            <ParallaxLayer
+                speed={0.4}
+                className="pointer-events-none absolute left-1/2 top-[-150px] w-[1000px] -translate-x-1/2 opacity-30 blur-[1px] cloud-drift select-none"
+            >
+                <img src="/Cloud1.webp" alt="" className="h-full w-full" />
+            </ParallaxLayer>
+            <div className="relative z-10 mx-auto max-w-6xl">
+                <button
+                    type="button"
+                    onClick={onBack}
+                    className="mb-8 rounded-full bg-button px-6 py-2 font-outfit text-base text-white shadow-[0_0_20px_rgba(130,104,180,0.45)] transition hover:bg-[#8268B4]"
+                >
+                    Back to role selection
+                </button>
+                <p className="font-outfit text-sm uppercase tracking-[0.2em] text-primary/60">{eyebrow}</p>
+                <h1 className="mt-3 font-outfit text-4xl font-semibold text-primary sm:text-5xl">{title}</h1>
+                <form
+                    noValidate
+                    className="mt-10 max-w-4xl space-y-10"
+                >
+                    {children}
+                </form>
+            </div>
+        </section>
+    );
+}
+
+function JudgeApplicationForm({ onBack }: { onBack: () => void }) {
+    const expertise = ["Software / Technology", "AI / Machine Learning", "Data", "Aerospace / Aviation", "Business / Entrepreneurship", "Product Management", "Design / UX", "Finance", "Marketing", "Cybersecurity", "Engineering", "Other"];
+
+    return (
+        <RoleApplicationShell title="Judge application" eyebrow="Judge application" onBack={onBack}>
+            <div>
+                <h2 className="mb-6 font-outfit text-2xl font-semibold text-primary">Basic Information</h2>
+                <div className="grid gap-6 md:grid-cols-2">
+                    <RoleInput label="Name" required />
+                    <RoleInput label="Email" type="email" required />
+                    <RoleInput label="Company / Organization" required />
+                    <RoleInput label="Job Title / Role" required />
+                    <RoleInput label="LinkedIn (optional)" />
+                    <RoleInput label="Industry / Field" required />
+                </div>
+            </div>
+            <div>
+                <h2 className="mb-6 font-outfit text-2xl font-semibold text-primary">Expertise</h2>
+                <RoleCheckboxGroup label="Which areas best describe your professional expertise?" options={expertise} />
+                <div className="mt-6 grid gap-6 md:grid-cols-2">
+                    <RoleSelect label="Years of professional experience" options={["", "0-2", "3-5", "6-10", "11-15", "16+"]} required />
+                    <RoleInput label="What makes a strong hackathon project?" required />
+                </div>
+                <RoleTextArea label="Briefly describe your professional background and expertise." required />
+                <RoleTextArea label="Have you judged a hackathon, competition, pitch competition, science fair, or similar event? If yes, briefly describe." required />
+            </div>
+            <div>
+                <h2 className="mb-6 font-outfit text-2xl font-semibold text-primary">Availability</h2>
+                <RoleSelect label="Are you available for the full judging period?" options={["", "Yes", "No"]} required />
+                <RoleAgreements submitLabel="Submit Judge Application" />
+            </div>
+        </RoleApplicationShell>
+    );
+}
+
+function MentorApplicationForm({ onBack }: { onBack: () => void }) {
+    const areas = ["Programming / Software Development", "AI / Machine Learning", "Web Development", "App Development", "Data Science", "Cybersecurity", "UI/UX & Design", "Entrepreneurship / Business", "Pitching / Presentations", "Product Development", "Other"];
+
+    return (
+        <RoleApplicationShell title="Mentor application" eyebrow="Mentor application" onBack={onBack}>
+            <div>
+                <h2 className="mb-6 font-outfit text-2xl font-semibold text-primary">Basic Information</h2>
+                <div className="grid gap-6 md:grid-cols-2">
+                    <RoleInput label="Name" required />
+                    <RoleInput label="Email" type="email" required />
+                    <RoleInput label="University / College" required />
+                    <RoleInput label="Program and year of study" required />
+                    <RoleInput label="LinkedIn / Portfolio / GitHub (optional)" />
+                </div>
+            </div>
+            <div>
+                <h2 className="mb-6 font-outfit text-2xl font-semibold text-primary">Experience & Skills</h2>
+                <RoleCheckboxGroup label="What areas are you most comfortable helping with?" options={areas} />
+                <RoleTextArea label="What technologies, programming languages, or tools are you most familiar with?" placeholder="e.g., Python, JavaScript, React, Figma, APIs" required />
+                <RoleTextArea label="Have you mentored, taught, tutored, or worked with high-school students before? If yes, briefly describe." required />
+                <RoleTextArea label="What are you hoping to get out of mentoring at Hack the Skies?" required />
+            </div>
+            <div>
+                <h2 className="mb-6 font-outfit text-2xl font-semibold text-primary">Availability</h2>
+                <div className="grid gap-6 md:grid-cols-2">
+                    <RoleSelect label="Are you available for the full Hack the Skies event?" options={["", "Yes", "No"]} required />
+                    <RoleInput label="Times you will be unavailable (optional)" />
+                </div>
+                <RoleAgreements submitLabel="Submit Mentor Application" />
+            </div>
+        </RoleApplicationShell>
+    );
+}
+
+function RoleCheckboxGroup({ label, options }: { label: string; options: string[] }) {
+    return (
+        <div>
+            <label className="mb-3 block font-outfit text-base text-primary">{label}</label>
+            <div className="grid gap-2 md:grid-cols-2">
+                {options.map((option) => (
+                    <label key={option} className="flex items-center gap-2 font-outfit text-primary/80">
+                        <input type="checkbox" className="h-4 w-4 accent-primary" />
+                        {option}
+                    </label>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function RoleTextArea({ label, placeholder, required }: { label: string; placeholder?: string; required?: boolean }) {
+    return (
+        <div className="mt-6">
+            <label className="mb-2 block font-outfit text-base text-primary">
+                {label} {required && <span className="text-red-400">*</span>}
+            </label>
+            <textarea required={required} placeholder={placeholder} className="min-h-[130px] w-full resize-none rounded-lg border border-primary bg-button p-4 font-outfit text-primary placeholder:text-primary/60 focus:outline-none focus:ring-2 focus:ring-primary" />
+        </div>
+    );
+}
+
+function RoleAgreements({ submitLabel }: { submitLabel: string }) {
+    const [agreements, setAgreements] = useState({
+        terms: false,
+        eligibility: false,
+        information: false,
+        participation: false,
+    });
+    const [error, setError] = useState("");
+
+    const toggle = (key: keyof typeof agreements) => {
+        setAgreements((current) => ({ ...current, [key]: !current[key] }));
+        setError("");
+    };
+
+    const handleSubmit = (event: React.MouseEvent<HTMLButtonElement>) => {
+        const form = event.currentTarget.closest("form");
+        if (!form) return;
+
+        form.dataset.validationAttempted = "true";
+        if (!form.checkValidity()) {
+            setError("Please fill in all required fields before submitting.");
+            return;
+        }
+
+        setError("Your application is ready to submit once backend support is connected.");
+    };
+
+    return (
+        <div className="mt-8 space-y-3 rounded-lg border border-primary/30 bg-white/5 p-6">
+            <label className="flex items-start gap-3 font-outfit text-base text-primary">
+                <input type="checkbox" required checked={agreements.terms} onChange={() => toggle("terms")} className="mt-1 h-5 w-5 shrink-0 accent-primary" />
+                <span>
+                    I agree to the <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-white">Terms of Service</a> and acknowledge the <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-white">Privacy Policy</a>.
+                </span>
+            </label>
+            <label className="flex items-start gap-3 font-outfit text-base text-primary">
+                <input type="checkbox" required checked={agreements.eligibility} onChange={() => toggle("eligibility")} className="mt-1 h-5 w-5 shrink-0 accent-primary" />
+                <span>I confirm that the information I provided is accurate and complete.</span>
+            </label>
+            <label className="flex items-start gap-3 font-outfit text-base text-primary">
+                <input type="checkbox" required checked={agreements.information} onChange={() => toggle("information")} className="mt-1 h-5 w-5 shrink-0 accent-primary" />
+                <span>I consent to Hack the Skies using this information to review my application and coordinate the event.</span>
+            </label>
+            <label className="flex items-start gap-3 font-outfit text-base text-primary">
+                <input type="checkbox" required checked={agreements.participation} onChange={() => toggle("participation")} className="mt-1 h-5 w-5 shrink-0 accent-primary" />
+                <span>I understand that participation is subject to approval and event policies.</span>
+            </label>
+            {error && <p role="alert" className="font-outfit text-sm text-red-400">{error}</p>}
+            <button type="button" onClick={handleSubmit} className="mt-5 rounded-full bg-button px-7 py-3 font-outfit font-semibold text-white shadow-[0_0_20px_rgba(130,104,180,0.45)] transition hover:bg-[#8268B4]">
+                {submitLabel}
+            </button>
         </div>
     );
 }
@@ -1001,45 +1312,6 @@ function Section2({
                 error={errors.schoolCity}
                 required
             />
-
-            <div>
-                <label className="block text-primary font-outfit text-base mb-3">
-                    Are you currently enrolled in high school?{" "}
-                    <span className="text-red-400">*</span>
-                </label>
-                <div className="space-y-2">
-                    {["Yes", "No"].map((option) => (
-                        <label key={option} className="flex items-center gap-2">
-                            <input
-                                type="radio"
-                                name="enrolledInHighSchool"
-                                value={option}
-                                checked={section2.enrolledInHighSchool === option}
-                                onChange={(e) =>
-                                    updateData({
-                                        section2: { ...section2, enrolledInHighSchool: e.target.value },
-                                    })
-                                }
-                                className="w-4 h-4 cursor-pointer accent-primary"
-                            />
-                            <span className="text-primary font-outfit">{option}</span>
-                        </label>
-                    ))}
-                </div>
-                {section2.enrolledInHighSchool === "No" && (
-                    <div className="mt-4 p-4 bg-red-900/30 border border-red-400 rounded-lg">
-                        <p className="text-red-300 font-outfit">
-                            Hack the Skies is currently only open to students enrolled in high
-                            school. Thank you for your interest!
-                        </p>
-                    </div>
-                )}
-                {errors.enrolledInHighSchool && (
-                    <p className="text-red-400 font-outfit text-sm mt-1">
-                        {errors.enrolledInHighSchool}
-                    </p>
-                )}
-            </div>
         </div>
     );
 }
@@ -1283,61 +1555,45 @@ function Section5({
     wordCount: number;
 }) {
     const section5 = data.section5;
+    const questions = [
+        "What are you hoping to learn or build at Hack the Skies?",
+        "Describe a project or idea you are proud of.",
+        "How do you approach solving a difficult problem?",
+        "What role do you usually play on a team?",
+        "What would you contribute to the Hack the Skies community?",
+    ];
 
     return (
         <div className="space-y-6">
             <h2 className="text-4xl font-outfit font-semibold text-primary mb-8">
-                Application Question
+                Application Questions
             </h2>
 
-            <div>
-                <label className="block text-primary font-outfit text-base mb-3">
-                    Question: What is your interest in attending Hack the Skies?{" "}
-                    <span className="text-red-400">*</span>
-                </label>
-                <textarea
-                    value={section5.applicationQuestion}
-                    onChange={(e) => {
-                        const text = e.target.value;
-                        const words = text.trim().split(/\s+/).filter((w) => w.length > 0)
-                            .length;
-                        if (words <= 300) {
-                            updateData({
-                                section5: { ...section5, applicationQuestion: text },
-                            });
-                        }
-                    }}
-                    placeholder="Type your answer here"
-                    className="
-						w-full
-						p-4
-						border border-primary
-						rounded-lg
-						bg-button
-						text-primary
-						font-outfit
-						placeholder:text-primary/60
-						focus:outline-none
-						focus:ring-2
-						focus:ring-primary
-						min-h-[200px]
-						resize-none
-					"
-                />
-                <div className="flex justify-between items-center mt-2">
-                    <p
-                        className={`font-outfit text-sm ${wordCount > 300 ? "text-red-400" : "text-primary"
-                            }`}
-                    >
-                        {wordCount} / 300 words
-                    </p>
-                    {errors.applicationQuestion && (
-                        <p className="text-red-400 font-outfit text-sm">
-                            {errors.applicationQuestion}
+            {questions.map((question, index) => (
+                <div key={question}>
+                    <label className="mb-3 block font-outfit text-base text-primary">
+                        {index + 1}. {question} <span className="text-red-400">*</span>
+                    </label>
+                    <textarea
+                        value={section5.applicationQuestions[index]}
+                        onChange={(event) => {
+                            const answers = [...section5.applicationQuestions];
+                            answers[index] = event.target.value;
+                            updateData({ section5: { applicationQuestions: answers } });
+                        }}
+                        placeholder="Type your answer here"
+                        className="min-h-[150px] w-full resize-none rounded-lg border border-primary bg-button p-4 font-outfit text-primary placeholder:text-primary/60 focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    <div className="mt-2 flex items-center justify-between">
+                        <p className="font-outfit text-sm text-primary">
+                            {section5.applicationQuestions[index].trim().split(/\s+/).filter((word) => word.length > 0).length} / 300 words
                         </p>
-                    )}
+                        {errors[`applicationQuestion${index}`] && (
+                            <p className="font-outfit text-sm text-red-400">{errors[`applicationQuestion${index}`]}</p>
+                        )}
+                    </div>
                 </div>
-            </div>
+            ))}
         </div>
     );
 }
@@ -1407,10 +1663,6 @@ function Section6({
                     { label: "Current grade", value: data.section2.grade },
                     { label: "Expected graduation year", value: data.section2.graduationYear },
                     { label: "School city", value: data.section2.schoolCity },
-                    {
-                        label: "Enrolled in high school",
-                        value: data.section2.enrolledInHighSchool,
-                    },
                 ]}
             />
 
@@ -1458,15 +1710,16 @@ function Section6({
                 ]}
             />
 
-            <ReviewSection
-                title="Application Question"
+            <ReviewQuestions
                 onEdit={() => onEditSection(5)}
-                content={[
-                    {
-                        label: "Your answer",
-                        value: data.section5.applicationQuestion,
-                    },
+                questions={[
+                    "What are you hoping to learn or build at Hack the Skies?",
+                    "Describe a project or idea you are proud of.",
+                    "How do you approach solving a difficult problem?",
+                    "What role do you usually play on a team?",
+                    "What would you contribute to the Hack the Skies community?",
                 ]}
+                answers={data.section5.applicationQuestions}
             />
 
             <div className="space-y-3 bg-white/5 border border-primary/30 rounded-lg p-6">
@@ -1637,6 +1890,88 @@ function ReviewSection({
     );
 }
 
+function ReviewQuestions({
+    questions,
+    answers,
+    onEdit,
+}: {
+    questions: string[];
+    answers: string[];
+    onEdit: () => void;
+}) {
+    return (
+        <div className="space-y-6 border border-primary/30 rounded-lg p-6">
+            <div className="flex justify-between items-center">
+                <h3 className="text-2xl font-outfit font-semibold text-primary">
+                    Application Questions
+                </h3>
+                <button
+                    onClick={onEdit}
+                    className="text-primary font-outfit text-sm border border-primary px-4 py-2 rounded-lg hover:bg-primary/10 transition-colors"
+                >
+                    Edit
+                </button>
+            </div>
+            <div className="space-y-8">
+                {questions.map((question, index) => (
+                    <div key={question} className="space-y-2">
+                        <p className="font-outfit text-base font-semibold text-primary">
+                            {index + 1}. {question}
+                        </p>
+                        <p className="whitespace-pre-wrap font-outfit text-base leading-relaxed text-primary">
+                            {answers[index] || "(not provided)"}
+                        </p>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function RoleInput({
+    label,
+    type,
+    required,
+}: {
+    label: string;
+    type?: string;
+    required?: boolean;
+}) {
+    const [value, setValue] = useState("");
+
+    return (
+        <FormInput
+            label={label}
+            type={type}
+            value={value}
+            onChange={(event) => setValue(event.target.value)}
+            required={required}
+        />
+    );
+}
+
+function RoleSelect({
+    label,
+    options,
+    required,
+}: {
+    label: string;
+    options: string[];
+    required?: boolean;
+}) {
+    const [value, setValue] = useState("");
+
+    return (
+        <FormSelect
+            label={label}
+            value={value}
+            onChange={(event) => setValue(event.target.value)}
+            options={options}
+            required={required}
+        />
+    );
+}
+
 function FormInput({
     label,
     type = "text",
@@ -1670,6 +2005,7 @@ function FormInput({
                 type={type}
                 value={value}
                 onChange={onChange}
+                required={required}
                 className={`
 					w-full
 					p-3
@@ -1714,6 +2050,7 @@ function FormSelect({
             <select
                 value={value}
                 onChange={onChange}
+                required={required}
                 className={`
 					w-full
 					p-3

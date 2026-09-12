@@ -1,4 +1,4 @@
-import React, { FormEvent, useState } from "react";
+import React, { useState, type SubmitEvent } from "react";
 import { Score, Team, Track } from "../types";
 import { Header } from "../components/Common";
 
@@ -21,7 +21,7 @@ export default function TracksSection({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
 
-  const save = (event: FormEvent) => {
+  const save = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!name.trim()) return;
     setTracks((current) =>

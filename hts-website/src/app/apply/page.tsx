@@ -1,12 +1,21 @@
-"use client";
-
 import Link from "next/link";
-import ApplicationForm from "@/components/ApplicationForm";
 import Footer from "@/components/Footer";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import ApplicationForm from "@/components/ApplicationForm";
+import AccountMenu from "../../components/AccountMenu";
 
-export default function Apply() {
+export default async function Apply() {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        redirect("/auth");
+    }
+
     return (
         <main className="flex flex-col min-h-screen">
+            <AccountMenu email={user.email ?? ""} />
             <Link href="/">
                 <button
                     type="button"
@@ -28,10 +37,10 @@ export default function Apply() {
                     Return to Home
                 </button>
             </Link>
-            <div className="flex-1 flex items-center justify-center">
+            {/* <div className="flex-1 flex items-center justify-center">
                 <h1 className="text-center justify-center font-outfit text-5xl md:text-6xl lg:text-7xl font-semibold text-primary">Coming Soon</h1>
-            </div>
-            {/* <div className="flex-1">
+            </div> */}
+            <div className="flex-1">
 				<div className="pt-24 pb-12">
 					<h1 className="
 						text-center
@@ -47,7 +56,7 @@ export default function Apply() {
 					</h2>
 				</div>
 				<ApplicationForm />
-			</div> */}
+			</div>
             <Footer />
         </main>
     );

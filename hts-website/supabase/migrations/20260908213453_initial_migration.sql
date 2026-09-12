@@ -1,6 +1,6 @@
 CREATE TYPE application_type AS ENUM ('hacker', 'judge', 'mentor');
 
-CREATE TYPE application_status AS ENUM ('pending', 'accepted', 'rejected', 'waitlist');
+CREATE TYPE application_status AS ENUM ('draft', 'pending', 'accepted', 'rejected', 'waitlist');
 
 CREATE TYPE points_transaction_type AS ENUM ('workshop', 'referral', 'admin');
 
@@ -98,11 +98,15 @@ CREATE INDEX judging_scores_track_id_idx ON judging_scores(track_id);
 CREATE TABLE applications (
 	user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE RESTRICT,
 	application_type application_type NOT NULL,
-	status application_status NOT NULL,
+	status application_status NOT NULL DEFAULT 'draft',
+	email TEXT NOT NULL
+);
+
+CREATE TABLE hacker_applications (
+	user_id UUID PRIMARY KEY REFERENCES applications(user_id) ON DELETE RESTRICT,
 	first_name TEXT NOT NULL,
 	last_name TEXT NOT NULL,
 	preferred_name TEXT NOT NULL,
-	email TEXT NOT NULL,
 	phone_number TEXT NOT NULL,
 	date_of_birth DATE NOT NULL,
 	t_shirt_size TEXT NOT NULL,
@@ -112,15 +116,6 @@ CREATE TABLE applications (
 	dietary_other TEXT NOT NULL,
 	accessibility_accommodations TEXT[] NOT NULL,
 	accessibility_other TEXT NOT NULL,
-	resume_path TEXT,
-	eligibility_confirm BOOLEAN NOT NULL,
-	information_confirm BOOLEAN NOT NULL,
-	parental_confirm BOOLEAN NOT NULL,
-	terms_agreed BOOLEAN NOT NULL
-);
-
-CREATE TABLE hacker_applications (
-	user_id UUID PRIMARY KEY REFERENCES applications(user_id) ON DELETE RESTRICT,
 	school_name TEXT NOT NULL,
 	grade TEXT NOT NULL,
 	graduation_year TEXT NOT NULL,
@@ -135,15 +130,52 @@ CREATE TABLE hacker_applications (
 	hackathon_experience TEXT NOT NULL,
 	heard_about_hts TEXT NOT NULL,
 	heard_about_hts_other TEXT NOT NULL,
-	application_question TEXT NOT NULL
+	application_questions_1 TEXT NOT NULL,
+	application_questions_2 TEXT NOT NULL,
+	application_questions_3 TEXT NOT NULL,
+	application_questions_4 TEXT NOT NULL,
+	application_questions_5 TEXT NOT NULL,
+	eligibility_confirm BOOLEAN NOT NULL,
+	information_confirm BOOLEAN NOT NULL,
+	parental_confirm BOOLEAN NOT NULL,
+	terms_agreed BOOLEAN NOT NULL
 );
 
 CREATE TABLE judge_applications (
-	user_id UUID PRIMARY KEY REFERENCES applications(user_id) ON DELETE RESTRICT
+	user_id UUID PRIMARY KEY REFERENCES applications(user_id) ON DELETE RESTRICT,
+	name TEXT NOT NULL,
+	company_organization TEXT NOT NULL,
+	job_title TEXT NOT NULL,
+	linkedin_url TEXT,
+	industry_field TEXT NOT NULL,
+	expertise TEXT[] NOT NULL,
+	years_of_professional_experience TEXT NOT NULL,
+	strong_project_description TEXT NOT NULL,
+	professional_background TEXT NOT NULL,
+	judging_experience TEXT NOT NULL,
+	available_for_full_judging_period BOOLEAN NOT NULL,
+	terms_agreed BOOLEAN NOT NULL,
+	eligibility_confirm BOOLEAN NOT NULL,
+	information_confirm BOOLEAN NOT NULL,
+	participation_confirm BOOLEAN NOT NULL
 );
 
 CREATE TABLE mentor_applications (
-	user_id UUID PRIMARY KEY REFERENCES applications(user_id) ON DELETE RESTRICT
+	user_id UUID PRIMARY KEY REFERENCES applications(user_id) ON DELETE RESTRICT,
+	name TEXT NOT NULL,
+	university_college TEXT NOT NULL,
+	program_and_year_of_study TEXT NOT NULL,
+	linkedin_portfolio_github_url TEXT,
+	mentoring_areas TEXT[] NOT NULL,
+	technologies_and_tools TEXT NOT NULL,
+	mentoring_experience TEXT NOT NULL,
+	mentoring_goals TEXT NOT NULL,
+	available_for_full_event BOOLEAN NOT NULL,
+	times_unavailable TEXT,
+	terms_agreed BOOLEAN NOT NULL,
+	eligibility_confirm BOOLEAN NOT NULL,
+	information_confirm BOOLEAN NOT NULL,
+	participation_confirm BOOLEAN NOT NULL
 );
 
 CREATE TABLE points_transactions (

@@ -2,7 +2,7 @@
 
 import ParallaxLayer from "@/components/ParallaxLayer";
 import { submitContactForm } from "@/actions/submitContactForm";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, type SubmitEvent } from "react";
 
 export default function Contact() {
 	const [notification, setNotification] = useState<string | null>(null);
@@ -26,7 +26,7 @@ export default function Contact() {
 		};
 	}, [notification]);
 
-	async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+	async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
 		event.preventDefault();
 		if (isSubmitting) return;
 
@@ -321,4 +321,4 @@ export default function Contact() {
 		</section>
 	);
 }
-
+
