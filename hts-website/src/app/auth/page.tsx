@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import ParallaxLayer from "@/components/ParallaxLayer";
 import Footer from "@/components/Footer";
+import { createClient } from "@/lib/supabase/client";
 import {
   resetPassword,
   signInWithGoogle,
@@ -110,6 +111,14 @@ function AuthContent() {
   useEffect(() => {
     setMode(getAuthMode(searchParams.get("mode")));
   }, [searchParams]);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) router.replace("/apply");
+    });
+  }, [router]);
 
   useEffect(() => {
     const resetLoadingState = () => setIsLoading(false);

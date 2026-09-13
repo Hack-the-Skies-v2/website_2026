@@ -5,9 +5,11 @@ import { deleteCurrentUser, logout } from "@/actions/auth";
 
 type AccountMenuProps = {
     email: string;
+    label?: string;
+    placement?: "top-left" | "inline";
 };
 
-export default function AccountMenu({ email }: AccountMenuProps) {
+export default function AccountMenu({ email, label, placement = "top-left" }: AccountMenuProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
     const [countdown, setCountdown] = useState(10);
@@ -34,19 +36,22 @@ export default function AccountMenu({ email }: AccountMenuProps) {
 
     return (
         <>
-            <div className="fixed top-4 left-4 z-50 font-outfit">
+            <div className={`font-outfit ${placement === "top-left" ? "fixed left-4 top-4 z-50" : "relative"}`}>
             <button
                 type="button"
                 onClick={() => setIsOpen((open) => !open)}
                 aria-expanded={isOpen}
                 aria-haspopup="true"
-                className="max-w-[calc(100vw-2rem)] cursor-pointer rounded-full border border-primary/35 bg-[#171329]/95 px-5 py-2 text-left text-sm text-primary shadow-[0_0_20px_rgba(130,104,180,0.3)] backdrop-blur-xl transition-colors hover:border-primary/70 hover:bg-[#221c38]"
+                className={placement === "inline"
+                    ? "w-full cursor-pointer text-left text-sm text-primary transition-colors hover:text-white"
+                    : "max-w-[calc(100vw-2rem)] cursor-pointer rounded-full border border-primary/35 bg-[#171329]/95 px-5 py-2 text-left text-sm text-primary shadow-[0_0_20px_rgba(130,104,180,0.3)] backdrop-blur-xl transition-colors hover:border-primary/70 hover:bg-[#221c38]"}
             >
-                <span className="block max-w-[18rem] truncate">{email}</span>
+                <span className="block truncate font-semibold">{label ?? email}</span>
+                {label && <span className="mt-1 block truncate text-primary/50">{email}</span>}
             </button>
 
             {isOpen && (
-                <div className="absolute left-0 mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-2xl border border-primary/25 bg-[#171329]/95 p-4 text-primary shadow-[0_0_30px_rgba(107,87,155,0.35)] backdrop-blur-xl">
+                <div className={`absolute left-0 mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-2xl border border-primary/25 bg-[#171329]/95 p-4 text-primary shadow-[0_0_30px_rgba(107,87,155,0.35)] backdrop-blur-xl ${placement === "inline" ? "bottom-full mb-2 mt-0" : ""}`}>
                     <p className="mb-3 break-words text-xs text-primary/60">Signed in as</p>
                     <p className="mb-4 break-words text-sm">{email}</p>
 

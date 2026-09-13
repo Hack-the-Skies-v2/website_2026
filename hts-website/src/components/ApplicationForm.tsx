@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useActionState } from "react";
+import { useRouter } from "next/navigation";
 import ParallaxLayer from "@/components/ParallaxLayer";
+import { submitRoleApplication, type RoleApplicationState } from "@/actions/submitRoleApplication";
 
 const STORAGE_KEY = "hts_application_draft";
 const AUTO_SAVE_DELAY = 1000;
@@ -754,7 +756,7 @@ function RoleSelection({
                 <button
                     type="button"
                     onClick={onContinue}
-                    className="mt-8 ml-auto block rounded-full bg-button px-7 py-3 font-outfit font-semibold text-white shadow-[0_0_20px_rgba(130,104,180,0.45)] transition hover:scale-105 hover:bg-[#8268B4]"
+                    className="cursor-pointer mt-8 ml-auto block rounded-full bg-button px-7 py-3 font-outfit font-semibold text-white shadow-[0_0_20px_rgba(130,104,180,0.45)] transition hover:scale-105 hover:bg-[#8268B4]"
                 >
                     Continue
                 </button>
@@ -766,14 +768,50 @@ function RoleSelection({
 function RoleApplicationShell({
     title,
     eyebrow,
+    role,
     children,
     onBack,
 }: {
     title: string;
     eyebrow: string;
+    role: "Judge" | "Mentor";
     children: React.ReactNode;
     onBack: () => void;
 }) {
+    const [state, formAction, isPending] = useActionState<RoleApplicationState, FormData>(
+        submitRoleApplication,
+        { success: false },
+    );
+    const [areasError, setAreasError] = useState("");
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!state.success) return;
+
+        const redirectTimer = window.setTimeout(() => {
+            router.replace("/portal");
+        }, 1600);
+
+        return () => window.clearTimeout(redirectTimer);
+    }, [router, state.success]);
+
+    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        const hasSelectedArea = event.currentTarget.querySelector(
+            'input[name="areas"]:checked',
+        );
+
+        if (!hasSelectedArea) {
+            event.preventDefault();
+            setAreasError("Please select at least one area of expertise.");
+            event.currentTarget
+                .querySelector<HTMLElement>("[data-expertise-section]")
+                ?.scrollIntoView({ behavior: "smooth", block: "center" });
+            return;
+        }
+
+        setAreasError("");
+    };
+
     return (
         <section className="relative min-h-screen bg-[#141123] px-6 py-12">
             <ParallaxLayer
@@ -786,17 +824,23 @@ function RoleApplicationShell({
                 <button
                     type="button"
                     onClick={onBack}
-                    className="mb-8 rounded-full bg-button px-6 py-2 font-outfit text-base text-white shadow-[0_0_20px_rgba(130,104,180,0.45)] transition hover:bg-[#8268B4]"
+                    className="mb-8 rounded-full cursor-pointer bg-button px-6 py-2 font-outfit text-base text-white shadow-[0_0_20px_rgba(130,104,180,0.45)] transition hover:bg-[#8268B4]"
                 >
                     Back to role selection
                 </button>
                 <p className="font-outfit text-sm uppercase tracking-[0.2em] text-primary/60">{eyebrow}</p>
                 <h1 className="mt-3 font-outfit text-4xl font-semibold text-primary sm:text-5xl">{title}</h1>
                 <form
-                    noValidate
+                    action={formAction}
+                    onSubmit={handleSubmit}
                     className="mt-10 max-w-4xl space-y-10"
                 >
+                    <input type="hidden" name="role" value={role} />
                     {children}
+                    {areasError && <p role="alert" className="font-outfit text-sm text-red-400">{areasError}</p>}
+                    {state.error && <p role="alert" className="font-outfit text-sm text-red-400">{state.error}</p>}
+                    {state.success && <p role="status" className="rounded-lg border border-emerald-400/30 bg-emerald-400/10 p-4 font-outfit text-sm text-emerald-200">Your application was submitted successfully. Redirecting you to the portal...</p>}
+                    {isPending && <p className="font-outfit text-sm text-primary/60">Submitting your application...</p>}
                 </form>
             </div>
         </section>
@@ -807,31 +851,31 @@ function JudgeApplicationForm({ onBack }: { onBack: () => void }) {
     const expertise = ["Software / Technology", "AI / Machine Learning", "Data", "Aerospace / Aviation", "Business / Entrepreneurship", "Product Management", "Design / UX", "Finance", "Marketing", "Cybersecurity", "Engineering", "Other"];
 
     return (
-        <RoleApplicationShell title="Judge application" eyebrow="Judge application" onBack={onBack}>
+        <RoleApplicationShell title="Judge application" eyebrow="Judge application" role="Judge" onBack={onBack}>
             <div>
                 <h2 className="mb-6 font-outfit text-2xl font-semibold text-primary">Basic Information</h2>
                 <div className="grid gap-6 md:grid-cols-2">
-                    <RoleInput label="Name" required />
-                    <RoleInput label="Email" type="email" required />
-                    <RoleInput label="Company / Organization" required />
-                    <RoleInput label="Job Title / Role" required />
-                    <RoleInput label="LinkedIn (optional)" />
-                    <RoleInput label="Industry / Field" required />
+                    <RoleInput name="name" label="Name" required />
+                    <RoleInput name="email" label="Email" type="email" required />
+                    <RoleInput name="companyOrganization" label="Company / Organization" required />
+                    <RoleInput name="jobTitle" label="Job Title / Role" required />
+                    <RoleInput name="linkedinUrl" label="LinkedIn (optional)" />
+                    <RoleInput name="industryField" label="Industry / Field" required />
                 </div>
             </div>
             <div>
                 <h2 className="mb-6 font-outfit text-2xl font-semibold text-primary">Expertise</h2>
-                <RoleCheckboxGroup label="Which areas best describe your professional expertise?" options={expertise} />
+                <RoleCheckboxGroup name="areas" label="Which areas best describe your professional expertise?" options={expertise} />
                 <div className="mt-6 grid gap-6 md:grid-cols-2">
-                    <RoleSelect label="Years of professional experience" options={["", "0-2", "3-5", "6-10", "11-15", "16+"]} required />
-                    <RoleInput label="What makes a strong hackathon project?" required />
+                    <RoleSelect name="yearsOfExperience" label="Years of professional experience" options={["", "0-2", "3-5", "6-10", "11-15", "16+"]} required />
+                    <RoleInput name="strongProjectDescription" label="What makes a strong hackathon project?" required />
                 </div>
-                <RoleTextArea label="Briefly describe your professional background and expertise." required />
-                <RoleTextArea label="Have you judged a hackathon, competition, pitch competition, science fair, or similar event? If yes, briefly describe." required />
+                <RoleTextArea name="professionalBackground" label="Briefly describe your professional background and expertise." required />
+                <RoleTextArea name="judgingExperience" label="Have you judged a hackathon, competition, pitch competition, science fair, or similar event? If yes, briefly describe." required />
             </div>
             <div>
                 <h2 className="mb-6 font-outfit text-2xl font-semibold text-primary">Availability</h2>
-                <RoleSelect label="Are you available for the full judging period?" options={["", "Yes", "No"]} required />
+                <RoleSelect name="availableForFullJudgingPeriod" label="Are you available for the full judging period?" options={["", "Yes", "No"]} required />
                 <RoleAgreements submitLabel="Submit Judge Application" />
             </div>
         </RoleApplicationShell>
@@ -842,29 +886,29 @@ function MentorApplicationForm({ onBack }: { onBack: () => void }) {
     const areas = ["Programming / Software Development", "AI / Machine Learning", "Web Development", "App Development", "Data Science", "Cybersecurity", "UI/UX & Design", "Entrepreneurship / Business", "Pitching / Presentations", "Product Development", "Other"];
 
     return (
-        <RoleApplicationShell title="Mentor application" eyebrow="Mentor application" onBack={onBack}>
+        <RoleApplicationShell title="Mentor application" eyebrow="Mentor application" role="Mentor" onBack={onBack}>
             <div>
                 <h2 className="mb-6 font-outfit text-2xl font-semibold text-primary">Basic Information</h2>
                 <div className="grid gap-6 md:grid-cols-2">
-                    <RoleInput label="Name" required />
-                    <RoleInput label="Email" type="email" required />
-                    <RoleInput label="University / College" required />
-                    <RoleInput label="Program and year of study" required />
-                    <RoleInput label="LinkedIn / Portfolio / GitHub (optional)" />
+                    <RoleInput name="name" label="Name" required />
+                    <RoleInput name="email" label="Email" type="email" required />
+                    <RoleInput name="universityCollege" label="University / College" required />
+                    <RoleInput name="programAndYear" label="Program and year of study" required />
+                    <RoleInput name="linkedinPortfolioGithub" label="LinkedIn / Portfolio / GitHub (optional)" />
                 </div>
             </div>
             <div>
                 <h2 className="mb-6 font-outfit text-2xl font-semibold text-primary">Experience & Skills</h2>
-                <RoleCheckboxGroup label="What areas are you most comfortable helping with?" options={areas} />
-                <RoleTextArea label="What technologies, programming languages, or tools are you most familiar with?" placeholder="e.g., Python, JavaScript, React, Figma, APIs" required />
-                <RoleTextArea label="Have you mentored, taught, tutored, or worked with high-school students before? If yes, briefly describe." required />
-                <RoleTextArea label="What are you hoping to get out of mentoring at Hack the Skies?" required />
+                <RoleCheckboxGroup name="areas" label="What areas are you most comfortable helping with?" options={areas} />
+                <RoleTextArea name="technologiesAndTools" label="What technologies, programming languages, or tools are you most familiar with?" placeholder="e.g., Python, JavaScript, React, Figma, APIs" required />
+                <RoleTextArea name="mentoringExperience" label="Have you mentored, taught, tutored, or worked with high-school students before? If yes, briefly describe." required />
+                <RoleTextArea name="mentoringGoals" label="What are you hoping to get out of mentoring at Hack the Skies?" required />
             </div>
             <div>
                 <h2 className="mb-6 font-outfit text-2xl font-semibold text-primary">Availability</h2>
                 <div className="grid gap-6 md:grid-cols-2">
-                    <RoleSelect label="Are you available for the full Hack the Skies event?" options={["", "Yes", "No"]} required />
-                    <RoleInput label="Times you will be unavailable (optional)" />
+                    <RoleSelect name="availableForFullEvent" label="Are you available for the full Hack the Skies event?" options={["", "Yes", "No"]} required />
+                    <RoleInput name="timesUnavailable" label="Times you will be unavailable (optional)" />
                 </div>
                 <RoleAgreements submitLabel="Submit Mentor Application" />
             </div>
@@ -872,14 +916,14 @@ function MentorApplicationForm({ onBack }: { onBack: () => void }) {
     );
 }
 
-function RoleCheckboxGroup({ label, options }: { label: string; options: string[] }) {
+function RoleCheckboxGroup({ name, label, options }: { name: string; label: string; options: string[] }) {
     return (
-        <div>
+        <div data-expertise-section>
             <label className="mb-3 block font-outfit text-base text-primary">{label}</label>
             <div className="grid gap-2 md:grid-cols-2">
                 {options.map((option) => (
-                    <label key={option} className="flex items-center gap-2 font-outfit text-primary/80">
-                        <input type="checkbox" className="h-4 w-4 accent-primary" />
+                    <label key={option} className="cursor-pointer flex items-center gap-2 font-outfit text-primary/80">
+                        <input type="checkbox" name={name} value={option} className="h-4 w-4 accent-primary cursor-pointer" />
                         {option}
                     </label>
                 ))}
@@ -888,13 +932,15 @@ function RoleCheckboxGroup({ label, options }: { label: string; options: string[
     );
 }
 
-function RoleTextArea({ label, placeholder, required }: { label: string; placeholder?: string; required?: boolean }) {
+function RoleTextArea({ name, label, placeholder, required }: { name: string; label: string; placeholder?: string; required?: boolean }) {
+    const [value, setValue] = useState("");
+
     return (
         <div className="mt-6">
             <label className="mb-2 block font-outfit text-base text-primary">
                 {label} {required && <span className="text-red-400">*</span>}
             </label>
-            <textarea required={required} placeholder={placeholder} className="min-h-[130px] w-full resize-none rounded-lg border border-primary bg-button p-4 font-outfit text-primary placeholder:text-primary/60 focus:outline-none focus:ring-2 focus:ring-primary" />
+            <textarea name={name} value={value} onChange={(event) => setValue(event.target.value)} required={required} placeholder={placeholder} className="min-h-[130px] w-full resize-none rounded-lg border border-primary bg-button p-4 font-outfit text-primary placeholder:text-primary/60 focus:outline-none focus:ring-2 focus:ring-primary" />
         </div>
     );
 }
@@ -906,48 +952,31 @@ function RoleAgreements({ submitLabel }: { submitLabel: string }) {
         information: false,
         participation: false,
     });
-    const [error, setError] = useState("");
-
     const toggle = (key: keyof typeof agreements) => {
         setAgreements((current) => ({ ...current, [key]: !current[key] }));
-        setError("");
-    };
-
-    const handleSubmit = (event: React.MouseEvent<HTMLButtonElement>) => {
-        const form = event.currentTarget.closest("form");
-        if (!form) return;
-
-        form.dataset.validationAttempted = "true";
-        if (!form.checkValidity()) {
-            setError("Please fill in all required fields before submitting.");
-            return;
-        }
-
-        setError("Your application is ready to submit once backend support is connected.");
     };
 
     return (
         <div className="mt-8 space-y-3 rounded-lg border border-primary/30 bg-white/5 p-6">
-            <label className="flex items-start gap-3 font-outfit text-base text-primary">
-                <input type="checkbox" required checked={agreements.terms} onChange={() => toggle("terms")} className="mt-1 h-5 w-5 shrink-0 accent-primary" />
+            <label className="flex items-start gap-3 font-outfit text-base text-primary cursor-pointer">
+                <input type="checkbox" name="termsAgreed" value="true" required checked={agreements.terms} onChange={() => toggle("terms")} className="cursor-pointer mt-1 h-5 w-5 shrink-0 accent-primary" />
                 <span>
                     I agree to the <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-white">Terms of Service</a> and acknowledge the <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-white">Privacy Policy</a>.
                 </span>
             </label>
-            <label className="flex items-start gap-3 font-outfit text-base text-primary">
-                <input type="checkbox" required checked={agreements.eligibility} onChange={() => toggle("eligibility")} className="mt-1 h-5 w-5 shrink-0 accent-primary" />
+            <label className="flex items-start gap-3 font-outfit text-base text-primary cursor-pointer">
+                <input type="checkbox" name="eligibilityConfirmed" value="true" required checked={agreements.eligibility} onChange={() => toggle("eligibility")} className="cursor-pointer mt-1 h-5 w-5 shrink-0 accent-primary" />
                 <span>I confirm that the information I provided is accurate and complete.</span>
             </label>
-            <label className="flex items-start gap-3 font-outfit text-base text-primary">
-                <input type="checkbox" required checked={agreements.information} onChange={() => toggle("information")} className="mt-1 h-5 w-5 shrink-0 accent-primary" />
+            <label className="flex items-start gap-3 font-outfit text-base text-primary cursor-pointer">
+                <input type="checkbox" name="informationConfirmed" value="true" required checked={agreements.information} onChange={() => toggle("information")} className="cursor-pointer mt-1 h-5 w-5 shrink-0 accent-primary" />
                 <span>I consent to Hack the Skies using this information to review my application and coordinate the event.</span>
             </label>
-            <label className="flex items-start gap-3 font-outfit text-base text-primary">
-                <input type="checkbox" required checked={agreements.participation} onChange={() => toggle("participation")} className="mt-1 h-5 w-5 shrink-0 accent-primary" />
+            <label className="flex items-start gap-3 font-outfit text-base text-primary cursor-pointer">
+                <input type="checkbox" name="participationConfirmed" value="true" required checked={agreements.participation} onChange={() => toggle("participation")} className="cursor-pointer mt-1 h-5 w-5 shrink-0 accent-primary" />
                 <span>I understand that participation is subject to approval and event policies.</span>
             </label>
-            {error && <p role="alert" className="font-outfit text-sm text-red-400">{error}</p>}
-            <button type="button" onClick={handleSubmit} className="mt-5 rounded-full bg-button px-7 py-3 font-outfit font-semibold text-white shadow-[0_0_20px_rgba(130,104,180,0.45)] transition hover:bg-[#8268B4]">
+            <button type="submit" className="cursor-pointer mt-5 rounded-full bg-button px-7 py-3 font-outfit font-semibold text-white shadow-[0_0_20px_rgba(130,104,180,0.45)] transition hover:bg-[#8268B4]">
                 {submitLabel}
             </button>
         </div>
@@ -1929,10 +1958,12 @@ function ReviewQuestions({
 }
 
 function RoleInput({
+    name,
     label,
     type,
     required,
 }: {
+    name: string;
     label: string;
     type?: string;
     required?: boolean;
@@ -1941,6 +1972,7 @@ function RoleInput({
 
     return (
         <FormInput
+            name={name}
             label={label}
             type={type}
             value={value}
@@ -1951,10 +1983,12 @@ function RoleInput({
 }
 
 function RoleSelect({
+    name,
     label,
     options,
     required,
 }: {
+    name: string;
     label: string;
     options: string[];
     required?: boolean;
@@ -1963,6 +1997,7 @@ function RoleSelect({
 
     return (
         <FormSelect
+            name={name}
             label={label}
             value={value}
             onChange={(event) => setValue(event.target.value)}
@@ -1973,6 +2008,7 @@ function RoleSelect({
 }
 
 function FormInput({
+    name,
     label,
     type = "text",
     value,
@@ -1982,6 +2018,7 @@ function FormInput({
     required = false,
     className = "",
 }: {
+    name?: string;
     label: string;
     type?: string;
     value: string;
@@ -2002,6 +2039,7 @@ function FormInput({
                 </p>
             )}
             <input
+                name={name}
                 type={type}
                 value={value}
                 onChange={onChange}
@@ -2028,6 +2066,7 @@ function FormInput({
 }
 
 function FormSelect({
+    name,
     label,
     value,
     onChange,
@@ -2035,6 +2074,7 @@ function FormSelect({
     error,
     required = false,
 }: {
+    name?: string;
     label: string;
     value: string;
     onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
@@ -2048,6 +2088,7 @@ function FormSelect({
                 {label} {required && <span className="text-red-400">*</span>}
             </label>
             <select
+                name={name}
                 value={value}
                 onChange={onChange}
                 required={required}

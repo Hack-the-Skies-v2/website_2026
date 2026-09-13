@@ -13,6 +13,18 @@ export default async function Apply() {
         redirect("/auth");
     }
 
+    const { data: application } = await supabase
+        .from("applications")
+        .select("user_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+    console.log(user.id);
+
+    if (application) {
+        redirect("/portal");
+    }
+
     return (
         <main className="flex flex-col min-h-screen">
             <AccountMenu email={user.email ?? ""} />
