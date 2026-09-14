@@ -104,11 +104,14 @@ export default function Hero() {
                 </span>
                 for high school students.
             </h1>
+            <p className="font-outfit text-sm md:text-base text-primary/70 mt-4 mb-4 select-none">
+                Judge and Mentor applications are open.
+            </p>
             <div className="mt-4 flex flex-col items-center justify-center gap-3 sm:flex-row">
                 <Link href="/apply">
-					<button
-						type="button"
-						className="
+                    <button
+                        type="button"
+                        className="
 							rounded-full
 							bg-button
 							px-6 py-2
@@ -121,9 +124,9 @@ export default function Hero() {
 							hover:scale-105
                             cursor-pointer
 						"
-					>Apply Now!
-					</button>
-				</Link>
+                    >Apply Now!
+                    </button>
+                </Link>
                 {/* <button
                     type="button"
                     disabled

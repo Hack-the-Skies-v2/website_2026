@@ -24,22 +24,22 @@ export default function Introduction() {
                 </button>
             </Link>
             <ParallaxLayer>
-                <h1 className="
-            mt-48
-            text-center
-            font-outfit text-5xl md:text-5xl lg:text-7xl font-semibold text-primary select-none">
-                    Application Portal
-                </h1>
-                <h2 className="
-          mt-6
-          text-center 
-          font-outfit 
-          md:text-xl 
-          md:text-2xl 
-          lg:text-3xl 
-          text-primary">
-                    Ready to come to Hack The Skies? You are a few questions away!
-                </h2>
+                <div className="px-4 sm:px-6 max-w-4xl mx-auto">
+                    <h1 className="
+                mt-48
+                text-center
+                font-outfit text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-semibold text-primary select-none">
+                        Application Portal
+                    </h1>
+                    <h2 className="
+              mt-6
+              text-center 
+              font-outfit 
+              text-base sm:text-lg md:text-2xl lg:text-3xl 
+              text-primary/90">
+                        Ready to come to Hack The Skies? You are a few questions away!
+                    </h2>
+                </div>
             </ParallaxLayer>
         </>
     );

@@ -15,13 +15,14 @@ export default async function Apply() {
 
     const { data: application } = await supabase
         .from("applications")
-        .select("user_id")
+        .select("user_id, application_type")
         .eq("user_id", user.id)
         .maybeSingle();
 
-    console.log(user.id);
-
     if (application) {
+        if (application.application_type === "judge" || application.application_type === "mentor") {
+            redirect("/jm-portal");
+        }
         redirect("/portal");
     }
 
@@ -53,17 +54,17 @@ export default async function Apply() {
                 <h1 className="text-center justify-center font-outfit text-5xl md:text-6xl lg:text-7xl font-semibold text-primary">Coming Soon</h1>
             </div> */}
             <div className="flex-1">
-				<div className="pt-24 pb-12">
+				<div className="pt-24 pb-12 px-4 sm:px-6 max-w-4xl mx-auto">
 					<h1 className="
 						text-center
-						font-outfit text-5xl md:text-6xl lg:text-7xl font-semibold text-primary select-none mb-6">
+						font-outfit text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-semibold text-primary select-none mb-6">
 						Application Portal
 					</h1>
 					<h2 className="
 						text-center 
 						font-outfit 
-						text-lg md:text-xl lg:text-2xl
-						text-primary mb-12">
+						text-base sm:text-lg md:text-xl lg:text-2xl
+						text-primary/90 mb-12">
 						Ready to come to Hack the Skies? You are a few questions away!
 					</h2>
 				</div>

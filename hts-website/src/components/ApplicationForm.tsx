@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback, useActionState } from "react"
 import { useRouter } from "next/navigation";
 import ParallaxLayer from "@/components/ParallaxLayer";
 import { submitRoleApplication, type RoleApplicationState } from "@/actions/submitRoleApplication";
+import { submitHackerApplication } from "@/actions/submitHackerApplication";
 
 const STORAGE_KEY = "hts_application_draft";
 const AUTO_SAVE_DELAY = 1000;
@@ -30,7 +31,6 @@ interface ApplicationData {
         firstName: string;
         lastName: string;
         preferredName: string;
-        email: string;
         phoneNumber: string;
         dateOfBirth: string;
         tShirtSize: string;
@@ -78,7 +78,6 @@ const EMPTY_DATA: ApplicationData = {
         firstName: "",
         lastName: "",
         preferredName: "",
-        email: "",
         phoneNumber: "",
         dateOfBirth: "",
         tShirtSize: "",
@@ -168,16 +167,23 @@ function clearApplicationDraft() {
 }
 
 export default function ApplicationForm() {
+    const router = useRouter();
     const [currentSection, setCurrentSection] = useState(0);
     const [data, setData] = useState<ApplicationData>(EMPTY_DATA);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "">("");
-    const [submitted, setSubmitted] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState("");
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     useEffect(() => {
         const loaded = loadApplicationDraft();
+        if (loaded.section1.role === "Hacker") {
+            loaded.section1.role = "";
+            setCurrentSection(0);
+        } else {
+            setCurrentSection(loaded.section1.role ? 1 : 0);
+        }
         setData(loaded);
-        setCurrentSection(loaded.section1.role ? 1 : 0);
     }, []);
 
     const debouncedSave = useCallback((newData: ApplicationData) => {
@@ -217,10 +223,6 @@ export default function ApplicationForm() {
             newErrors.firstName = "Please enter your first name.";
         if (!data.section1.lastName.trim())
             newErrors.lastName = "Please enter your last name.";
-        if (!data.section1.email.trim())
-            newErrors.email = "Please enter your email address.";
-        else if (!validateEmail(data.section1.email))
-            newErrors.email = "Please enter a valid email address.";
         if (!data.section1.phoneNumber.trim())
             newErrors.phoneNumber = "Please enter your phone number.";
         else if (!validatePhone(data.section1.phoneNumber))
@@ -383,6 +385,11 @@ export default function ApplicationForm() {
             return;
         }
 
+        if (data.section1.role === "Hacker") {
+            setErrors({ role: "Hacker applications are currently closed. Only Judge and Mentor applications are open." });
+            return;
+        }
+
         setErrors({});
         setCurrentSection(1);
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -405,10 +412,18 @@ export default function ApplicationForm() {
         setSaveStatus("saved");
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (validateSection6()) {
-            setSubmitted(true);
-            saveApplicationDraft(data);
+            setIsSubmitting(true);
+            setSubmitError("");
+            const res = await submitHackerApplication(data);
+            if (res.success) {
+                clearApplicationDraft();
+                router.replace("/portal");
+            } else {
+                setIsSubmitting(false);
+                setSubmitError(res.error || "Unable to submit your application. Please try again.");
+            }
         }
     };
 
@@ -418,7 +433,6 @@ export default function ApplicationForm() {
     };
 
     const getProgress = () => {
-        if (submitted) return 100;
         return Math.round((currentSection / 6) * 100);
     };
 
@@ -427,79 +441,10 @@ export default function ApplicationForm() {
         0,
     );
 
-    if (submitted) {
-        return (
-            <section className="min-h-screen bg-[#141123] text-white flex items-center justify-center px-6 py-12">
-                <ParallaxLayer
-                    speed={0.4}
-                    className="
-						pointer-events-none
-						absolute
-						top-[-150px]
-						left-1/2
-						w-[1000px]
-						-translate-x-1/2
-						opacity-30
-						blur-[1px]
-						cloud-drift
-						select-none
-					"
-                >
-                    <img src="/Cloud1.webp" alt="" className="h-full w-full" />
-                </ParallaxLayer>
-                <ParallaxLayer
-                    speed={0.35}
-                    className="
-						pointer-events-none
-						absolute
-						left-4
-						top-20
-						w-24
-						md:left-12
-						md:top-32
-						md:w-36
-						opacity-70
-						magenta-planet-glow
-						select-none
-						planet-float-delayed
-					"
-                >
-                    <img src="/Planet1.webp" alt="" className="h-full w-full" />
-                </ParallaxLayer>
-                <div className="max-w-2xl text-center relative z-10">
-                    <h1 className="text-5xl md:text-6xl font-outfit font-semibold text-primary mb-6">
-                        Thank you!
-                    </h1>
-                    <p className="text-lg md:text-xl text-primary mb-8">
-                        Your application has been submitted successfully. We're excited to see you
-                        at Hack the Skies!
-                    </p>
-                    <a
-                        href="/"
-                        className="
-							inline-block
-							rounded-full
-							bg-button
-							px-8 py-3
-							font-outfit
-							text-lg text-white
-							shadow-[0_0_20px_rgba(130,104,180,0.45)]
-							transition-all duration-150
-							hover:bg-[#8268B4]
-							hover:scale-105
-						"
-                    >
-                        Return to Home
-                    </a>
-                </div>
-            </section>
-        );
-    }
-
-    if (currentSection === 0) {
+    if (currentSection === 0 || data.section1.role === "Hacker") {
         return (
             <RoleSelection
-                role={data.section1.role}
+                role={data.section1.role === "Hacker" ? "" : data.section1.role}
                 error={errors.role}
                 onSelect={(role) =>
                     updateData({ section1: { ...data.section1, role } })
@@ -626,7 +571,9 @@ export default function ApplicationForm() {
                             </button>
                         ) : (
                             <button
+                                type="button"
                                 onClick={handleSubmit}
+                                disabled={isSubmitting}
                                 className="
 									rounded-full
 									bg-button
@@ -639,12 +586,20 @@ export default function ApplicationForm() {
 									hover:scale-105
 									ml-auto
                                     cursor-pointer
+                                    disabled:cursor-not-allowed
+                                    disabled:opacity-50
 								"
                             >
-                                Submit Application
+                                {isSubmitting ? "Submitting..." : "Submit Application"}
                             </button>
                         )}
                     </div>
+
+                    {submitError && (
+                        <p role="alert" className="mt-4 text-center font-outfit text-sm text-red-400">
+                            {submitError}
+                        </p>
+                    )}
 
                     {saveStatus && (
                         <div className="mt-4 text-center text-primary font-outfit text-sm">
@@ -705,6 +660,12 @@ function RoleSelection({
     onSelect: (role: "Hacker" | "Judge" | "Mentor") => void;
     onContinue: () => void;
 }) {
+    const roleOptions = [
+        { value: "Hacker", disabled: true, tag: "Closed" },
+        { value: "Judge", disabled: false },
+        { value: "Mentor", disabled: false },
+    ];
+
     return (
         <section className="relative flex min-h-screen items-center justify-center bg-[#141123] px-6 py-12">
             <ParallaxLayer
@@ -714,41 +675,44 @@ function RoleSelection({
                 <img src="/Cloud1.webp" alt="" className="h-full w-full" />
             </ParallaxLayer>
             <div className="relative z-10 w-full max-w-6xl px-0 py-6 sm:px-6 sm:py-10">
-                <p className="font-outfit text-sm uppercase tracking-[0.2em] text-primary/60">
-                    Hack the Skies application
-                </p>
                 <h1 className="mt-3 font-outfit text-4xl font-semibold text-primary sm:text-5xl">
-                    Choose your application type
+                    Choose your role
                 </h1>
-                <p className="mt-3 font-outfit text-primary/70">
-                    Select the role that best describes how you want to take part.
-                </p>
                 <div className="mt-8 grid gap-4 md:grid-cols-3">
-                    {[
-                        { value: "Hacker" },
-                        { value: "Judge" },
-                        { value: "Mentor" },
-                    ].map((option) => (
+                    {roleOptions.map((option) => (
                         <label
                             key={option.value}
-                            className={`cursor-pointer rounded-2xl border p-5 transition ${role === option.value
-                                ? "border-primary bg-primary/15 shadow-[0_0_22px_rgba(193,185,242,0.2)]"
-                                : "border-primary/25 bg-[#221c38]/60 hover:border-primary/60"
+                            className={`rounded-2xl border p-5 transition ${option.disabled
+                                ? "cursor-not-allowed border-primary/10 bg-[#221c38]/30 opacity-40 select-none"
+                                : "cursor-pointer " +
+                                (role === option.value
+                                    ? "border-primary bg-primary/15 shadow-[0_0_22px_rgba(193,185,242,0.2)]"
+                                    : "border-primary/25 bg-[#221c38]/60 hover:border-primary/60")
                                 }`}
                         >
                             <input
                                 type="radio"
                                 name="application-role"
                                 value={option.value}
+                                disabled={option.disabled}
                                 checked={role === option.value}
-                                onChange={() =>
-                                    onSelect(option.value as "Hacker" | "Judge" | "Mentor")
-                                }
+                                onChange={() => {
+                                    if (!option.disabled) {
+                                        onSelect(option.value as "Hacker" | "Judge" | "Mentor");
+                                    }
+                                }}
                                 className="sr-only"
                             />
-                            <span className="block font-outfit text-xl font-semibold text-primary">
-                                {option.value}
-                            </span>
+                            <div className="flex items-center justify-between">
+                                <span className="block font-outfit text-xl font-semibold text-primary">
+                                    {option.value}
+                                </span>
+                                {option.tag && (
+                                    <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary/60">
+                                        {option.tag}
+                                    </span>
+                                )}
+                            </div>
                         </label>
                     ))}
                 </div>
@@ -756,7 +720,8 @@ function RoleSelection({
                 <button
                     type="button"
                     onClick={onContinue}
-                    className="cursor-pointer mt-8 ml-auto block rounded-full bg-button px-7 py-3 font-outfit font-semibold text-white shadow-[0_0_20px_rgba(130,104,180,0.45)] transition hover:scale-105 hover:bg-[#8268B4]"
+                    disabled={!role || role === "Hacker"}
+                    className="cursor-pointer mt-8 ml-auto block rounded-full bg-button px-7 py-3 font-outfit font-semibold text-white shadow-[0_0_20px_rgba(130,104,180,0.45)] transition hover:scale-105 hover:bg-[#8268B4] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
                 >
                     Continue
                 </button>
@@ -789,7 +754,7 @@ function RoleApplicationShell({
         if (!state.success) return;
 
         const redirectTimer = window.setTimeout(() => {
-            router.replace("/portal");
+            router.replace("/jm-portal");
         }, 1600);
 
         return () => window.clearTimeout(redirectTimer);
@@ -828,7 +793,6 @@ function RoleApplicationShell({
                 >
                     Back to role selection
                 </button>
-                <p className="font-outfit text-sm uppercase tracking-[0.2em] text-primary/60">{eyebrow}</p>
                 <h1 className="mt-3 font-outfit text-4xl font-semibold text-primary sm:text-5xl">{title}</h1>
                 <form
                     action={formAction}
@@ -853,10 +817,19 @@ function JudgeApplicationForm({ onBack }: { onBack: () => void }) {
     return (
         <RoleApplicationShell title="Judge application" eyebrow="Judge application" role="Judge" onBack={onBack}>
             <div>
+                <p className="font-outfit text-md text-primary/80 mb-6">
+                    Become a Hack the Skies 2026 Judge
+                    <br />
+                    As a judge at Hack the Skies, you’ll evaluate projects built by high-school students and help recognize the teams that stand out. You’ll get to see creative ideas, emerging technology, and innovative solutions firsthand while providing valuable feedback to students.
+                    <br />
+                    We’re looking for industry professionals who can bring their expertise, perspective, and constructive feedback to the judging process. You don’t need prior hackathon judging experience, just an interest in supporting students and evaluating their work.
+                    <br />
+                    Judges only need to be available in-person for the afternoon of October 18th.
+                </p>
+                <p className="font-outfit text-md uppercase tracking-[0.2em] text-primary/80 mb-6">Answers do not save</p>
                 <h2 className="mb-6 font-outfit text-2xl font-semibold text-primary">Basic Information</h2>
                 <div className="grid gap-6 md:grid-cols-2">
                     <RoleInput name="name" label="Name" required />
-                    <RoleInput name="email" label="Email" type="email" required />
                     <RoleInput name="companyOrganization" label="Company / Organization" required />
                     <RoleInput name="jobTitle" label="Job Title / Role" required />
                     <RoleInput name="linkedinUrl" label="LinkedIn (optional)" />
@@ -868,8 +841,8 @@ function JudgeApplicationForm({ onBack }: { onBack: () => void }) {
                 <RoleCheckboxGroup name="areas" label="Which areas best describe your professional expertise?" options={expertise} />
                 <div className="mt-6 grid gap-6 md:grid-cols-2">
                     <RoleSelect name="yearsOfExperience" label="Years of professional experience" options={["", "0-2", "3-5", "6-10", "11-15", "16+"]} required />
-                    <RoleInput name="strongProjectDescription" label="What makes a strong hackathon project?" required />
                 </div>
+                <RoleTextArea name="strongProjectDescription" label="What makes a strong hackathon project?" required />
                 <RoleTextArea name="professionalBackground" label="Briefly describe your professional background and expertise." required />
                 <RoleTextArea name="judgingExperience" label="Have you judged a hackathon, competition, pitch competition, science fair, or similar event? If yes, briefly describe." required />
             </div>
@@ -888,10 +861,15 @@ function MentorApplicationForm({ onBack }: { onBack: () => void }) {
     return (
         <RoleApplicationShell title="Mentor application" eyebrow="Mentor application" role="Mentor" onBack={onBack}>
             <div>
+                <p className="font-outfit text-md text-primary/80 mb-6">
+                    Become a Hack the Skies 2026 Mentor
+                    <br />
+                    As a mentor at Hack the Skies, you’ll support high-school students throughout our two-day in-person hackathon on October 17th and 18th, as well as an optional (online) opening ceremony on October 16th. You’ll help teams brainstorm ideas, troubleshoot technical challenges, explore new tools, and turn their ideas into working projects, no matter their experience level. You don’t need to have all the answers. We’re looking for university students who are approachable, enthusiastic, and excited to help the next generation of students learn, build, and have fun.
+                </p>
+                <p className="font-outfit text-md uppercase tracking-[0.2em] text-primary/80 mb-6">Answers do not save</p>
                 <h2 className="mb-6 font-outfit text-2xl font-semibold text-primary">Basic Information</h2>
                 <div className="grid gap-6 md:grid-cols-2">
                     <RoleInput name="name" label="Name" required />
-                    <RoleInput name="email" label="Email" type="email" required />
                     <RoleInput name="universityCollege" label="University / College" required />
                     <RoleInput name="programAndYear" label="Program and year of study" required />
                     <RoleInput name="linkedinPortfolioGithub" label="LinkedIn / Portfolio / GitHub (optional)" />
@@ -900,7 +878,7 @@ function MentorApplicationForm({ onBack }: { onBack: () => void }) {
             <div>
                 <h2 className="mb-6 font-outfit text-2xl font-semibold text-primary">Experience & Skills</h2>
                 <RoleCheckboxGroup name="areas" label="What areas are you most comfortable helping with?" options={areas} />
-                <RoleTextArea name="technologiesAndTools" label="What technologies, programming languages, or tools are you most familiar with?" placeholder="e.g., Python, JavaScript, React, Figma, APIs" required />
+                <RoleTextArea name="technologiesAndTools" label="What technologies, programming languages, or tools are you most familiar with?" required />
                 <RoleTextArea name="mentoringExperience" label="Have you mentored, taught, tutored, or worked with high-school students before? If yes, briefly describe." required />
                 <RoleTextArea name="mentoringGoals" label="What are you hoping to get out of mentoring at Hack the Skies?" required />
             </div>
@@ -1034,6 +1012,7 @@ function Section1({
 
     return (
         <div className="space-y-6">
+            <p className="font-outfit text-md uppercase tracking-[0.2em] text-primary/80 mb-6">Answers automatically save</p>
             <h2 className="text-4xl font-outfit font-semibold text-primary mb-8">
                 Personal Information
             </h2>
@@ -1076,18 +1055,6 @@ function Section1({
 
             <div className="grid md:grid-cols-2 gap-6">
                 <FormInput
-                    label="Email"
-                    type="email"
-                    value={section1.email}
-                    onChange={(e) =>
-                        updateData({
-                            section1: { ...section1, email: e.target.value },
-                        })
-                    }
-                    error={errors.email}
-                    required
-                />
-                <FormInput
                     label="Phone number"
                     type="tel"
                     value={section1.phoneNumber}
@@ -1097,21 +1064,6 @@ function Section1({
                         })
                     }
                     error={errors.phoneNumber}
-                    required
-                />
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
-                <FormInput
-                    label="Date of birth"
-                    type="date"
-                    value={section1.dateOfBirth}
-                    onChange={(e) =>
-                        updateData({
-                            section1: { ...section1, dateOfBirth: e.target.value },
-                        })
-                    }
-                    error={errors.dateOfBirth}
                     required
                 />
                 <FormSelect
@@ -1150,6 +1102,21 @@ function Section1({
                     }
                     options={["", ...CANADIAN_PROVINCES]}
                     error={errors.province}
+                    required
+                />
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+                <FormInput
+                    label="Date of birth"
+                    type="date"
+                    value={section1.dateOfBirth}
+                    onChange={(e) =>
+                        updateData({
+                            section1: { ...section1, dateOfBirth: e.target.value },
+                        })
+                    }
+                    error={errors.dateOfBirth}
                     required
                 />
             </div>
@@ -1656,7 +1623,6 @@ function Section6({
                         label: "Preferred name",
                         value: data.section1.preferredName || "(not provided)",
                     },
-                    { label: "Email", value: data.section1.email },
                     { label: "Phone number", value: data.section1.phoneNumber },
                     { label: "Date of birth", value: data.section1.dateOfBirth },
                     { label: "T-shirt size", value: data.section1.tShirtSize },

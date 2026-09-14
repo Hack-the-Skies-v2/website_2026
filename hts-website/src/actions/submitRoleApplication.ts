@@ -96,7 +96,6 @@ export async function submitRoleApplication(
 	try {
 		const { error } = await supabase.rpc("submit_role_application", {
 			p_application_type: result.data.role.toLowerCase(),
-			p_email: user.email,
 			p_data: result.data,
 		});
 
