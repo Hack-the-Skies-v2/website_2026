@@ -46,7 +46,7 @@ export default async function JudgePage() {
                     href="/jm-portal"
                     className="text-sm text-primary/55 transition hover:text-primary"
                 >
-                    ← Back to Judge & Mentor Portal
+                    Back to Judge & Mentor Portal
                 </Link>
                 {/* <JudgeForm /> */}
                 <section className="mt-10 max-w-3xl rounded-3xl border border-primary/20 bg-[#171329]/90 p-8 text-center shadow-[0_0_45px_rgba(107,87,155,0.2)] backdrop-blur-xl sm:p-12">
