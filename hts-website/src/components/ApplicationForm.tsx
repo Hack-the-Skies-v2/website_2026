@@ -862,7 +862,7 @@ function MentorApplicationForm({ onBack }: { onBack: () => void }) {
         <RoleApplicationShell title="Mentor application" eyebrow="Mentor application" role="Mentor" onBack={onBack}>
             <div>
                 <p className="font-outfit text-md text-primary/80 mb-6">
-                    Become a Hack the Skies 2026 Mentor
+                    Become a Hack the Skies 2026 Mentor!
                     <br />
                     As a mentor at Hack the Skies, you’ll support high-school students throughout our two-day in-person hackathon on October 17th and 18th, as well as an optional (online) opening ceremony on October 16th. You’ll help teams brainstorm ideas, troubleshoot technical challenges, explore new tools, and turn their ideas into working projects, no matter their experience level. You don’t need to have all the answers. We’re looking for university students who are approachable, enthusiastic, and excited to help the next generation of students learn, build, and have fun.
                 </p>

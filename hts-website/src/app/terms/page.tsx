@@ -167,7 +167,7 @@ export default function Terms() {
                         </h2>
                         <p>
                             Participants who violate the Code of Conduct or event rules may be asked to leave
-                            immediately without a refund. Serious violations may result in being banned from future
+                            immediately. Serious violations may result in being banned from future
                             Hack the Skies events.
                         </p>
                     </section>
