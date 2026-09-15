@@ -20,11 +20,12 @@ export default async function PortalPage() {
 
 	if (!user) redirect("/auth");
 
-	const [{ data: profile }, { data: application }, { data: meals }, { data: workshops }] = await Promise.all([
+	const [{ data: profile }, { data: application }, { data: meals }, { data: workshops }, { data: referralCode }] = await Promise.all([
 		supabase.from("users").select("hacker, points, qr_code_link").eq("id", user.id).maybeSingle(),
 		supabase.from("applications").select("application_type").eq("user_id", user.id).maybeSingle(),
 		supabase.from("meals").select("id, name, starts_at, ends_at").order("starts_at"),
 		supabase.from("workshops").select("id, name, description, room, starts_at, ends_at").order("starts_at"),
+		supabase.rpc("get_my_referral_code"),
 	]);
 
 	if (application?.application_type === "judge" || application?.application_type === "mentor") {
@@ -46,7 +47,7 @@ export default async function PortalPage() {
 
 	return (
 		<>
-			<HackerPortal name={user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "Hacker"} email={user.email ?? ""} points={profile?.points ?? 0} qrCode={profile?.qr_code_link ?? null} schedule={schedule} />
+			<HackerPortal name={user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "Hacker"} email={user.email ?? ""} points={profile?.points ?? 0} qrCode={profile?.qr_code_link ?? null} schedule={schedule} referralCode={referralCode ?? null} />
 		</>
 	);
 }

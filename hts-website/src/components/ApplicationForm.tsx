@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import ParallaxLayer from "@/components/ParallaxLayer";
 import { submitRoleApplication, type RoleApplicationState } from "@/actions/submitRoleApplication";
 import { submitHackerApplication } from "@/actions/submitHackerApplication";
+import { saveDraftHackerApplication } from "@/actions/saveDraftHackerApplication";
+import { loadDraftHackerApplication } from "@/actions/loadDraftHackerApplication";
 
 const STORAGE_KEY = "hts_application_draft";
-const AUTO_SAVE_DELAY = 1000;
+const AUTO_SAVE_DELAY = 1500;
 
 const CANADIAN_PROVINCES = [
     "Alberta",
@@ -171,19 +173,29 @@ export default function ApplicationForm() {
     const [currentSection, setCurrentSection] = useState(0);
     const [data, setData] = useState<ApplicationData>(EMPTY_DATA);
     const [errors, setErrors] = useState<Record<string, string>>({});
-    const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "">("");
+    const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "">("")
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState("");
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const dbLoadedRef = useRef(false);
+
     useEffect(() => {
-        const loaded = loadApplicationDraft();
-        if (loaded.section1.role === "Hacker") {
-            loaded.section1.role = "";
-            setCurrentSection(0);
-        } else {
+        queueMicrotask(() => {
+            const loaded = loadApplicationDraft();
             setCurrentSection(loaded.section1.role ? 1 : 0);
-        }
-        setData(loaded);
+            setData(loaded);
+
+            if (!dbLoadedRef.current) {
+                dbLoadedRef.current = true;
+                loadDraftHackerApplication().then((dbDraft) => {
+                    if (dbDraft) {
+                        setData(dbDraft as unknown as ApplicationData);
+                        setCurrentSection(1);
+                        saveApplicationDraft(dbDraft as unknown as ApplicationData);
+                    }
+                }).catch(() => { });
+            }
+        });
     }, []);
 
     const debouncedSave = useCallback((newData: ApplicationData) => {
@@ -195,8 +207,18 @@ export default function ApplicationForm() {
 
         saveTimeoutRef.current = setTimeout(() => {
             saveApplicationDraft(newData);
-            setSaveStatus("saved");
-            setTimeout(() => setSaveStatus(""), 2000);
+
+            if (newData.section1.role === "Hacker") {
+                saveDraftHackerApplication(newData).then((res) => {
+                    setSaveStatus(res.success ? "saved" : "");
+                    if (res.success) setTimeout(() => setSaveStatus(""), 2000);
+                }).catch(() => {
+                    setSaveStatus("");
+                });
+            } else {
+                setSaveStatus("saved");
+                setTimeout(() => setSaveStatus(""), 2000);
+            }
         }, AUTO_SAVE_DELAY);
     }, []);
 
@@ -234,16 +256,11 @@ export default function ApplicationForm() {
         if (!data.section1.city.trim()) newErrors.city = "Please enter your city.";
         if (!data.section1.province)
             newErrors.province = "Please select your province.";
-        if (data.section1.dietaryRestrictions.length === 0)
-            newErrors.dietaryRestrictions = "Please select dietary restrictions.";
         if (
             data.section1.dietaryRestrictions.includes("Other") &&
             !data.section1.dietaryOther.trim()
         )
             newErrors.dietaryOther = "Please specify your dietary restrictions.";
-        if (data.section1.accessibilityAccommodations.length === 0)
-            newErrors.accessibilityAccommodations =
-                "Please select accessibility options.";
         if (
             data.section1.accessibilityAccommodations.includes("Other") &&
             !data.section1.accessibilityOther.trim()
@@ -385,11 +402,6 @@ export default function ApplicationForm() {
             return;
         }
 
-        if (data.section1.role === "Hacker") {
-            setErrors({ role: "Hacker applications are currently closed. Only Judge and Mentor applications are open." });
-            return;
-        }
-
         setErrors({});
         setCurrentSection(1);
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -441,10 +453,10 @@ export default function ApplicationForm() {
         0,
     );
 
-    if (currentSection === 0 || data.section1.role === "Hacker") {
+    if (currentSection === 0) {
         return (
             <RoleSelection
-                role={data.section1.role === "Hacker" ? "" : data.section1.role}
+                role={data.section1.role}
                 error={errors.role}
                 onSelect={(role) =>
                     updateData({ section1: { ...data.section1, role } })
@@ -660,8 +672,8 @@ function RoleSelection({
     onSelect: (role: "Hacker" | "Judge" | "Mentor") => void;
     onContinue: () => void;
 }) {
-    const roleOptions = [
-        { value: "Hacker", disabled: true, tag: "Closed" },
+    const roleOptions: { value: string; disabled: boolean; tag?: string }[] = [
+        { value: "Hacker", disabled: false },
         { value: "Judge", disabled: false },
         { value: "Mentor", disabled: false },
     ];
@@ -720,7 +732,7 @@ function RoleSelection({
                 <button
                     type="button"
                     onClick={onContinue}
-                    disabled={!role || role === "Hacker"}
+                    disabled={!role}
                     className="cursor-pointer mt-8 ml-auto block rounded-full bg-button px-7 py-3 font-outfit font-semibold text-white shadow-[0_0_20px_rgba(130,104,180,0.45)] transition hover:scale-105 hover:bg-[#8268B4] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
                 >
                     Continue
@@ -732,13 +744,11 @@ function RoleSelection({
 
 function RoleApplicationShell({
     title,
-    eyebrow,
     role,
     children,
     onBack,
 }: {
     title: string;
-    eyebrow: string;
     role: "Judge" | "Mentor";
     children: React.ReactNode;
     onBack: () => void;
@@ -815,7 +825,7 @@ function JudgeApplicationForm({ onBack }: { onBack: () => void }) {
     const expertise = ["Software / Technology", "AI / Machine Learning", "Data", "Aerospace / Aviation", "Business / Entrepreneurship", "Product Management", "Design / UX", "Finance", "Marketing", "Cybersecurity", "Engineering", "Other"];
 
     return (
-        <RoleApplicationShell title="Judge application" eyebrow="Judge application" role="Judge" onBack={onBack}>
+        <RoleApplicationShell title="Judge application" role="Judge" onBack={onBack}>
             <div>
                 <p className="font-outfit text-md text-primary/80 mb-6">
                     Become a Hack the Skies 2026 Judge
@@ -859,7 +869,7 @@ function MentorApplicationForm({ onBack }: { onBack: () => void }) {
     const areas = ["Programming / Software Development", "AI / Machine Learning", "Web Development", "App Development", "Data Science", "Cybersecurity", "UI/UX & Design", "Entrepreneurship / Business", "Pitching / Presentations", "Product Development", "Other"];
 
     return (
-        <RoleApplicationShell title="Mentor application" eyebrow="Mentor application" role="Mentor" onBack={onBack}>
+        <RoleApplicationShell title="Mentor application" role="Mentor" onBack={onBack}>
             <div>
                 <p className="font-outfit text-md text-primary/80 mb-6">
                     Become a Hack the Skies 2026 Mentor!
@@ -973,18 +983,9 @@ function Section1({
     const section1 = data.section1;
 
     const handleDietaryChange = (option: string) => {
-        let newDietary = [...section1.dietaryRestrictions];
-        if (option === "None") {
-            newDietary = ["None"];
-        } else if (newDietary.includes("None")) {
-            newDietary = newDietary.filter((d) => d !== "None");
-        }
-
-        if (newDietary.includes(option)) {
-            newDietary = newDietary.filter((d) => d !== option);
-        } else {
-            newDietary.push(option);
-        }
+        const newDietary = section1.dietaryRestrictions.includes(option)
+            ? section1.dietaryRestrictions.filter((d) => d !== option)
+            : [...section1.dietaryRestrictions, option];
 
         updateData({
             section1: { ...section1, dietaryRestrictions: newDietary },
@@ -992,18 +993,9 @@ function Section1({
     };
 
     const handleAccessibilityChange = (option: string) => {
-        let newAccess = [...section1.accessibilityAccommodations];
-        if (option === "None") {
-            newAccess = ["None"];
-        } else if (newAccess.includes("None")) {
-            newAccess = newAccess.filter((a) => a !== "None");
-        }
-
-        if (newAccess.includes(option)) {
-            newAccess = newAccess.filter((a) => a !== option);
-        } else {
-            newAccess.push(option);
-        }
+        const newAccess = section1.accessibilityAccommodations.includes(option)
+            ? section1.accessibilityAccommodations.filter((a) => a !== option)
+            : [...section1.accessibilityAccommodations, option];
 
         updateData({
             section1: { ...section1, accessibilityAccommodations: newAccess },
@@ -1123,11 +1115,10 @@ function Section1({
 
             <div>
                 <label className="block text-primary font-outfit text-base mb-3">
-                    Dietary restrictions <span className="text-red-400">*</span>
+                    Dietary restrictions
                 </label>
                 <div className="space-y-2">
                     {[
-                        "None",
                         "Vegetarian",
                         "Vegan",
                         "Halal",
@@ -1169,16 +1160,10 @@ function Section1({
 
             <div>
                 <label className="block text-primary font-outfit text-base mb-3">
-                    Accessibility accommodations{" "}
-                    <span className="text-red-400">*</span>
+                    Accessibility accommodations
                 </label>
-                <p className="text-primary font-outfit text-sm mb-3">
-                    Let us know how we can make Hack the Skies more accessible and
-                    comfortable for you.
-                </p>
                 <div className="space-y-2">
                     {[
-                        "None",
                         "Mobility accommodation",
                         "Visual accommodation",
                         "Hearing accommodation",
@@ -1249,8 +1234,7 @@ function Section2({
     errors: Record<string, string>;
 }) {
     const section2 = data.section2;
-    const currentYear = new Date().getFullYear();
-    const graduationYears = Array.from({ length: 8 }, (_, i) => currentYear + i);
+    const graduationYears = ["2026", "2027", "2028", "2029", "2030", "2031"];
 
     return (
         <div className="space-y-6">
@@ -1291,7 +1275,7 @@ function Section2({
                             section2: { ...section2, graduationYear: e.target.value },
                         })
                     }
-                    options={["", ...graduationYears.map(String)]}
+                    options={["", ...graduationYears]}
                     error={errors.graduationYear}
                     required
                 />
@@ -1474,7 +1458,7 @@ function Section4({
                     <option value="3">3</option>
                     <option value="4">4</option>
                     <option value="5+">5+</option>
-                    <option value="unsure">I'm not sure</option>
+                    <option value="unsure">I&apos;m not sure</option>
                 </select>
                 {errors.hackathonExperience && (
                     <p className="text-red-400 font-outfit text-sm mt-1">
@@ -1630,14 +1614,20 @@ function Section6({
                     { label: "Province", value: data.section1.province },
                     {
                         label: "Dietary restrictions",
-                        value: data.section1.dietaryRestrictions.join(", "),
+                        value:
+                            data.section1.dietaryRestrictions.length > 0
+                                ? data.section1.dietaryRestrictions.join(", ")
+                                : "None",
                     },
                     ...(data.section1.dietaryRestrictions.includes("Other")
                         ? [{ label: "Dietary specifications", value: data.section1.dietaryOther }]
                         : []),
                     {
                         label: "Accessibility accommodations",
-                        value: data.section1.accessibilityAccommodations.join(", "),
+                        value:
+                            data.section1.accessibilityAccommodations.length > 0
+                                ? data.section1.accessibilityAccommodations.join(", ")
+                                : "None",
                     },
                     ...(data.section1.accessibilityAccommodations.includes("Other")
                         ? [

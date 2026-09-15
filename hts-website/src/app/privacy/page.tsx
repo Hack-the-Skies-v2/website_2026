@@ -55,7 +55,7 @@ export default function Privacy() {
                             1. Introduction
                         </h2>
                         <p>
-                            Hack the Skies ("we," "our," or "us") is committed to protecting the privacy of our
+                            Hack the Skies (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting the privacy of our
                             participants. This Privacy Policy explains what information we collect, how we use it,
                             and how we protect your privacy. Because many of our participants may be under 18,
                             we take extra care in our data handling practices.
@@ -208,7 +208,7 @@ export default function Privacy() {
                         <p>
                             Because many Hack the Skies participants are minors (under 18), we require parental or
                             guardian consent for collecting and processing their personal information. Parents and
-                            guardians have the right to review, update, or delete their child's information at any
+                            guardians have the right to review, update, or delete their child&apos;s information at any
                             time by contacting us directly.
                         </p>
                     </section>

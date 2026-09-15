@@ -80,12 +80,8 @@ export default function JMPortal({
                     {activeTab === "Application Status" && (
                         <div className="max-w-3xl space-y-6">
                             <div className="rounded-2xl border border-primary/15 bg-[#221c38] p-6">
-                                <p className="text-sm text-primary/60">Application review</p>
-                                <div className="mt-6 flex items-center justify-between">
-                                    <div>
-                                        <p className="font-semibold text-primary">{role} Application</p>
-                                        <p className="mt-1 text-sm text-primary/55">Hack the Skies 2026 · October 17-18 · Toronto</p>
-                                    </div>
+                                <div className="flex items-center justify-between">
+                                    <p className="font-semibold text-primary">{role} Application</p>
                                     <span className="rounded-full border border-star/30 bg-star/15 px-3 py-1 text-xs font-semibold text-star">
                                         Pending
                                     </span>
@@ -97,18 +93,12 @@ export default function JMPortal({
                     {activeTab === "Schedule" && (
                         <div className="flex min-h-64 max-w-2xl flex-col items-center justify-center rounded-2xl border border-primary/15 bg-[#221c38] p-8 text-center sm:p-12">
                             <h2 className="text-2xl font-semibold text-primary sm:text-3xl">Coming Soon</h2>
-                            <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-primary/60">
-                                The event timeline, workshop tracks, and judging schedules will be released closer to Hack the Skies 2026. Check back soon!
-                            </p>
                         </div>
                     )}
 
                     {activeTab === "QR code" && (
                         <div className="flex min-h-64 max-w-2xl flex-col items-center justify-center rounded-2xl border border-primary/15 bg-[#221c38] p-8 text-center sm:p-12">
                             <h2 className="text-2xl font-semibold text-primary sm:text-3xl">Coming Soon</h2>
-                            <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-primary/60">
-                                Your badge QR code will be generated once admissions decisions are finalized.
-                            </p>
                         </div>
                     )}
                 </section>

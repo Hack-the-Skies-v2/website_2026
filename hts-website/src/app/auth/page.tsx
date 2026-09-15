@@ -108,9 +108,12 @@ function AuthContent() {
   } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  useEffect(() => {
-    setMode(getAuthMode(searchParams.get("mode")));
-  }, [searchParams]);
+  const [prevModeParam, setPrevModeParam] = useState(searchParams.get("mode"));
+  const currentModeParam = searchParams.get("mode");
+  if (currentModeParam !== prevModeParam) {
+    setPrevModeParam(currentModeParam);
+    setMode(getAuthMode(currentModeParam));
+  }
 
   useEffect(() => {
     const supabase = createClient();

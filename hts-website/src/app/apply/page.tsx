@@ -5,7 +5,18 @@ import { redirect } from "next/navigation";
 import ApplicationForm from "@/components/ApplicationForm";
 import AccountMenu from "../../components/AccountMenu";
 
-export default async function Apply() {
+export default async function Apply({
+    searchParams,
+}: {
+    searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+    const params = await searchParams;
+    const ref = typeof params.ref === "string" ? params.ref : null;
+
+    if (ref) {
+        redirect(`/api/referral?code=${encodeURIComponent(ref)}`);
+    }
+
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -50,23 +61,13 @@ export default async function Apply() {
                     Return to Home
                 </button>
             </Link>
-            {/* <div className="flex-1 flex items-center justify-center">
-                <h1 className="text-center justify-center font-outfit text-5xl md:text-6xl lg:text-7xl font-semibold text-primary">Coming Soon</h1>
-            </div> */}
             <div className="flex-1">
 				<div className="pt-24 pb-12 px-4 sm:px-6 max-w-4xl mx-auto">
 					<h1 className="
 						text-center
-						font-outfit text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-semibold text-primary select-none mb-6">
+						font-outfit text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-semibold text-primary select-none mb-12">
 						Application Portal
 					</h1>
-					<h2 className="
-						text-center 
-						font-outfit 
-						text-base sm:text-lg md:text-xl lg:text-2xl
-						text-primary/90 mb-12">
-						Ready to come to Hack the Skies? You are a few questions away!
-					</h2>
 				</div>
 				<ApplicationForm />
 			</div>
