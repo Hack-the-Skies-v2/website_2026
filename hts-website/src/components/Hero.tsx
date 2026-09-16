@@ -104,9 +104,9 @@ export default function Hero() {
                 </span>
                 for high school students.
             </h1>
-            <p className="font-outfit text-sm md:text-base text-primary/70 mt-4 mb-4 select-none">
+            {/*<p className="font-outfit text-sm md:text-base text-primary/70 mt-4 mb-4 select-none">
                 Judge and Mentor applications are open.
-            </p>
+            </p>*/}
             <div className="mt-4 flex flex-col items-center justify-center gap-3 sm:flex-row">
                 {/*<Link href="/apply">
                     <button
