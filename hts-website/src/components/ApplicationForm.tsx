@@ -673,7 +673,7 @@ function RoleSelection({
     onContinue: () => void;
 }) {
     const roleOptions: { value: string; disabled: boolean; tag?: string }[] = [
-        { value: "Hacker", disabled: true },
+        { value: "Hacker", disabled: false },
         { value: "Judge", disabled: false },
         { value: "Mentor", disabled: false },
     ];
