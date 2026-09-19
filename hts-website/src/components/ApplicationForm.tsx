@@ -828,11 +828,11 @@ function JudgeApplicationForm({ onBack }: { onBack: () => void }) {
         <RoleApplicationShell title="Judge application" role="Judge" onBack={onBack}>
             <div>
                 <p className="font-outfit text-md text-primary/80 mb-6">
-                    Become a Hack the Skies 2026 Judge
+                    Become a Hack the Skies 2026 Judge!
                     <br />
-                    As a judge at Hack the Skies, you’ll evaluate projects built by high-school students and help recognize the teams that stand out. You’ll get to see creative ideas, emerging technology, and innovative solutions firsthand while providing valuable feedback to students.
+                    <p> As a judge at Hack the Skies, you’ll evaluate projects built by high-school students and help recognize the teams that stand out. You’ll get to see creative ideas, emerging technology, and innovative solutions firsthand while providing valuable feedback to students. </p>
                     <br />
-                    We’re looking for industry professionals who can bring their expertise, perspective, and constructive feedback to the judging process. You don’t need prior hackathon judging experience, just an interest in supporting students and evaluating their work.
+                    <p>We’re looking for industry professionals who can bring their expertise, perspective, and constructive feedback to the judging process. You don’t need prior hackathon judging experience, just an interest in supporting students and evaluating their work. </p>
                     <br />
                     Judges only need to be available in-person for the afternoon of October 18th.
                 </p>
@@ -872,9 +872,9 @@ function MentorApplicationForm({ onBack }: { onBack: () => void }) {
         <RoleApplicationShell title="Mentor application" role="Mentor" onBack={onBack}>
             <div>
                 <p className="font-outfit text-md text-primary/80 mb-6">
-                    Become a Hack the Skies 2026 Mentor!
+                    <p> Become a Hack the Skies 2026 Mentor!</p> 
                     <br />
-                    As a mentor at Hack the Skies, you’ll support high-school students throughout our two-day in-person hackathon on October 17th and 18th, as well as an optional (online) opening ceremony on October 16th. You’ll help teams brainstorm ideas, troubleshoot technical challenges, explore new tools, and turn their ideas into working projects, no matter their experience level. You don’t need to have all the answers. We’re looking for university students who are approachable, enthusiastic, and excited to help the next generation of students learn, build, and have fun.
+                    <p>As a mentor at Hack the Skies, you’ll support high-school students throughout our two-day in-person hackathon on October 17th and 18th, as well as an optional (online) opening ceremony on October 16th. You’ll help teams brainstorm ideas, troubleshoot technical challenges, explore new tools, and turn their ideas into working projects, no matter their experience level. You don’t need to have all the answers. We’re looking for university students who are approachable, enthusiastic, and excited to help the next generation of students learn, build, and have fun. </p>
                 </p>
                 <p className="font-outfit text-md uppercase tracking-[0.2em] text-primary/80 mb-6">Answers do not save</p>
                 <h2 className="mb-6 font-outfit text-2xl font-semibold text-primary">Basic Information</h2>
