@@ -20,6 +20,11 @@ const AUTOSAVE_DELAY_MS = 600;
 type SaveState = "idle" | "saving" | "saved" | "error";
 type Scores = Record<string, number | null>;
 
+export type ReviewInfoField = {
+  label: string;
+  value: string;
+};
+
 export type ReviewApplication = {
   id: string;
   type: "hacker" | "mentor" | "judge";
@@ -30,6 +35,7 @@ export type ReviewApplication = {
   school_or_organization: string | null;
   details: unknown;
   answers: { question: Question; text: string }[];
+  info: ReviewInfoField[];
   submitted_at: string;
 };
 
@@ -66,6 +72,7 @@ export default function OrganizerReviewClient({
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [confirming, setConfirming] = useState<OrganizerDecision | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [tab, setTab] = useState<"questions" | "details">("questions");
   const [isPending, startTransition] = useTransition();
   const pendingSave = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -83,6 +90,7 @@ export default function OrganizerReviewClient({
     setSaveState("idle");
     setConfirming(null);
     setNotice(null);
+    setTab("questions");
   }, [application.id]); // eslint-disable-line react-hooks/exhaustive-deps -- reset only when the applicant changes
 
   const composite = compositeScore(
@@ -328,7 +336,30 @@ export default function OrganizerReviewClient({
         </div>
       </header>
 
-      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+      <div className="flex rounded-full border border-primary/30 p-1 w-fit">
+        {(
+          [
+            { id: "questions" as const, label: "Questions" },
+            { id: "details" as const, label: "Details & restrictions" },
+          ] as const
+        ).map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => setTab(item.id)}
+            className={`rounded-full px-5 py-2 text-sm font-medium transition ${
+              tab === item.id
+                ? "bg-star text-[#201b38]"
+                : "text-primary hover:bg-primary/10"
+            }`}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "questions" ? (
+      <div className={`grid gap-5 ${questions.length <= 2 ? "md:grid-cols-2" : "md:grid-cols-2 lg:grid-cols-3"}`}>
         {application.answers.map(({ question, text }, index) => (
           <article
             key={question.id}
@@ -369,6 +400,46 @@ export default function OrganizerReviewClient({
           </article>
         ))}
       </div>
+      ) : (
+        <section className="rounded-2xl border border-primary/25 bg-[#201b38]/90 p-5 md:p-6">
+          <h2 className="text-lg font-semibold text-white">Application details</h2>
+          <p className="mt-1 text-sm text-white/55">
+            Restrictions, multiple-choice answers, links, and other profile fields.
+          </p>
+          {application.info?.length ? (
+            <dl className="mt-6 grid gap-4 sm:grid-cols-2">
+              {application.info.map((field) => (
+                <div
+                  key={`${field.label}:${field.value.slice(0, 24)}`}
+                  className="rounded-xl border border-primary/15 bg-[#171329]/70 px-4 py-3"
+                >
+                  <dt className="text-[11px] font-semibold uppercase tracking-wider text-primary/70">
+                    {field.label}
+                  </dt>
+                  <dd className="mt-1 whitespace-pre-wrap text-sm text-white/85">
+                    {/^https?:\/\//i.test(field.value) ? (
+                      <a
+                        href={field.value}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-star underline-offset-2 hover:underline break-all"
+                      >
+                        {field.value}
+                      </a>
+                    ) : (
+                      field.value
+                    )}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          ) : (
+            <p className="mt-6 text-sm italic text-white/40">
+              No extra details on file for this application.
+            </p>
+          )}
+        </section>
+      )}
     </div>
   );
 }

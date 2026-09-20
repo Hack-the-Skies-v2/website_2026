@@ -1,7 +1,11 @@
-import { answersByQuestion } from "@/lib/grading/questions";
+import {
+  answersByQuestion,
+  hackerQuestionsForStoredAnswers,
+  questionsForType,
+} from "@/lib/grading/questions";
 import type { ApplicationType } from "@/lib/grading/types";
 import type { OrganizerApplication } from "@/components/OrganizerDashboard";
-import type { ReviewApplication } from "@/components/OrganizerReviewClient";
+import type { ReviewApplication, ReviewInfoField } from "@/components/OrganizerReviewClient";
 
 type MockSeed = {
   id: string;
@@ -12,6 +16,7 @@ type MockSeed = {
   email: string;
   school_or_organization: string;
   answers: string[];
+  info: ReviewInfoField[];
   submitted_at: string;
   average_score: number | null;
   grader_count: number;
@@ -36,9 +41,26 @@ const SEEDS: MockSeed[] = [
     notification_sent_at: null,
     notification_error: null,
     answers: [
-      "I built a bus tracker for my school route because the transit app never showed the two buses that actually matter. It scrapes the schedule overnight, stores it locally, and shows one number: minutes until I have to leave the house. My little brother uses it more than I do now.",
-      "I want to spend a weekend with people who care about shipping messy first versions. Hack the Skies feels like the place where I can try something ambitious without waiting for a class assignment.",
-      "I want to get better at turning a vague idea into a working demo, and I hope I can help teammates who are newer to web stuff. I am also excited to meet mentors who build things for real users.",
+      "Late buses make half my class miss first period. I would build a simple school-route tracker that only shows the two buses that actually stop near us, with a leave-now alert so students are not guessing from the city transit app.",
+      "I taught myself scraping by rebuilding a bus tracker overnight. I started with one broken script, read docs until each error made sense, and shipped a tiny tool my brother still uses.",
+    ],
+    info: [
+      { label: "Preferred name", value: "Ava" },
+      { label: "Pronouns", value: "she/her" },
+      { label: "T-shirt size", value: "M" },
+      { label: "City", value: "Waterloo" },
+      { label: "Province", value: "Ontario" },
+      { label: "Dietary restrictions", value: "Vegetarian" },
+      { label: "Accessibility accommodations", value: "None" },
+      { label: "Grade", value: "11" },
+      { label: "Graduation year", value: "2027" },
+      { label: "Coding experience", value: "Intermediate" },
+      { label: "Goals", value: "Build my first project, Meet other students interested in tech, Work with mentors" },
+      { label: "Want to see at HTS", value: "More beginner-friendly workshops on shipping a demo." },
+      { label: "Favourite song", value: "Motion Sickness — Phoebe Bridgers" },
+      { label: "LinkedIn / Portfolio", value: "https://linkedin.com/in/ava-chen-mock" },
+      { label: "GitHub / Devpost", value: "https://github.com/ava-chen-mock" },
+      { label: "Heard about HTS", value: "Instagram" },
     ],
   },
   {
@@ -56,9 +78,27 @@ const SEEDS: MockSeed[] = [
     notification_sent_at: null,
     notification_error: null,
     answers: [
-      "Last year I repaired three pairs of headphones for people in my class after teaching myself to solder. Not a flashy project, but I liked that the fix was invisible once it worked.",
-      "I applied because I want a weekend where I can focus on one project end to end, and Hack the Skies seems student-run in a way that feels welcoming.",
-      "I want to learn how teams decide what to cut when time runs out. I can contribute calm debugging energy when something breaks at 2am.",
+      "Broken headphones pile up in lost and found. I would design a tiny repair station app that logs common fixes and parts so students can revive gear instead of tossing it.",
+      "I learned to solder from YouTube after three pairs of classmates' headphones died. I practiced on scrap wires first, failed a lot, then fixed the real ones.",
+    ],
+    info: [
+      { label: "Preferred name", value: "Jordan" },
+      { label: "Pronouns", value: "they/them" },
+      { label: "T-shirt size", value: "L" },
+      { label: "City", value: "Kitchener" },
+      { label: "Province", value: "Ontario" },
+      { label: "Dietary restrictions", value: "Halal, Nut allergy" },
+      { label: "Dietary (other)", value: "No tree nuts; sesame is fine." },
+      { label: "Accessibility accommodations", value: "Quiet space for breaks" },
+      { label: "Grade", value: "12" },
+      { label: "Graduation year", value: "2026" },
+      { label: "Coding experience", value: "Novice" },
+      { label: "Goals", value: "Improve my coding skills, Find teammates, Try something completely new" },
+      { label: "Want to see at HTS", value: "Hardware lending and soldering help." },
+      { label: "Favourite song", value: "Sunflower — Rex Orange County" },
+      { label: "LinkedIn / Portfolio", value: "https://linkedin.com/in/jordan-patel-mock" },
+      { label: "GitHub / Devpost", value: "https://devpost.com/jordan-patel-mock" },
+      { label: "Heard about HTS", value: "Friend" },
     ],
   },
   {
@@ -76,9 +116,17 @@ const SEEDS: MockSeed[] = [
     notification_sent_at: null,
     notification_error: null,
     answers: [
-      "I have mentored at two high-school hackathons and work on a small open-source CLI used by local clubs. I am strongest at helping beginners structure their first backend.",
-      "I ask what they have already tried, then we reproduce the bug together. If they are stuck on scope, I help them define a weekend-sized MVP before touching code.",
-      "I want to mentor at Hack the Skies because the organizers are students too. The energy is collaborative, and I like helping hackers ship something they are proud of by Sunday.",
+      "Python, TypeScript, FastAPI, Postgres, and beginner-friendly React. Strongest at helping teams structure a first backend.",
+      "I have mentored at two high-school hackathons and run a small open-source CLI used by local coding clubs.",
+      "I want to help beginners ship something they are proud of by Sunday and leave with clearer debugging habits.",
+    ],
+    info: [
+      { label: "Program / year", value: "Software Engineering, 3B" },
+      { label: "University / college", value: "University of Waterloo" },
+      { label: "LinkedIn / Portfolio / GitHub", value: "https://linkedin.com/in/sam-okoye-mock" },
+      { label: "Mentoring areas", value: "Programming / Software Development, Web Development, Product Development" },
+      { label: "Available for full event", value: "Yes" },
+      { label: "Times unavailable", value: "Saturday 2–4pm lecture conflict" },
     ],
   },
   {
@@ -96,9 +144,25 @@ const SEEDS: MockSeed[] = [
     notification_sent_at: "2026-03-16T09:00:00.000Z",
     notification_error: null,
     answers: [
-      "I followed a few coding tutorials and made a personal homepage.",
-      "I heard about Hack the Skies from a friend and thought it would be fun.",
-      "I mostly want to see what a hackathon is like.",
+      "Lunch lines are chaotic. I would try a simple queue display so people know which line is shortest.",
+      "I followed a few coding tutorials and made a personal homepage. I mostly copied examples until something loaded.",
+    ],
+    info: [
+      { label: "Preferred name", value: "Riley" },
+      { label: "Pronouns", value: "he/him" },
+      { label: "T-shirt size", value: "S" },
+      { label: "City", value: "Kitchener" },
+      { label: "Province", value: "Ontario" },
+      { label: "Dietary restrictions", value: "None" },
+      { label: "Grade", value: "10" },
+      { label: "Graduation year", value: "2028" },
+      { label: "Coding experience", value: "Complete Beginner" },
+      { label: "Goals", value: "Learn how to code, See what a hackathon is like" },
+      { label: "Want to see at HTS", value: "A chill intro track." },
+      { label: "Favourite song", value: "Blinding Lights — The Weeknd" },
+      { label: "LinkedIn / Portfolio", value: "" },
+      { label: "GitHub / Devpost", value: "https://github.com/riley-nguyen-mock" },
+      { label: "Heard about HTS", value: "Friend" },
     ],
   },
   {
@@ -116,9 +180,16 @@ const SEEDS: MockSeed[] = [
     notification_sent_at: "2026-03-16T10:00:00.000Z",
     notification_error: null,
     answers: [
+      "JavaScript, Figma, product scoping, and pitching. Comfortable pairing on UI polish and demo storytelling.",
       "I lead a campus coding club and mentor first-years through their first group projects.",
-      "I start with what they already understand, then suggest one next experiment instead of rewriting their work.",
       "I want to give high-school hackers the same patient feedback I wish I had at their age.",
+    ],
+    info: [
+      { label: "Program / year", value: "Business & Computer Science, Year 3" },
+      { label: "University / college", value: "Wilfrid Laurier University" },
+      { label: "LinkedIn / Portfolio / GitHub", value: "https://linkedin.com/in/morgan-singh-mock" },
+      { label: "Mentoring areas", value: "UI/UX & Design, Pitching / Presentations, Entrepreneurship / Business" },
+      { label: "Available for full event", value: "Yes" },
     ],
   },
   {
@@ -136,9 +207,26 @@ const SEEDS: MockSeed[] = [
     notification_sent_at: null,
     notification_error: null,
     answers: [
-      "I made a plant-watering reminder that texts my roommate when the soil sensor is dry.",
-      "I want a weekend of building with people who are as curious as I am.",
-      "I hope to learn how to scope a project that can actually finish by Sunday demo.",
+      "Our greenhouse club forgets to water plants. I would build a cheap soil-sensor reminder that texts whoever is on duty that week.",
+      "I learned circuits by frying two sensors first. Then I slowed down, sketched the wiring, and got a working plant reminder for my roommate.",
+    ],
+    info: [
+      { label: "Preferred name", value: "Casey" },
+      { label: "Pronouns", value: "she/they" },
+      { label: "T-shirt size", value: "M" },
+      { label: "City", value: "Cambridge" },
+      { label: "Province", value: "Ontario" },
+      { label: "Dietary restrictions", value: "Gluten-free" },
+      { label: "Accessibility accommodations", value: "None" },
+      { label: "Grade", value: "11" },
+      { label: "Graduation year", value: "2027" },
+      { label: "Coding experience", value: "Intermediate" },
+      { label: "Goals", value: "Build my first project, Learn about AI, Win prizes" },
+      { label: "Want to see at HTS", value: "Hardware kits and sensor help desks." },
+      { label: "Favourite song", value: "Electric Feel — MGMT" },
+      { label: "LinkedIn / Portfolio", value: "https://caseybrooks.dev" },
+      { label: "GitHub / Devpost", value: "https://github.com/casey-brooks-mock" },
+      { label: "Heard about HTS", value: "School club" },
     ],
   },
   {
@@ -156,11 +244,30 @@ const SEEDS: MockSeed[] = [
     notification_sent_at: null,
     notification_error: null,
     answers: [
-      "I want to learn how to ship a small ML demo that classifies bird calls from phone audio, and leave with something I can keep iterating on after the weekend.",
-      "I built a chrome extension that highlights duplicate calendar events before I double-book myself. It is ugly but it saved me twice last month.",
-      "I break the problem into the smallest failing test, write down what I already know, then ask one person for a second pair of eyes before rewriting everything.",
-      "I usually end up as the glue person: wiring APIs, keeping the board honest, and making sure the demo story matches what we actually built.",
-      "I would bring a calm debugging habit, share notes from workshops, and help first-time hackers get unstuck without taking over their project.",
+      "I would use phone audio to classify bird calls around campus so the eco club can map which species show up near noisy roads.",
+      "I taught myself browser extensions by shipping a calendar duplicate highlighter. I broke it five times, read MDN, and shipped an ugly version that still saves me.",
+    ],
+    info: [
+      { label: "Preferred name", value: "Mock" },
+      { label: "Pronouns", value: "they/them" },
+      { label: "T-shirt size", value: "L" },
+      { label: "City", value: "Toronto" },
+      { label: "Province", value: "Ontario" },
+      { label: "Dietary restrictions", value: "Vegetarian, Other" },
+      { label: "Dietary (other)", value: "No mushrooms." },
+      { label: "Accessibility accommodations", value: "Other" },
+      { label: "Accessibility (other)", value: "Prefer written instructions for workshops." },
+      { label: "Grade", value: "12" },
+      { label: "Graduation year", value: "2026" },
+      { label: "Coding experience", value: "Advanced" },
+      { label: "Goals", value: "Improve my coding skills, Meet other students interested in tech, Work with mentors" },
+      { label: "Want to see at HTS", value: "ML intro workshop and demo coaching." },
+      { label: "Favourite song", value: "Nightcall — Kavinsky" },
+      { label: "LinkedIn / Portfolio", value: "https://linkedin.com/in/mock-mock" },
+      { label: "GitHub / Devpost", value: "https://github.com/mock-mock" },
+      { label: "Heard about HTS", value: "Other" },
+      { label: "Heard about HTS (other)", value: "Discord server" },
+      { label: "Other comments", value: "Happy to help first-time hackers debug." },
     ],
   },
   {
@@ -181,6 +288,15 @@ const SEEDS: MockSeed[] = [
       "A strong project solves a real user problem, ships a working demo, and shows clear tradeoffs the team made under time pressure.",
       "I build developer tools at Northwind and previously mentored university hackathon teams on product scoping and demo polish.",
       "I judged a campus pitch night last year and a high-school science fair software category the year before.",
+    ],
+    info: [
+      { label: "Company / organization", value: "Northwind Labs" },
+      { label: "Job title", value: "Staff Engineer" },
+      { label: "LinkedIn", value: "https://linkedin.com/in/alex-rivera" },
+      { label: "Industry / field", value: "Developer tools" },
+      { label: "Expertise", value: "Software / Technology, AI / Machine Learning, Product Management" },
+      { label: "Years of experience", value: "6-10" },
+      { label: "Available for full judging period", value: "Yes" },
     ],
   },
 ];
@@ -208,6 +324,10 @@ export function getMockOrganizerApplications(): OrganizerApplication[] {
 export function getMockReviewApplication(id: string): ReviewApplication | null {
   const seed = SEEDS.find((entry) => entry.id === id);
   if (!seed) return null;
+  const questions =
+    seed.type === "hacker"
+      ? hackerQuestionsForStoredAnswers(seed.answers)
+      : questionsForType(seed.type);
   return {
     id: seed.id,
     type: seed.type,
@@ -217,7 +337,8 @@ export function getMockReviewApplication(id: string): ReviewApplication | null {
     email: seed.email,
     school_or_organization: seed.school_or_organization,
     details: null,
-    answers: answersByQuestion(seed.type, seed.answers),
+    answers: answersByQuestion(seed.type, seed.answers, questions),
+    info: seed.info.filter((field) => field.value.trim()),
     submitted_at: seed.submitted_at,
   };
 }

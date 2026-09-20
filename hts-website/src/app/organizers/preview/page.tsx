@@ -13,21 +13,30 @@ export default function OrganizerPreviewPage() {
             </p>
             <h1 className="mt-3 text-4xl font-semibold">Organizer console</h1>
             <p className="mt-2 text-white/65">
-              Local mock: Accept and Reject send real emails to TEST_DECISION_EMAIL. Pick any application and try it.
+              Local mock with the new Questions / Details tabs. Open any row, then switch tabs.
+              Accept and Reject still send real emails to TEST_DECISION_EMAIL.
             </p>
           </div>
-          <Link
-            href="/organizers/preview/email-test"
-            className="rounded-full border border-primary/50 px-4 py-2 text-sm hover:bg-primary/10"
-          >
-            Test emails
-          </Link>
-          <Link
-            href="/"
-            className="rounded-full border border-primary/50 px-4 py-2 text-sm hover:bg-primary/10"
-          >
-            Public website
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/organizers"
+              className="rounded-full bg-star px-4 py-2 text-sm font-semibold text-[#201b38] hover:bg-[#ffe08a]"
+            >
+              Live organizer console
+            </Link>
+            <Link
+              href="/organizers/preview/email-test"
+              className="rounded-full border border-primary/50 px-4 py-2 text-sm hover:bg-primary/10"
+            >
+              Test emails
+            </Link>
+            <Link
+              href="/"
+              className="rounded-full border border-primary/50 px-4 py-2 text-sm hover:bg-primary/10"
+            >
+              Public website
+            </Link>
+          </div>
         </header>
         <OrganizerDashboard
           applications={getMockOrganizerApplications()}

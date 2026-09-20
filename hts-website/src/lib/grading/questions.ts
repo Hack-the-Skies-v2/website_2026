@@ -1,7 +1,25 @@
 import type { ApplicationType, Question } from "./types";
 
-/** Keep in sync with ApplicationForm hacker questions. */
+/** Current ApplicationForm long-answer prompts (2 questions). */
 export const HACKER_QUESTIONS: Question[] = [
+  {
+    id: "hacker-q1",
+    position: 1,
+    prompt:
+      "If you could use technology to solve any problem in your school or community, what would it be and why? (We're not judging feasibility, we're looking for creativity, motivation, and what you care about!)",
+    weight: 1,
+  },
+  {
+    id: "hacker-q2",
+    position: 2,
+    prompt:
+      "Tell us about a time you had to learn something completely new by yourself. How did you approach it, and what did you take away from the experience?",
+    weight: 1,
+  },
+];
+
+/** Older five-question hacker form (still present on some submitted rows). */
+export const LEGACY_HACKER_QUESTIONS: Question[] = [
   {
     id: "hacker-q1",
     position: 1,
@@ -86,11 +104,17 @@ export function questionsForType(type: ApplicationType): Question[] {
   return HACKER_QUESTIONS;
 }
 
+/** Pick current vs legacy hacker prompts from how many answers were stored. */
+export function hackerQuestionsForStoredAnswers(answers: string[]): Question[] {
+  if (answers.slice(2).some((text) => text.trim())) return LEGACY_HACKER_QUESTIONS;
+  return HACKER_QUESTIONS;
+}
+
 export function answersByQuestion(
   type: ApplicationType,
   answers: unknown,
+  questions = questionsForType(type),
 ): { question: Question; text: string }[] {
-  const questions = questionsForType(type);
   const list = Array.isArray(answers)
     ? answers.map((answer) => (typeof answer === "string" ? answer : String(answer ?? "")))
     : [];

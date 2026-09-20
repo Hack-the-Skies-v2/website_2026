@@ -1,10 +1,14 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import OrganizerReviewClient from "@/components/OrganizerReviewClient";
 import {
   getMockOrganizerApplications,
   getMockReviewApplication,
 } from "@/lib/grading/mock-applications";
-import { questionsForType } from "@/lib/grading/questions";
+import {
+  hackerQuestionsForStoredAnswers,
+  questionsForType,
+} from "@/lib/grading/questions";
 import {
   advanceAfterDecision,
   prioritizeForReview,
@@ -18,7 +22,10 @@ export default async function OrganizerPreviewReviewPage({ params }: PageProps) 
   const application = getMockReviewApplication(id);
   if (!application) notFound();
 
-  const questions = questionsForType(application.type);
+  const questions =
+    application.type === "hacker"
+      ? hackerQuestionsForStoredAnswers(application.answers.map((row) => row.text))
+      : questionsForType(application.type);
   const trackPeers = getMockOrganizerApplications().filter(
     (row) => row.type === application.type,
   );
@@ -46,9 +53,21 @@ export default async function OrganizerPreviewReviewPage({ params }: PageProps) 
       <div className="mx-auto max-w-[100rem]">
         <div className="mb-4 flex flex-wrap items-center gap-3 text-sm text-white/50">
           <span className="rounded-full bg-star/20 px-3 py-1 text-xs font-medium text-star">
-            Preview · no emails
+            Preview · mock data
           </span>
-          <span>Queue: ungraded first, most graded last</span>
+          <Link
+            href="/organizers"
+            className="rounded-full border border-primary/40 px-3 py-1 text-xs font-medium text-primary hover:bg-primary/10"
+          >
+            ← Live organizer console
+          </Link>
+          <Link
+            href="/organizers/preview"
+            className="rounded-full border border-primary/40 px-3 py-1 text-xs font-medium text-primary hover:bg-primary/10"
+          >
+            Mock list
+          </Link>
+          <span>Use the Questions / Details tabs below</span>
           <span>Submitted {new Date(application.submitted_at).toLocaleString()}</span>
         </div>
         <OrganizerReviewClient
