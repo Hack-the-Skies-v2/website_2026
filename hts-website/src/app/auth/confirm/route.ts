@@ -25,7 +25,12 @@ export async function GET(request: NextRequest) {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
 
         if (!error) {
-            redirectTo.pathname = "/apply";
+            const next = searchParams.get("next");
+            redirectTo.pathname =
+                next && next.startsWith("/") && !next.startsWith("//")
+                    ? next
+                    : "/apply";
+            redirectTo.searchParams.delete("next");
             return NextResponse.redirect(redirectTo);
         }
     }

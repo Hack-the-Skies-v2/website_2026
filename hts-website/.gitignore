@@ -41,3 +41,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Local repository-analysis output
+/graphify-out/
+/src/graphify-out/

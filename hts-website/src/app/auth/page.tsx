@@ -115,13 +115,19 @@ function AuthContent() {
     setMode(getAuthMode(currentModeParam));
   }
 
+  const nextParam = searchParams.get("next");
+  const nextPath =
+    nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
+      ? nextParam
+      : "/apply";
+
   useEffect(() => {
     const supabase = createClient();
 
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) router.replace("/apply");
+      if (user) router.replace(nextPath);
     });
-  }, [router]);
+  }, [router, nextPath]);
 
   useEffect(() => {
     const resetLoadingState = () => setIsLoading(false);
@@ -134,10 +140,11 @@ function AuthContent() {
     setMode(newMode);
     setStatusMessage(null);
     setErrors({});
+    const nextQuery = nextParam ? `&next=${encodeURIComponent(nextParam)}` : "";
     if (newMode === "forgot") {
-      router.replace("/auth?mode=forgot", { scroll: false });
+      router.replace(`/auth?mode=forgot${nextQuery}`, { scroll: false });
     } else {
-      router.replace(`/auth?mode=${newMode}`, { scroll: false });
+      router.replace(`/auth?mode=${newMode}${nextQuery}`, { scroll: false });
     }
   };
 
@@ -188,7 +195,7 @@ function AuthContent() {
       const result = await signInWithEmail(email, password);
       setIsLoading(false);
       if (result.success) {
-        router.push("/apply");
+        router.push(nextPath);
         return;
       }
       setStatusMessage({ type: "error", text: result.error });
@@ -258,7 +265,7 @@ function AuthContent() {
     setStatusMessage(null);
 
     try {
-      const result = await signInWithGoogle();
+      const result = await signInWithGoogle(nextPath);
       if (result.success) {
         window.location.assign(result.url);
         return;

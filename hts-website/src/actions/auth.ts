@@ -74,13 +74,21 @@ export async function signInWithEmail(
         : { success: true };
 }
 
-export async function signInWithGoogle(): Promise<OAuthResult> {
+export async function signInWithGoogle(
+    nextPath = "/apply",
+): Promise<OAuthResult> {
     try {
         const supabase = await createClient();
+        const safeNext =
+            nextPath.startsWith("/") && !nextPath.startsWith("//")
+                ? nextPath
+                : "/apply";
+        const origin =
+            process.env.NEXT_PUBLIC_SITE_URL || "https://hacktheskies.com";
         const { data, error } = await supabase.auth.signInWithOAuth({
             provider: "google",
             options: {
-                redirectTo: "https://hacktheskies.com/auth/confirm",
+                redirectTo: `${origin}/auth/confirm?next=${encodeURIComponent(safeNext)}`,
             },
         });
 
