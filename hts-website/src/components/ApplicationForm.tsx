@@ -65,12 +65,10 @@ const GOAL_OPTIONS = [
     "Other",
 ];
 
+// Earlier versions of the form asked five other questions ahead of these two.
+const LEGACY_QUESTION_COUNT = 5;
+
 const APPLICATION_QUESTIONS = [
-    "What are you hoping to learn or build at Hack the Skies?",
-    "Describe a project or idea you are proud of.",
-    "How do you approach solving a difficult problem?",
-    "What role do you usually play on a team?",
-    "What would you contribute to the Hack the Skies community?",
     "If you could use technology to solve any problem in your school or community, what would it be and why? (We’re not judging feasibility, we’re looking for creativity, motivation, and what you care about!)",
     "Tell us about a time you had to learn something completely new by yourself. How did you approach it, and what did you take away from the experience?",
 ];
@@ -194,7 +192,6 @@ type StoredDraft = {
     section4?: Partial<ApplicationData["section4"] & ApplicationData["section5"]>;
     section5?: Partial<ApplicationData["section5"]> & {
         applicationQuestions?: string[];
-        applicationQuestion?: string;
     };
     section6?: Partial<ApplicationData["section5"]>;
 };
@@ -210,7 +207,13 @@ function loadApplicationDraft(): ApplicationData {
                 ? currentAnswers
                 : Array.isArray(previousAnswers)
                     ? previousAnswers
-                    : [parsed.section5?.applicationQuestion ?? ""];
+                    : [];
+            // Drafts from earlier versions hold the five removed questions first,
+            // followed by the two that are kept, so only those two are carried over.
+            const answers =
+                storedAnswers.length > APPLICATION_QUESTIONS.length
+                    ? storedAnswers.slice(LEGACY_QUESTION_COUNT)
+                    : storedAnswers;
             const confirmationSources = [parsed.section5, parsed.section6, parsed.section4];
             const confirmed = (key: keyof ApplicationData["section5"]) =>
                 confirmationSources.find((source) => typeof source?.[key] === "boolean")?.[key] ?? false;
@@ -220,7 +223,7 @@ function loadApplicationDraft(): ApplicationData {
                 section2: { ...EMPTY_DATA.section2, ...parsed.section2 },
                 section3: {
                     applicationQuestions: APPLICATION_QUESTIONS.map(
-                        (_, index) => storedAnswers[index] ?? "",
+                        (_, index) => answers[index] ?? "",
                     ),
                 },
                 section4: {

@@ -106,11 +106,6 @@ export async function loadDraftHackerApplication(): Promise<DraftHackerData> {
 			applicationQuestions: [
 				draft.application_questions_1 ?? "",
 				draft.application_questions_2 ?? "",
-				draft.application_questions_3 ?? "",
-				draft.application_questions_4 ?? "",
-				draft.application_questions_5 ?? "",
-				draft.application_questions_6 ?? "",
-				draft.application_questions_7 ?? "",
 			],
 		},
 		section4: {

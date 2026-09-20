@@ -46,7 +46,7 @@ const hackerSchema = z.object({
 	section3: z.object({
 		applicationQuestions: z
 			.array(z.string().trim().min(1, "Please answer every application question").max(5000).transform(stripHtml))
-			.length(7),
+			.length(2),
 	}),
 	section4: z
 		.object({
@@ -130,11 +130,6 @@ export async function submitHackerApplication(data: unknown) {
 				favouriteSong: d.section2.favouriteSong,
 				applicationQuestions1: d.section3.applicationQuestions[0] ?? "",
 				applicationQuestions2: d.section3.applicationQuestions[1] ?? "",
-				applicationQuestions3: d.section3.applicationQuestions[2] ?? "",
-				applicationQuestions4: d.section3.applicationQuestions[3] ?? "",
-				applicationQuestions5: d.section3.applicationQuestions[4] ?? "",
-				applicationQuestions6: d.section3.applicationQuestions[5] ?? "",
-				applicationQuestions7: d.section3.applicationQuestions[6] ?? "",
 				resumePath: d.section4.resumePath,
 				resumeName: d.section4.resumeName,
 				linkedinPortfolio: d.section4.linkedinPortfolio,
