@@ -115,12 +115,18 @@ function AuthContent() {
   }
 
   const nextParam = searchParams.get("next");
+  const authError = searchParams.get("error");
+  const authErrorEmail = searchParams.get("email");
+  const blockAutoRedirect =
+    authError === "not_admin" || authError === "config";
   const nextPath =
     nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
       ? nextParam
       : "/apply";
 
   useEffect(() => {
+    if (blockAutoRedirect) return;
+
     let cancelled = false;
     const supabase = createClient();
 
@@ -131,7 +137,7 @@ function AuthContent() {
     return () => {
       cancelled = true;
     };
-  }, [router, nextPath]);
+  }, [router, nextPath, blockAutoRedirect]);
 
   useEffect(() => {
     const resetLoadingState = () => setIsLoading(false);
@@ -330,6 +336,20 @@ function AuthContent() {
           </div>
 
           <div className="rounded-3xl border border-primary/25 bg-[#171329] p-6 sm:p-8">
+            {authError === "not_admin" ? (
+              <div className="mb-5 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm font-outfit text-amber-100">
+                {authErrorEmail
+                  ? `${authErrorEmail} is signed in but is not marked admin.`
+                  : "This account is not marked admin."}{" "}
+                Ask another admin to set <code className="text-star">admin = true</code> for
+                your user, or sign in with an organizer account.
+              </div>
+            ) : null}
+            {authError === "config" ? (
+              <div className="mb-5 rounded-xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm font-outfit text-rose-100">
+                Supabase env vars are missing. Check deployment configuration.
+              </div>
+            ) : null}
             {mode === "forgot" ? (
               <div className="mb-6 flex items-center justify-between">
                 <button

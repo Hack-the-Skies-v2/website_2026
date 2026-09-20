@@ -32,7 +32,7 @@ export async function getOrganizer(): Promise<Organizer | null> {
 
 export async function requireOrganizer(): Promise<Organizer> {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
-    redirect("/auth?next=/organizers&error=config");
+    redirect("/organizers/sign-in?error=config");
   }
 
   const supabase = await createClient();
@@ -51,7 +51,9 @@ export async function requireOrganizer(): Promise<Organizer> {
     .maybeSingle();
 
   if (!profile?.admin) {
-    redirect(`/auth?next=/organizers&error=not_admin&email=${encodeURIComponent(user.email)}`);
+    redirect(
+      `/organizers/sign-in?error=not_admin&email=${encodeURIComponent(user.email)}`,
+    );
   }
 
   return { id: user.id, email: user.email };
