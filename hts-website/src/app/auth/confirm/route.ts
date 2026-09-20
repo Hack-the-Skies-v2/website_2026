@@ -5,9 +5,31 @@ import { createClient } from "@/lib/supabase/server";
 
 const allowedTypes = ["signup", "email", "recovery"] as const;
 type AllowedOtpType = (typeof allowedTypes)[number];
+const AUTH_NEXT_COOKIE = "auth_next";
 
 function isAllowedOtpType(value: string | null): value is AllowedOtpType {
     return value !== null && allowedTypes.includes(value as AllowedOtpType);
+}
+
+function resolveNext(request: NextRequest): string {
+    const fromQuery = request.nextUrl.searchParams.get("next");
+    const fromCookie = request.cookies.get(AUTH_NEXT_COOKIE)?.value;
+    const candidate = fromQuery || fromCookie || "/apply";
+    return candidate.startsWith("/") && !candidate.startsWith("//")
+        ? candidate
+        : "/apply";
+}
+
+function redirectWithClearedNext(request: NextRequest, pathname: string) {
+    const redirectTo = request.nextUrl.clone();
+    redirectTo.pathname = pathname;
+    redirectTo.search = "";
+    const response = NextResponse.redirect(redirectTo);
+    response.cookies.set(AUTH_NEXT_COOKIE, "", {
+        path: "/",
+        maxAge: 0,
+    });
+    return response;
 }
 
 export async function GET(request: NextRequest) {
@@ -15,23 +37,14 @@ export async function GET(request: NextRequest) {
     const code = searchParams.get("code");
     const token_hash = searchParams.get("token_hash");
     const rawType = searchParams.get("type");
-    const redirectTo = request.nextUrl.clone();
-    redirectTo.searchParams.delete("token_hash");
-    redirectTo.searchParams.delete("type");
-    redirectTo.searchParams.delete("code");
+    const nextPath = resolveNext(request);
 
     if (code) {
         const supabase = await createClient();
         const { error } = await supabase.auth.exchangeCodeForSession(code);
 
         if (!error) {
-            const next = searchParams.get("next");
-            redirectTo.pathname =
-                next && next.startsWith("/") && !next.startsWith("//")
-                    ? next
-                    : "/apply";
-            redirectTo.searchParams.delete("next");
-            return NextResponse.redirect(redirectTo);
+            return redirectWithClearedNext(request, nextPath);
         }
     }
 
@@ -44,20 +57,21 @@ export async function GET(request: NextRequest) {
             token_hash,
         });
         if (!error) {
-            redirectTo.searchParams.delete("next");
-            redirectTo.pathname = type === "recovery"
-                ? "/auth/update-password"
-                : data.session
-                    ? "/apply"
-                    : "/auth";
-            if (!data.session && type !== "recovery") {
-                redirectTo.searchParams.set("confirmed", "1");
+            if (type === "recovery") {
+                return redirectWithClearedNext(request, "/auth/update-password");
             }
-            return NextResponse.redirect(redirectTo);
+            if (data.session) {
+                return redirectWithClearedNext(request, nextPath);
+            }
+            const redirectTo = request.nextUrl.clone();
+            redirectTo.pathname = "/auth";
+            redirectTo.search = "";
+            redirectTo.searchParams.set("confirmed", "1");
+            const response = NextResponse.redirect(redirectTo);
+            response.cookies.set(AUTH_NEXT_COOKIE, "", { path: "/", maxAge: 0 });
+            return response;
         }
     }
 
-    redirectTo.pathname = "/auth/error";
-    redirectTo.search = "";
-    return NextResponse.redirect(redirectTo);
+    return redirectWithClearedNext(request, "/auth/error");
 }

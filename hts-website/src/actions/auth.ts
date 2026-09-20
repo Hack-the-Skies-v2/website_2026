@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { cookies, headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -50,6 +51,8 @@ type OAuthResult =
     | { success: true; url: string }
     | { success: false; error: string };
 
+const AUTH_NEXT_COOKIE = "auth_next";
+
 function validationError(result: {
     success: false;
     error: z.ZodError;
@@ -58,6 +61,23 @@ function validationError(result: {
         success: false,
         error: result.error.issues[0]?.message ?? "Invalid form input",
     };
+}
+
+function safeNextPath(nextPath: string) {
+    return nextPath.startsWith("/") && !nextPath.startsWith("//")
+        ? nextPath
+        : "/apply";
+}
+
+async function requestOrigin() {
+    const headerStore = await headers();
+    const host =
+        headerStore.get("x-forwarded-host")?.split(",")[0]?.trim() ||
+        headerStore.get("host")?.split(",")[0]?.trim();
+    const proto =
+        headerStore.get("x-forwarded-proto")?.split(",")[0]?.trim() || "https";
+    if (host) return `${proto}://${host}`;
+    return process.env.NEXT_PUBLIC_SITE_URL || "https://www.hacktheskies.com";
 }
 
 export async function signInWithEmail(
@@ -79,15 +99,21 @@ export async function signInWithGoogle(
 ): Promise<OAuthResult> {
     try {
         const supabase = await createClient();
-        const safeNext =
-            nextPath.startsWith("/") && !nextPath.startsWith("//")
-                ? nextPath
-                : "/apply";
-        const origin =
-            process.env.NEXT_PUBLIC_SITE_URL || "https://hacktheskies.com";
+        const safeNext = safeNextPath(nextPath);
+        const origin = await requestOrigin();
+        const cookieStore = await cookies();
+        cookieStore.set(AUTH_NEXT_COOKIE, safeNext, {
+            path: "/",
+            maxAge: 60 * 10,
+            httpOnly: true,
+            sameSite: "lax",
+            secure: origin.startsWith("https://"),
+        });
+
         const { data, error } = await supabase.auth.signInWithOAuth({
             provider: "google",
             options: {
+                // Keep callback URL stable for Supabase allow-list; next is in the cookie.
                 redirectTo: `${origin}/auth/confirm?next=${encodeURIComponent(safeNext)}`,
             },
         });
