@@ -101,7 +101,6 @@ function AuthContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [sessionChecked, setSessionChecked] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{
     type: "success" | "error" | "info";
     text: string;
@@ -126,12 +125,7 @@ function AuthContent() {
     const supabase = createClient();
 
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (cancelled) return;
-      if (user) {
-        router.replace(nextPath);
-        return;
-      }
-      setSessionChecked(true);
+      if (!cancelled && user) router.replace(nextPath);
     });
 
     return () => {
@@ -290,16 +284,6 @@ function AuthContent() {
       });
     }
   };
-
-  if (!sessionChecked) {
-    return (
-      <main className="relative flex min-h-screen flex-col bg-[#141123]">
-        <div className="flex flex-1 items-center justify-center px-4">
-          <div className="font-outfit text-lg text-primary/70">Checking session…</div>
-        </div>
-      </main>
-    );
-  }
 
   return (
     <main className="relative flex min-h-screen flex-col overflow-x-clip bg-[#141123]">
