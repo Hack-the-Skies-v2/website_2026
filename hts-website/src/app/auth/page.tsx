@@ -4,7 +4,6 @@ import type { SubmitEvent } from "react";
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import ParallaxLayer from "@/components/ParallaxLayer";
 import Footer from "@/components/Footer";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -102,6 +101,7 @@ function AuthContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [sessionChecked, setSessionChecked] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{
     type: "success" | "error" | "info";
     text: string;
@@ -122,11 +122,21 @@ function AuthContent() {
       : "/apply";
 
   useEffect(() => {
+    let cancelled = false;
     const supabase = createClient();
 
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) router.replace(nextPath);
+      if (cancelled) return;
+      if (user) {
+        router.replace(nextPath);
+        return;
+      }
+      setSessionChecked(true);
     });
+
+    return () => {
+      cancelled = true;
+    };
   }, [router, nextPath]);
 
   useEffect(() => {
@@ -281,12 +291,21 @@ function AuthContent() {
     }
   };
 
+  if (!sessionChecked) {
+    return (
+      <main className="relative flex min-h-screen flex-col bg-[#141123]">
+        <div className="flex flex-1 items-center justify-center px-4">
+          <div className="font-outfit text-lg text-primary/70">Checking session…</div>
+        </div>
+      </main>
+    );
+  }
+
   return (
-    <main className="relative flex flex-col min-h-screen">
-      <Link href="/">
-        <button
-          type="button"
-          className="
+    <main className="relative flex min-h-screen flex-col overflow-x-clip bg-[#141123]">
+      <Link
+        href="/"
+        className="
             fixed top-4 right-4 z-50
             rounded-full
             bg-button
@@ -294,20 +313,16 @@ function AuthContent() {
             font-outfit
             text-base text-white
             shadow-[0_0_20px_rgba(130,104,180,0.45)]
-            transition-all duration-150
+            transition-colors duration-150
             md:px-8 md:py-3 md:text-lg
             hover:bg-[#8268B4]
-            cursor-pointer
-            hover:scale-105
           "
-        >
-          Return to Home
-        </button>
+      >
+        Return to Home
       </Link>
 
-      <div className="pointer-events-none absolute inset-0 [overflow-x:clip]" aria-hidden="true">
-        <ParallaxLayer
-          speed={0.25}
+      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+        <div
           className="
             absolute
             right-[-1rem]
@@ -320,39 +335,35 @@ function AuthContent() {
             lg:right-12
             lg:top-16
             lg:w-80
-            constellation-glow
             select-none
-            opacity-80
-            planet-float
+            opacity-70
           "
         >
           <img src="/Constellation.png" alt="" className="h-full w-full" />
-        </ParallaxLayer>
+        </div>
 
-        <ParallaxLayer
-          speed={0.15}
+        <div
           className="
             absolute
             top-[-80px]
             left-1/2
             w-[850px]
             -translate-x-1/2
-            opacity-25
+            opacity-20
             blur-[1px]
-            cloud-drift
             select-none
           "
         >
           <img src="/Cloud1.webp" alt="" className="h-full w-full" />
-        </ParallaxLayer>
+        </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center px-4 py-16 sm:px-6 lg:px-8 z-10">
+      <div className="z-10 flex flex-1 items-center justify-center px-4 py-16 sm:px-6 lg:px-8">
         <div className="w-full max-w-md">
-          <div className="text-center mb-8">
+          <div className="mb-8 text-center">
             <Link
               href="/"
-              className="inline-flex items-center justify-center gap-3 group transition-transform hover:scale-[1.02]"
+              className="inline-flex items-center justify-center gap-3"
             >
               <img
                 src="/favicon.ico"
@@ -969,9 +980,7 @@ export default function Auth() {
     <Suspense
       fallback={
         <main className="flex min-h-screen items-center justify-center bg-[#141123]">
-          <div className="font-outfit text-2xl text-primary animate-pulse">
-            Loading Hack the Skies Auth...
-          </div>
+          <div className="font-outfit text-lg text-primary/70">Loading…</div>
         </main>
       }
     >
