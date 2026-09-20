@@ -12,6 +12,7 @@ export type DraftHackerData = {
 		pronounsOther: string;
 		grade: string;
 		email: string;
+		teammates: string[];
 		phoneNumber: string;
 		dateOfBirth: string;
 		tShirtSize: string;
@@ -21,30 +22,30 @@ export type DraftHackerData = {
 		dietaryOther: string;
 		accessibilityAccommodations: string[];
 		accessibilityOther: string;
+		heardAboutHTS: string;
+		heardAboutHTSOther: string;
 	};
 	section2: {
 		schoolName: string;
 		graduationYear: string;
 		schoolCity: string;
+		codingExperience: string;
+		goals: string[];
+		goalsOther: string;
+		wantToSee: string;
+		favouriteSong: string;
 	};
 	section3: {
-		parentName: string;
-		parentEmail: string;
-		parentPhone: string;
-		emergencyContactName: string;
-		emergencyContactPhone: string;
-		emergencyContactRelationship: string;
-		emergencyContactRelationshipOther: string;
-	};
-	section4: {
-		hackathonExperience: string;
-		heardAboutHTS: string;
-		heardAboutHTSOther: string;
-	};
-	section5: {
 		applicationQuestions: string[];
 	};
-	section6: {
+	section4: {
+		resumePath: string;
+		resumeName: string;
+		linkedinPortfolio: string;
+		githubDevpost: string;
+		otherComments: string;
+	};
+	section5: {
 		eligibilityConfirm: boolean;
 		informationConfirm: boolean;
 		parentalConfirm: boolean;
@@ -78,6 +79,7 @@ export async function loadDraftHackerApplication(): Promise<DraftHackerData> {
 			pronounsOther: draft.pronouns_other ?? "",
 			grade: draft.grade ?? "",
 			email: draft.email ?? "",
+			teammates: draft.teammates ?? [],
 			phoneNumber: draft.phone_number ?? "",
 			dateOfBirth: draft.date_of_birth ?? "",
 			tShirtSize: draft.t_shirt_size ?? "",
@@ -87,36 +89,38 @@ export async function loadDraftHackerApplication(): Promise<DraftHackerData> {
 			dietaryOther: draft.dietary_other ?? "",
 			accessibilityAccommodations: draft.accessibility_accommodations ?? [],
 			accessibilityOther: draft.accessibility_other ?? "",
+			heardAboutHTS: draft.heard_about_hts ?? "",
+			heardAboutHTSOther: draft.heard_about_hts_other ?? "",
 		},
 		section2: {
 			schoolName: draft.school_name ?? "",
 			graduationYear: draft.graduation_year ?? "",
 			schoolCity: draft.school_city ?? "",
+			codingExperience: draft.coding_experience ?? "",
+			goals: draft.goals ?? [],
+			goalsOther: draft.goals_other ?? "",
+			wantToSee: draft.want_to_see ?? "",
+			favouriteSong: draft.favourite_song ?? "",
 		},
 		section3: {
-			parentName: draft.parent_name ?? "",
-			parentEmail: draft.parent_email ?? "",
-			parentPhone: draft.parent_phone ?? "",
-			emergencyContactName: draft.emergency_contact_name ?? "",
-			emergencyContactPhone: draft.emergency_contact_phone ?? "",
-			emergencyContactRelationship: draft.emergency_contact_relationship ?? "",
-			emergencyContactRelationshipOther: draft.emergency_contact_relationship_other ?? "",
-		},
-		section4: {
-			hackathonExperience: draft.hackathon_experience ?? "",
-			heardAboutHTS: draft.heard_about_hts ?? "",
-			heardAboutHTSOther: draft.heard_about_hts_other ?? "",
-		},
-		section5: {
 			applicationQuestions: [
 				draft.application_questions_1 ?? "",
 				draft.application_questions_2 ?? "",
 				draft.application_questions_3 ?? "",
 				draft.application_questions_4 ?? "",
 				draft.application_questions_5 ?? "",
+				draft.application_questions_6 ?? "",
+				draft.application_questions_7 ?? "",
 			],
 		},
-		section6: {
+		section4: {
+			resumePath: draft.resume_path ?? "",
+			resumeName: draft.resume_name ?? "",
+			linkedinPortfolio: draft.linkedin_portfolio ?? "",
+			githubDevpost: draft.github_devpost ?? "",
+			otherComments: draft.other_comments ?? "",
+		},
+		section5: {
 			eligibilityConfirm: draft.eligibility_confirm ?? false,
 			informationConfirm: draft.information_confirm ?? false,
 			parentalConfirm: draft.parental_confirm ?? false,

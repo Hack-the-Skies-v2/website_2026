@@ -7,6 +7,7 @@ import { submitRoleApplication, type RoleApplicationState } from "@/actions/subm
 import { submitHackerApplication } from "@/actions/submitHackerApplication";
 import { saveDraftHackerApplication } from "@/actions/saveDraftHackerApplication";
 import { loadDraftHackerApplication } from "@/actions/loadDraftHackerApplication";
+import { uploadHackerResume, removeHackerResume } from "@/actions/uploadHackerResume";
 
 const STORAGE_KEY = "hts_application_draft";
 const AUTO_SAVE_DELAY = 1500;
@@ -27,6 +28,53 @@ const CANADIAN_PROVINCES = [
     "Yukon",
 ];
 
+const TOTAL_SECTIONS = 5;
+const MAX_RESUME_MB = 4;
+const MAX_RESUME_BYTES = MAX_RESUME_MB * 1024 * 1024;
+
+const HEARD_ABOUT_OPTIONS = [
+    "Word of Mouth (from an organizer)",
+    "Word of Mouth (from someone else)",
+    "Instagram",
+    "LinkedIn",
+    "Your school",
+    "Other",
+];
+
+const CODING_EXPERIENCE_OPTIONS = [
+    { value: "Complete Beginner", label: "Complete Beginner – I’m just getting started!" },
+    { value: "Novice", label: "Novice – I’ve done a few classes and followed some tutorials" },
+    { value: "Intermediate", label: "Intermediate – I’ve made a few projects on my own" },
+    {
+        value: "Advanced",
+        label: "Advanced – I’ve built larger/complex projects and am comfortable working independently",
+    },
+];
+
+const GOAL_OPTIONS = [
+    "Learn how to code",
+    "Build my first project",
+    "Improve my coding skills",
+    "Learn about AI",
+    "Meet other students interested in tech",
+    "Find teammates",
+    "Learn about careers in technology",
+    "Work with mentors",
+    "Win prizes",
+    "Try something completely new",
+    "Other",
+];
+
+const APPLICATION_QUESTIONS = [
+    "What are you hoping to learn or build at Hack the Skies?",
+    "Describe a project or idea you are proud of.",
+    "How do you approach solving a difficult problem?",
+    "What role do you usually play on a team?",
+    "What would you contribute to the Hack the Skies community?",
+    "If you could use technology to solve any problem in your school or community, what would it be and why? (We’re not judging feasibility, we’re looking for creativity, motivation, and what you care about!)",
+    "Tell us about a time you had to learn something completely new by yourself. How did you approach it, and what did you take away from the experience?",
+];
+
 interface ApplicationData {
     section1: {
         role: "Hacker" | "Judge" | "Mentor" | "";
@@ -37,6 +85,7 @@ interface ApplicationData {
         pronounsOther: string;
         grade: string;
         email: string;
+        teammates: string[];
         phoneNumber: string;
         dateOfBirth: string;
         tShirtSize: string;
@@ -46,30 +95,30 @@ interface ApplicationData {
         dietaryOther: string;
         accessibilityAccommodations: string[];
         accessibilityOther: string;
+        heardAboutHTS: string;
+        heardAboutHTSOther: string;
     };
     section2: {
         schoolName: string;
         graduationYear: string;
         schoolCity: string;
+        codingExperience: string;
+        goals: string[];
+        goalsOther: string;
+        wantToSee: string;
+        favouriteSong: string;
     };
     section3: {
-        parentName: string;
-        parentEmail: string;
-        parentPhone: string;
-        emergencyContactName: string;
-        emergencyContactPhone: string;
-        emergencyContactRelationship: string;
-        emergencyContactRelationshipOther: string;
-    };
-    section4: {
-        hackathonExperience: string;
-        heardAboutHTS: string;
-        heardAboutHTSOther: string;
-    };
-    section5: {
         applicationQuestions: string[];
     };
-    section6: {
+    section4: {
+        resumePath: string;
+        resumeName: string;
+        linkedinPortfolio: string;
+        githubDevpost: string;
+        otherComments: string;
+    };
+    section5: {
         eligibilityConfirm: boolean;
         informationConfirm: boolean;
         parentalConfirm: boolean;
@@ -87,6 +136,7 @@ const EMPTY_DATA: ApplicationData = {
         pronounsOther: "",
         grade: "",
         email: "",
+        teammates: [],
         phoneNumber: "",
         dateOfBirth: "",
         tShirtSize: "",
@@ -96,30 +146,30 @@ const EMPTY_DATA: ApplicationData = {
         dietaryOther: "",
         accessibilityAccommodations: [],
         accessibilityOther: "",
+        heardAboutHTS: "",
+        heardAboutHTSOther: "",
     },
     section2: {
         schoolName: "",
         graduationYear: "",
         schoolCity: "",
+        codingExperience: "",
+        goals: [],
+        goalsOther: "",
+        wantToSee: "",
+        favouriteSong: "",
     },
     section3: {
-        parentName: "",
-        parentEmail: "",
-        parentPhone: "",
-        emergencyContactName: "",
-        emergencyContactPhone: "",
-        emergencyContactRelationship: "",
-        emergencyContactRelationshipOther: "",
+        applicationQuestions: APPLICATION_QUESTIONS.map(() => ""),
     },
     section4: {
-        hackathonExperience: "",
-        heardAboutHTS: "",
-        heardAboutHTSOther: "",
+        resumePath: "",
+        resumeName: "",
+        linkedinPortfolio: "",
+        githubDevpost: "",
+        otherComments: "",
     },
     section5: {
-        applicationQuestions: ["", "", "", "", ""],
-    },
-    section6: {
         eligibilityConfirm: false,
         informationConfirm: false,
         parentalConfirm: false,
@@ -135,28 +185,56 @@ function saveApplicationDraft(data: ApplicationData) {
     }
 }
 
+// Drafts saved by earlier versions of the form kept the confirmations in section4
+// or section6 and the application questions in section5, so those shapes are read here too.
+type StoredDraft = {
+    section1?: Partial<ApplicationData["section1"]>;
+    section2?: Partial<ApplicationData["section2"]>;
+    section3?: { applicationQuestions?: string[] };
+    section4?: Partial<ApplicationData["section4"] & ApplicationData["section5"]>;
+    section5?: Partial<ApplicationData["section5"]> & {
+        applicationQuestions?: string[];
+        applicationQuestion?: string;
+    };
+    section6?: Partial<ApplicationData["section5"]>;
+};
+
 function loadApplicationDraft(): ApplicationData {
     try {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
-            const parsed = JSON.parse(saved) as Partial<ApplicationData> & {
-                section1?: Partial<ApplicationData["section1"]>;
-                section5?: Partial<ApplicationData["section5"]> & {
-                    applicationQuestion?: string;
-                };
-            };
-            const previousAnswer = parsed.section5?.applicationQuestion ?? "";
+            const parsed = JSON.parse(saved) as StoredDraft;
+            const currentAnswers = parsed.section3?.applicationQuestions;
+            const previousAnswers = parsed.section5?.applicationQuestions;
+            const storedAnswers = Array.isArray(currentAnswers)
+                ? currentAnswers
+                : Array.isArray(previousAnswers)
+                    ? previousAnswers
+                    : [parsed.section5?.applicationQuestion ?? ""];
+            const confirmationSources = [parsed.section5, parsed.section6, parsed.section4];
+            const confirmed = (key: keyof ApplicationData["section5"]) =>
+                confirmationSources.find((source) => typeof source?.[key] === "boolean")?.[key] ?? false;
 
             return {
-                ...EMPTY_DATA,
-                ...parsed,
                 section1: { ...EMPTY_DATA.section1, ...parsed.section1 },
+                section2: { ...EMPTY_DATA.section2, ...parsed.section2 },
+                section3: {
+                    applicationQuestions: APPLICATION_QUESTIONS.map(
+                        (_, index) => storedAnswers[index] ?? "",
+                    ),
+                },
+                section4: {
+                    resumePath: parsed.section4?.resumePath ?? "",
+                    resumeName: parsed.section4?.resumeName ?? "",
+                    linkedinPortfolio: parsed.section4?.linkedinPortfolio ?? "",
+                    githubDevpost: parsed.section4?.githubDevpost ?? "",
+                    otherComments: parsed.section4?.otherComments ?? "",
+                },
                 section5: {
-                    ...EMPTY_DATA.section5,
-                    ...parsed.section5,
-                    applicationQuestions: Array.isArray(parsed.section5?.applicationQuestions)
-                        ? parsed.section5.applicationQuestions
-                        : [previousAnswer, "", "", "", ""],
+                    eligibilityConfirm: confirmed("eligibilityConfirm"),
+                    informationConfirm: confirmed("informationConfirm"),
+                    parentalConfirm: confirmed("parentalConfirm"),
+                    termsAgreed: confirmed("termsAgreed"),
                 },
             };
         }
@@ -182,6 +260,8 @@ export default function ApplicationForm() {
     const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "">("")
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState("");
+    const [isUploadingResume, setIsUploadingResume] = useState(false);
+    const dataRef = useRef<ApplicationData>(EMPTY_DATA);
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const dbLoadedRef = useRef(false);
 
@@ -237,6 +317,23 @@ export default function ApplicationForm() {
         [data, debouncedSave]
     );
 
+    useEffect(() => {
+        dataRef.current = data;
+    }, [data]);
+
+    const applyResume = useCallback(
+        (resumePath: string, resumeName: string) => {
+            const current = dataRef.current;
+            const newData = {
+                ...current,
+                section4: { ...current.section4, resumePath, resumeName },
+            };
+            setData(newData);
+            debouncedSave(newData);
+        },
+        [debouncedSave]
+    );
+
     const validateEmail = (email: string) => {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     };
@@ -258,7 +355,13 @@ export default function ApplicationForm() {
             newErrors.pronounsOther = "Please specify your pronouns.";
         if (!data.section1.grade.length)
             newErrors.grade = "Please select your grade.";
-        if (!data.section1.email.trim())newErrors.email = "Please enter your email address.";
+        if (!data.section1.email.trim())
+            newErrors.email = "Please enter your email address.";
+        else if (!validateEmail(data.section1.email))
+            newErrors.email = "Please enter a valid email address.";
+        if (!data.section1.teammates.some((name) => name.trim()))
+            newErrors.teammates =
+                "Please list your teammates, or write \"None\" if you're applying on your own.";
         if (!data.section1.phoneNumber.trim())
             newErrors.phoneNumber = "Please enter your phone number.";
         else if (!validatePhone(data.section1.phoneNumber))
@@ -281,6 +384,13 @@ export default function ApplicationForm() {
         )
             newErrors.accessibilityOther =
                 "Please describe your accessibility needs.";
+        if (!data.section1.heardAboutHTS)
+            newErrors.heardAboutHTS = "Please select how you heard about us.";
+        if (
+            data.section1.heardAboutHTS === "Other" &&
+            !data.section1.heardAboutHTSOther.trim()
+        )
+            newErrors.heardAboutHTSOther = "Please specify.";
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -294,6 +404,19 @@ export default function ApplicationForm() {
             newErrors.graduationYear = "Please select your graduation year.";
         if (!data.section2.schoolCity.trim())
             newErrors.schoolCity = "Please enter your school city.";
+        if (!data.section2.codingExperience)
+            newErrors.codingExperience = "Please select your experience level.";
+        if (!data.section2.goals.length)
+            newErrors.goals = "Please select at least one option.";
+        if (
+            data.section2.goals.includes("Other") &&
+            !data.section2.goalsOther.trim()
+        )
+            newErrors.goalsOther = "Please specify.";
+        if (!data.section2.wantToSee.trim())
+            newErrors.wantToSee = "Please tell us what you'd like to see.";
+        if (!data.section2.favouriteSong.trim())
+            newErrors.favouriteSong = "Please enter your favourite song.";
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -301,59 +424,7 @@ export default function ApplicationForm() {
 
     const validateSection3 = () => {
         const newErrors: Record<string, string> = {};
-        if (!data.section3.parentName.trim())
-            newErrors.parentName = "Please enter your parent/guardian's name.";
-        if (!data.section3.parentEmail.trim())
-            newErrors.parentEmail =
-                "Please enter your parent/guardian's email address.";
-        else if (!validateEmail(data.section3.parentEmail))
-            newErrors.parentEmail = "Please enter a valid email address.";
-        if (!data.section3.parentPhone.trim())
-            newErrors.parentPhone =
-                "Please enter your parent/guardian's phone number.";
-        else if (!validatePhone(data.section3.parentPhone))
-            newErrors.parentPhone = "Please enter a valid phone number.";
-        if (!data.section3.emergencyContactName.trim())
-            newErrors.emergencyContactName =
-                "Please enter your emergency contact's name.";
-        if (!data.section3.emergencyContactPhone.trim())
-            newErrors.emergencyContactPhone =
-                "Please enter your emergency contact's phone number.";
-        else if (!validatePhone(data.section3.emergencyContactPhone))
-            newErrors.emergencyContactPhone = "Please enter a valid phone number.";
-        if (!data.section3.emergencyContactRelationship)
-            newErrors.emergencyContactRelationship =
-                "Please select the relationship.";
-        if (
-            data.section3.emergencyContactRelationship === "Other" &&
-            !data.section3.emergencyContactRelationshipOther.trim()
-        )
-            newErrors.emergencyContactRelationshipOther =
-                "Please specify the relationship.";
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-
-    const validateSection4 = () => {
-        const newErrors: Record<string, string> = {};
-        if (!data.section4.hackathonExperience)
-            newErrors.hackathonExperience = "Please select an option.";
-        if (!data.section4.heardAboutHTS)
-            newErrors.heardAboutHTS = "Please select how you heard about us.";
-        if (
-            data.section4.heardAboutHTS === "Other" &&
-            !data.section4.heardAboutHTSOther.trim()
-        )
-            newErrors.heardAboutHTSOther = "Please specify.";
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-
-    const validateSection5 = () => {
-        const newErrors: Record<string, string> = {};
-        data.section5.applicationQuestions.forEach((answer, index) => {
+        data.section3.applicationQuestions.forEach((answer, index) => {
             const wordCount = answer.trim().split(/\s+/).filter((word) => word.length > 0).length;
             if (!answer.trim()) newErrors[`applicationQuestion${index}`] = "Please answer this question.";
             if (wordCount > 300) newErrors[`applicationQuestion${index}`] = "Your answer exceeds 300 words.";
@@ -363,16 +434,30 @@ export default function ApplicationForm() {
         return Object.keys(newErrors).length === 0;
     };
 
-    const validateSection6 = () => {
+    const validateSection4 = () => {
         const newErrors: Record<string, string> = {};
-        if (!data.section6.eligibilityConfirm)
+        if (
+            !data.section4.resumePath &&
+            !data.section4.linkedinPortfolio.trim() &&
+            !data.section4.githubDevpost.trim()
+        )
+            newErrors.wrapUp =
+                "Please upload a resume or share a LinkedIn / portfolio or GitHub / Devpost link.";
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const validateSection5 = () => {
+        const newErrors: Record<string, string> = {};
+        if (!data.section5.eligibilityConfirm)
             newErrors.eligibilityConfirm = "Please confirm eligibility.";
-        if (!data.section6.informationConfirm)
+        if (!data.section5.informationConfirm)
             newErrors.informationConfirm =
                 "Please confirm information accuracy.";
-        if (!data.section6.parentalConfirm)
+        if (!data.section5.parentalConfirm)
             newErrors.parentalConfirm = "Please confirm understanding.";
-        if (!data.section6.termsAgreed)
+        if (!data.section5.termsAgreed)
             newErrors.termsAgreed = "Please agree to the Terms of Service and Privacy Policy.";
 
         setErrors(newErrors);
@@ -394,15 +479,12 @@ export default function ApplicationForm() {
             case 4:
                 isValid = validateSection4();
                 break;
-            case 5:
-                isValid = validateSection5();
-                break;
             default:
                 isValid = true;
         }
 
         if (isValid) {
-            if (currentSection < 6) {
+            if (currentSection < TOTAL_SECTIONS) {
                 setCurrentSection(currentSection + 1);
                 window.scrollTo({ top: 0, behavior: "smooth" });
             }
@@ -438,7 +520,7 @@ export default function ApplicationForm() {
     };
 
     const handleSubmit = async () => {
-        if (validateSection6()) {
+        if (validateSection5()) {
             setIsSubmitting(true);
             setSubmitError("");
             const res = await submitHackerApplication(data);
@@ -458,13 +540,8 @@ export default function ApplicationForm() {
     };
 
     const getProgress = () => {
-        return Math.round((currentSection / 6) * 100);
+        return Math.round((currentSection / TOTAL_SECTIONS) * 100);
     };
-
-    const wordCount = data.section5.applicationQuestions.reduce(
-        (total, answer) => total + answer.trim().split(/\s+/).filter((word) => word.length > 0).length,
-        0,
-    );
 
     if (currentSection === 0) {
         return (
@@ -535,18 +612,13 @@ export default function ApplicationForm() {
                             data={data}
                             updateData={updateData}
                             errors={errors}
+                            isUploading={isUploadingResume}
+                            onUploadingChange={setIsUploadingResume}
+                            onResumeChange={applyResume}
                         />
                     )}
                     {currentSection === 5 && (
                         <Section5
-                            data={data}
-                            updateData={updateData}
-                            errors={errors}
-                            wordCount={wordCount}
-                        />
-                    )}
-                    {currentSection === 6 && (
-                        <Section6
                             data={data}
                             updateData={updateData}
                             errors={errors}
@@ -575,9 +647,10 @@ export default function ApplicationForm() {
                             </button>
                         )}
 
-                        {currentSection < 6 ? (
+                        {currentSection < TOTAL_SECTIONS ? (
                             <button
                                 onClick={handleContinue}
+                                disabled={isUploadingResume}
                                 className="
 									rounded-full
 									bg-button
@@ -589,6 +662,8 @@ export default function ApplicationForm() {
 									hover:bg-[#8268B4]
 									hover:scale-105
                                     cursor-pointer
+                                    disabled:cursor-not-allowed
+                                    disabled:opacity-50
 									ml-auto
 								"
                             >
@@ -643,12 +718,12 @@ export default function ApplicationForm() {
 
 function RocketProgressIndicator({ progress }: { progress: number }) {
     const rocketPosition = Math.min(Math.max((progress / 100) * 430, 0), 430);
-    const completedSteps = Math.max(1, Math.round(progress / 100 * 6));
+    const completedSteps = Math.max(1, Math.round(progress / 100 * TOTAL_SECTIONS));
 
     return (
         <div className="fixed right-8 top-1/2 flex -translate-y-1/2 flex-col items-center">
             <div className="mb-4 font-outfit text-base font-semibold text-primary">
-                {completedSteps} of 6 sections
+                {completedSteps} of {TOTAL_SECTIONS} sections
             </div>
             <div className="relative h-[500px] w-16 rounded-full border border-primary/30 bg-[#221c38]/80 p-1 shadow-[0_0_25px_rgba(193,185,242,0.12)]">
                 <div
@@ -1159,6 +1234,19 @@ function Section1({
                 required
             />
 
+            <FormInput
+                label="Are you applying with a team?"
+                value={section1.teammates.join(",")}
+                onChange={(e) =>
+                    updateData({
+                        section1: { ...section1, teammates: e.target.value.split(",") },
+                    })
+                }
+                helperText='If so, enter their full names, separated by commas. Otherwise, write "None".'
+                error={errors.teammates}
+                required
+            />
+
             <div className="grid md:grid-cols-2 gap-6">
                 <FormInput
                     label="Phone number"
@@ -1334,6 +1422,50 @@ function Section1({
                     </p>
                 )}
             </div>
+
+            <div>
+                <label className="block text-primary font-outfit text-base mb-3">
+                    How did you hear about Hack the Skies?{" "}
+                    <span className="text-red-400">*</span>
+                </label>
+                <div className="space-y-2">
+                    {HEARD_ABOUT_OPTIONS.map((option) => (
+                        <label key={option} className="flex items-center gap-2">
+                            <input
+                                type="radio"
+                                name="heardAboutHTS"
+                                value={option}
+                                checked={section1.heardAboutHTS === option}
+                                onChange={(e) =>
+                                    updateData({
+                                        section1: { ...section1, heardAboutHTS: e.target.value },
+                                    })
+                                }
+                                className="w-4 h-4 cursor-pointer accent-primary"
+                            />
+                            <span className="text-primary font-outfit">{option}</span>
+                        </label>
+                    ))}
+                </div>
+                {section1.heardAboutHTS === "Other" && (
+                    <FormInput
+                        label="Please specify"
+                        value={section1.heardAboutHTSOther}
+                        onChange={(e) =>
+                            updateData({
+                                section1: { ...section1, heardAboutHTSOther: e.target.value },
+                            })
+                        }
+                        error={errors.heardAboutHTSOther}
+                        className="mt-3"
+                    />
+                )}
+                {errors.heardAboutHTS && (
+                    <p className="text-red-400 font-outfit text-sm mt-1">
+                        {errors.heardAboutHTS}
+                    </p>
+                )}
+            </div>
         </div>
     );
 }
@@ -1350,10 +1482,20 @@ function Section2({
     const section2 = data.section2;
     const graduationYears = ["2026", "2027", "2028", "2029", "2030", "2031"];
 
+    const handleGoalChange = (option: string) => {
+        const newGoals = section2.goals.includes(option)
+            ? section2.goals.filter((g) => g !== option)
+            : [...section2.goals, option];
+
+        updateData({
+            section2: { ...section2, goals: newGoals },
+        });
+    };
+
     return (
         <div className="space-y-6">
             <h2 className="text-4xl font-outfit font-semibold text-primary mb-8">
-                School Information
+                Getting to Know You
             </h2>
 
             <FormInput
@@ -1364,6 +1506,7 @@ function Section2({
                         section2: { ...section2, schoolName: e.target.value },
                     })
                 }
+                helperText="Please provide the full name with no abbreviations."
                 error={errors.schoolName}
                 required
             />
@@ -1394,6 +1537,104 @@ function Section2({
                 error={errors.schoolCity}
                 required
             />
+
+            <p className="font-outfit text-sm text-primary/60">
+                Your answers to the questions below will have zero impact on your application.
+            </p>
+
+            <div>
+                <label className="block text-primary font-outfit text-base mb-3">
+                    How would you describe your experience with coding and technology?{" "}
+                    <span className="text-red-400">*</span>
+                </label>
+                <div className="space-y-2">
+                    {CODING_EXPERIENCE_OPTIONS.map((option) => (
+                        <label key={option.value} className="flex items-center gap-2">
+                            <input
+                                type="radio"
+                                name="codingExperience"
+                                value={option.value}
+                                checked={section2.codingExperience === option.value}
+                                onChange={(e) =>
+                                    updateData({
+                                        section2: { ...section2, codingExperience: e.target.value },
+                                    })
+                                }
+                                className="w-4 h-4 cursor-pointer accent-primary"
+                            />
+                            <span className="text-primary font-outfit">{option.label}</span>
+                        </label>
+                    ))}
+                </div>
+                {errors.codingExperience && (
+                    <p className="text-red-400 font-outfit text-sm mt-1">
+                        {errors.codingExperience}
+                    </p>
+                )}
+            </div>
+
+            <div>
+                <label className="block text-primary font-outfit text-base mb-3">
+                    What are you hoping to get out of Hack the Skies?{" "}
+                    <span className="text-red-400">*</span>
+                </label>
+                <div className="space-y-2">
+                    {GOAL_OPTIONS.map((option) => (
+                        <label key={option} className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                checked={section2.goals.includes(option)}
+                                onChange={() => handleGoalChange(option)}
+                                className="w-4 h-4 cursor-pointer accent-primary"
+                            />
+                            <span className="text-primary font-outfit">{option}</span>
+                        </label>
+                    ))}
+                </div>
+                {section2.goals.includes("Other") && (
+                    <FormInput
+                        label="Please specify"
+                        value={section2.goalsOther}
+                        onChange={(e) =>
+                            updateData({
+                                section2: { ...section2, goalsOther: e.target.value },
+                            })
+                        }
+                        error={errors.goalsOther}
+                        className="mt-3"
+                    />
+                )}
+                {errors.goals && (
+                    <p className="text-red-400 font-outfit text-sm mt-1">
+                        {errors.goals}
+                    </p>
+                )}
+            </div>
+
+            <FormTextArea
+                label="Is there anything you want to see happen at Hack the Skies?"
+                value={section2.wantToSee}
+                onChange={(e) =>
+                    updateData({
+                        section2: { ...section2, wantToSee: e.target.value },
+                    })
+                }
+                helperText="1–2 sentences."
+                error={errors.wantToSee}
+                required
+            />
+
+            <FormInput
+                label="What is your favourite song?"
+                value={section2.favouriteSong}
+                onChange={(e) =>
+                    updateData({
+                        section2: { ...section2, favouriteSong: e.target.value },
+                    })
+                }
+                error={errors.favouriteSong}
+                required
+            />
         </div>
     );
 }
@@ -1412,263 +1653,27 @@ function Section3({
     return (
         <div className="space-y-6">
             <h2 className="text-4xl font-outfit font-semibold text-primary mb-8">
-                Parent / Guardian Information
+                Long(er) Answer
             </h2>
 
-            <FormInput
-                label="Parent / guardian name"
-                value={section3.parentName}
-                onChange={(e) =>
-                    updateData({
-                        section3: { ...section3, parentName: e.target.value },
-                    })
-                }
-                error={errors.parentName}
-                required
-            />
-
-            <div className="grid md:grid-cols-2 gap-6">
-                <FormInput
-                    label="Parent / guardian email"
-                    type="email"
-                    value={section3.parentEmail}
-                    onChange={(e) =>
-                        updateData({
-                            section3: { ...section3, parentEmail: e.target.value },
-                        })
-                    }
-                    error={errors.parentEmail}
-                    required
-                />
-                <FormInput
-                    label="Parent / guardian phone number"
-                    type="tel"
-                    value={section3.parentPhone}
-                    onChange={(e) =>
-                        updateData({
-                            section3: { ...section3, parentPhone: e.target.value },
-                        })
-                    }
-                    error={errors.parentPhone}
-                    required
-                />
-            </div>
-
-            <FormInput
-                label="Emergency contact name"
-                value={section3.emergencyContactName}
-                onChange={(e) =>
-                    updateData({
-                        section3: { ...section3, emergencyContactName: e.target.value },
-                    })
-                }
-                error={errors.emergencyContactName}
-                required
-            />
-
-            <FormInput
-                label="Emergency contact phone number"
-                type="tel"
-                value={section3.emergencyContactPhone}
-                onChange={(e) =>
-                    updateData({
-                        section3: { ...section3, emergencyContactPhone: e.target.value },
-                    })
-                }
-                error={errors.emergencyContactPhone}
-                required
-            />
-
-            <div>
-                <FormSelect
-                    label="Relationship to participant"
-                    value={section3.emergencyContactRelationship}
-                    onChange={(e) =>
-                        updateData({
-                            section3: { ...section3, emergencyContactRelationship: e.target.value },
-                        })
-                    }
-                    options={["", "Parent", "Guardian", "Sibling", "Relative", "Family friend", "Other"]}
-                    error={errors.emergencyContactRelationship}
-                    required
-                />
-                {section3.emergencyContactRelationship === "Other" && (
-                    <FormInput
-                        label="Please specify"
-                        value={section3.emergencyContactRelationshipOther}
-                        onChange={(e) =>
-                            updateData({
-                                section3: { ...section3, emergencyContactRelationshipOther: e.target.value },
-                            })
-                        }
-                        error={errors.emergencyContactRelationshipOther}
-                        className="mt-3"
-                    />
-                )}
-            </div>
-        </div>
-    );
-}
-
-function Section4({
-    data,
-    updateData,
-    errors,
-}: {
-    data: ApplicationData;
-    updateData: (updates: Partial<ApplicationData>) => void;
-    errors: Record<string, string>;
-}) {
-    const section4 = data.section4;
-
-    return (
-        <div className="space-y-6">
-            <h2 className="text-4xl font-outfit font-semibold text-primary mb-8">
-                Hackathon Information
-            </h2>
-
-            <div>
-                <label className="block text-primary font-outfit text-base mb-3">
-                    How many hackathons have you attended before?{" "}
-                    <span className="text-red-400">*</span>
-                </label>
-                <select
-                    value={section4.hackathonExperience}
-                    onChange={(e) =>
-                        updateData({
-                            section4: { ...section4, hackathonExperience: e.target.value },
-                        })
-                    }
-                    className="
-						w-full
-						p-3
-						border border-primary
-						rounded-lg
-						bg-button
-						text-primary
-						font-outfit
-						focus:outline-none
-						focus:ring-2
-						focus:ring-primary
-						cursor-pointer
-					"
-                >
-                    <option value="">Select an option</option>
-                    <option value="0">0</option>
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5+">5+</option>
-                    <option value="unsure">I&apos;m not sure</option>
-                </select>
-                {errors.hackathonExperience && (
-                    <p className="text-red-400 font-outfit text-sm mt-1">
-                        {errors.hackathonExperience}
-                    </p>
-                )}
-            </div>
-
-            <div>
-                <label className="block text-primary font-outfit text-base mb-3">
-                    How did you hear about Hack the Skies?{" "}
-                    <span className="text-red-400">*</span>
-                </label>
-                <div className="space-y-2">
-                    {[
-                        "School",
-                        "Friend",
-                        "Social media",
-                        "Hackathon community",
-                        "Teacher",
-                        "Club / organization",
-                        "Search engine",
-                        "Other",
-                    ].map((option) => (
-                        <label key={option} className="flex items-center gap-2">
-                            <input
-                                type="radio"
-                                name="heardAboutHTS"
-                                value={option}
-                                checked={section4.heardAboutHTS === option}
-                                onChange={(e) =>
-                                    updateData({
-                                        section4: { ...section4, heardAboutHTS: e.target.value },
-                                    })
-                                }
-                                className="w-4 h-4 cursor-pointer accent-primary"
-                            />
-                            <span className="text-primary font-outfit">{option}</span>
-                        </label>
-                    ))}
-                </div>
-                {section4.heardAboutHTS === "Other" && (
-                    <FormInput
-                        label="Please specify"
-                        value={section4.heardAboutHTSOther}
-                        onChange={(e) =>
-                            updateData({
-                                section4: { ...section4, heardAboutHTSOther: e.target.value },
-                            })
-                        }
-                        error={errors.heardAboutHTSOther}
-                        className="mt-3"
-                    />
-                )}
-                {errors.heardAboutHTS && (
-                    <p className="text-red-400 font-outfit text-sm mt-1">
-                        {errors.heardAboutHTS}
-                    </p>
-                )}
-            </div>
-        </div>
-    );
-}
-
-function Section5({
-    data,
-    updateData,
-    errors,
-    wordCount,
-}: {
-    data: ApplicationData;
-    updateData: (updates: Partial<ApplicationData>) => void;
-    errors: Record<string, string>;
-    wordCount: number;
-}) {
-    const section5 = data.section5;
-    const questions = [
-        "What are you hoping to learn or build at Hack the Skies?",
-        "Describe a project or idea you are proud of.",
-        "How do you approach solving a difficult problem?",
-        "What role do you usually play on a team?",
-        "What would you contribute to the Hack the Skies community?",
-    ];
-
-    return (
-        <div className="space-y-6">
-            <h2 className="text-4xl font-outfit font-semibold text-primary mb-8">
-                Application Questions
-            </h2>
-
-            {questions.map((question, index) => (
+            {APPLICATION_QUESTIONS.map((question, index) => (
                 <div key={question}>
                     <label className="mb-3 block font-outfit text-base text-primary">
                         {index + 1}. {question} <span className="text-red-400">*</span>
                     </label>
                     <textarea
-                        value={section5.applicationQuestions[index]}
+                        value={section3.applicationQuestions[index]}
                         onChange={(event) => {
-                            const answers = [...section5.applicationQuestions];
+                            const answers = [...section3.applicationQuestions];
                             answers[index] = event.target.value;
-                            updateData({ section5: { applicationQuestions: answers } });
+                            updateData({ section3: { applicationQuestions: answers } });
                         }}
                         placeholder="Type your answer here"
                         className="min-h-[150px] w-full resize-none rounded-lg border border-primary bg-button p-4 font-outfit text-primary placeholder:text-primary/60 focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                     <div className="mt-2 flex items-center justify-between">
                         <p className="font-outfit text-sm text-primary">
-                            {section5.applicationQuestions[index].trim().split(/\s+/).filter((word) => word.length > 0).length} / 300 words
+                            {section3.applicationQuestions[index].trim().split(/\s+/).filter((word) => word.length > 0).length} / 300 words
                         </p>
                         {errors[`applicationQuestion${index}`] && (
                             <p className="font-outfit text-sm text-red-400">{errors[`applicationQuestion${index}`]}</p>
@@ -1680,7 +1685,183 @@ function Section5({
     );
 }
 
-function Section6({
+function Section4({
+    data,
+    updateData,
+    errors,
+    isUploading,
+    onUploadingChange,
+    onResumeChange,
+}: {
+    data: ApplicationData;
+    updateData: (updates: Partial<ApplicationData>) => void;
+    errors: Record<string, string>;
+    isUploading: boolean;
+    onUploadingChange: (uploading: boolean) => void;
+    onResumeChange: (path: string, name: string) => void;
+}) {
+    const section4 = data.section4;
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [uploadError, setUploadError] = useState("");
+
+    const handleResumeSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        event.target.value = "";
+        if (!file) return;
+
+        if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+            setUploadError("Please upload a PDF file.");
+            return;
+        }
+        if (file.size > MAX_RESUME_BYTES) {
+            setUploadError(`Your resume must be ${MAX_RESUME_MB} MB or smaller.`);
+            return;
+        }
+
+        setUploadError("");
+        onUploadingChange(true);
+        try {
+            const formData = new FormData();
+            formData.append("resume", file);
+            const res = await uploadHackerResume(formData);
+            if (res.success) {
+                onResumeChange(res.path, res.name);
+            } else {
+                setUploadError(res.error);
+            }
+        } catch {
+            setUploadError("Unable to upload your resume right now. Please try again.");
+        } finally {
+            onUploadingChange(false);
+        }
+    };
+
+    const handleRemoveResume = async () => {
+        setUploadError("");
+        onUploadingChange(true);
+        try {
+            const res = await removeHackerResume();
+            if (res.success) {
+                onResumeChange("", "");
+            } else {
+                setUploadError(res.error);
+            }
+        } catch {
+            setUploadError("Unable to remove your resume right now. Please try again.");
+        } finally {
+            onUploadingChange(false);
+        }
+    };
+
+    const secondaryButton =
+        "text-primary font-outfit text-sm border border-primary px-4 py-2 rounded-lg hover:bg-primary/10 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50";
+
+    return (
+        <div className="space-y-6">
+            <h2 className="text-4xl font-outfit font-semibold text-primary mb-8">
+                Wrapping Up!
+            </h2>
+
+            <div>
+                <p className="font-outfit text-base text-primary">
+                    You must do at least one of the following: upload a resume, or share a
+                    LinkedIn / portfolio or GitHub / Devpost link.
+                </p>
+                {errors.wrapUp && (
+                    <p className="text-red-400 font-outfit text-sm mt-2">{errors.wrapUp}</p>
+                )}
+            </div>
+
+            <div>
+                <label className="block text-primary font-outfit text-base mb-1">
+                    Resume (PDF)
+                </label>
+                <p className="text-primary/60 font-outfit text-sm mb-3">
+                    PDF only, up to {MAX_RESUME_MB} MB.
+                </p>
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    onChange={handleResumeSelected}
+                    className="sr-only"
+                />
+                {section4.resumePath ? (
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 border border-primary/30 rounded-lg p-4">
+                        <span className="text-primary font-outfit text-base break-all">
+                            {section4.resumeName || "Resume.pdf"}
+                        </span>
+                        <div className="flex gap-3 sm:ml-auto">
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isUploading}
+                                className={secondaryButton}
+                            >
+                                {isUploading ? "Working..." : "Replace"}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleRemoveResume}
+                                disabled={isUploading}
+                                className={secondaryButton}
+                            >
+                                Remove
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                        className={secondaryButton}
+                    >
+                        {isUploading ? "Uploading..." : "Upload PDF"}
+                    </button>
+                )}
+                {uploadError && (
+                    <p role="alert" className="text-red-400 font-outfit text-sm mt-2">
+                        {uploadError}
+                    </p>
+                )}
+            </div>
+
+            <FormInput
+                label="LinkedIn / Portfolio Site"
+                value={section4.linkedinPortfolio}
+                onChange={(e) =>
+                    updateData({
+                        section4: { ...section4, linkedinPortfolio: e.target.value },
+                    })
+                }
+            />
+
+            <FormInput
+                label="GitHub / Devpost"
+                value={section4.githubDevpost}
+                onChange={(e) =>
+                    updateData({
+                        section4: { ...section4, githubDevpost: e.target.value },
+                    })
+                }
+            />
+
+            <FormTextArea
+                label="Any other questions, comments, or concerns?"
+                value={section4.otherComments}
+                onChange={(e) =>
+                    updateData({
+                        section4: { ...section4, otherComments: e.target.value },
+                    })
+                }
+                rows={4}
+            />
+        </div>
+    );
+}
+
+function Section5({
     data,
     updateData,
     errors,
@@ -1691,7 +1872,11 @@ function Section6({
     errors: Record<string, string>;
     onEditSection: (section: number) => void;
 }) {
-    const section6 = data.section6;
+    const section5 = data.section5;
+    const teammates = data.section1.teammates
+        .map((name) => name.trim())
+        .filter(Boolean)
+        .join(", ");
 
     return (
         <div className="space-y-8">
@@ -1722,6 +1907,7 @@ function Section6({
                             data.section1.grade || "None",
                     },
                     { label: "Email (non-school)", value: data.section1.email },
+                    { label: "Team", value: teammates },
                     { label: "Phone number", value: data.section1.phoneNumber },
                     { label: "Date of birth", value: data.section1.dateOfBirth },
                     { label: "T-shirt size", value: data.section1.tShirtSize },
@@ -1752,6 +1938,13 @@ function Section6({
                             },
                         ]
                         : []),
+                    {
+                        label: "How you heard about us",
+                        value:
+                            data.section1.heardAboutHTS === "Other"
+                                ? data.section1.heardAboutHTSOther
+                                : data.section1.heardAboutHTS,
+                    },
                 ]}
             />
 
@@ -1766,70 +1959,60 @@ function Section6({
             />
 
             <ReviewSection
-                title="Parent / Guardian Information"
-                onEdit={() => onEditSection(3)}
-                content={[
-                    { label: "Parent / guardian name", value: data.section3.parentName },
-                    { label: "Parent / guardian email", value: data.section3.parentEmail },
-                    { label: "Parent / guardian phone", value: data.section3.parentPhone },
-                    {
-                        label: "Emergency contact name",
-                        value: data.section3.emergencyContactName,
-                    },
-                    {
-                        label: "Emergency contact phone",
-                        value: data.section3.emergencyContactPhone,
-                    },
-                    {
-                        label: "Emergency contact relationship",
-                        value:
-                            data.section3.emergencyContactRelationship ===
-                                "Other"
-                                ? data.section3.emergencyContactRelationshipOther
-                                : data.section3.emergencyContactRelationship,
-                    },
-                ]}
-            />
-
-            <ReviewSection
-                title="Hackathon Information"
-                onEdit={() => onEditSection(4)}
+                title="Getting to Know You"
+                onEdit={() => onEditSection(2)}
                 content={[
                     {
-                        label: "Hackathons attended",
-                        value: data.section4.hackathonExperience,
+                        label: "Experience with coding and technology",
+                        value: data.section2.codingExperience,
                     },
                     {
-                        label: "How you heard about us",
-                        value:
-                            data.section4.heardAboutHTS === "Other"
-                                ? data.section4.heardAboutHTSOther
-                                : data.section4.heardAboutHTS,
+                        label: "Hoping to get out of Hack the Skies",
+                        value: data.section2.goals.join(", "),
                     },
+                    ...(data.section2.goals.includes("Other")
+                        ? [{ label: "Other goals", value: data.section2.goalsOther }]
+                        : []),
+                    {
+                        label: "Want to see at Hack the Skies",
+                        value: data.section2.wantToSee,
+                    },
+                    { label: "Favourite song", value: data.section2.favouriteSong },
                 ]}
             />
 
             <ReviewQuestions
-                onEdit={() => onEditSection(5)}
-                questions={[
-                    "What are you hoping to learn or build at Hack the Skies?",
-                    "Describe a project or idea you are proud of.",
-                    "How do you approach solving a difficult problem?",
-                    "What role do you usually play on a team?",
-                    "What would you contribute to the Hack the Skies community?",
+                onEdit={() => onEditSection(3)}
+                questions={APPLICATION_QUESTIONS}
+                answers={data.section3.applicationQuestions}
+            />
+
+            <ReviewSection
+                title="Wrapping Up"
+                onEdit={() => onEditSection(4)}
+                content={[
+                    {
+                        label: "Resume",
+                        value: data.section4.resumePath ? data.section4.resumeName || "Resume.pdf" : "",
+                    },
+                    { label: "LinkedIn / Portfolio", value: data.section4.linkedinPortfolio },
+                    { label: "GitHub / Devpost", value: data.section4.githubDevpost },
+                    {
+                        label: "Other questions, comments, or concerns",
+                        value: data.section4.otherComments,
+                    },
                 ]}
-                answers={data.section5.applicationQuestions}
             />
 
             <div className="space-y-3 bg-white/5 border border-primary/30 rounded-lg p-6">
                 <label className="flex items-start gap-3">
                     <input
                         type="checkbox"
-                        checked={section6.termsAgreed}
+                        checked={section5.termsAgreed}
                         onChange={(e) =>
                             updateData({
-                                section6: {
-                                    ...section6,
+                                section5: {
+                                    ...section5,
                                     termsAgreed: e.target.checked,
                                 },
                             })
@@ -1867,11 +2050,11 @@ function Section6({
                 <label className="flex items-start gap-3">
                     <input
                         type="checkbox"
-                        checked={section6.eligibilityConfirm}
+                        checked={section5.eligibilityConfirm}
                         onChange={(e) =>
                             updateData({
-                                section6: {
-                                    ...section6,
+                                section5: {
+                                    ...section5,
                                     eligibilityConfirm: e.target.checked,
                                 },
                             })
@@ -1892,11 +2075,11 @@ function Section6({
                 <label className="flex items-start gap-3">
                     <input
                         type="checkbox"
-                        checked={section6.informationConfirm}
+                        checked={section5.informationConfirm}
                         onChange={(e) =>
                             updateData({
-                                section6: {
-                                    ...section6,
+                                section5: {
+                                    ...section5,
                                     informationConfirm: e.target.checked,
                                 },
                             })
@@ -1916,11 +2099,11 @@ function Section6({
                 <label className="flex items-start gap-3">
                     <input
                         type="checkbox"
-                        checked={section6.parentalConfirm}
+                        checked={section5.parentalConfirm}
                         onChange={(e) =>
                             updateData({
-                                section6: {
-                                    ...section6,
+                                section5: {
+                                    ...section5,
                                     parentalConfirm: e.target.checked,
                                 },
                             })
@@ -2183,6 +2366,64 @@ function FormSelect({
                     </option>
                 ))}
             </select>
+            {error && (
+                <p className="text-red-400 font-outfit text-sm mt-1">{error}</p>
+            )}
+        </div>
+    );
+}
+
+function FormTextArea({
+    name,
+    label,
+    value,
+    onChange,
+    error,
+    helperText,
+    required = false,
+    rows = 3,
+    className = "",
+}: {
+    name?: string;
+    label: string;
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+    error?: string;
+    helperText?: string;
+    required?: boolean;
+    rows?: number;
+    className?: string;
+}) {
+    return (
+        <div className={className}>
+            <label className="block text-primary font-outfit text-base mb-1">
+                {label} {required && <span className="text-red-400">*</span>}
+            </label>
+            {helperText && (
+                <p className="text-primary/60 font-outfit text-sm mb-2">
+                    {helperText}
+                </p>
+            )}
+            <textarea
+                name={name}
+                value={value}
+                onChange={onChange}
+                required={required}
+                rows={rows}
+                className={`
+					w-full
+					p-3
+					border
+					${error ? "border-red-400" : "border-primary"}
+					rounded-lg
+					bg-button
+					text-primary
+					font-outfit
+					focus:outline-none
+					focus:ring-2
+					${error ? "focus:ring-red-400" : "focus:ring-primary"}
+				`}
+            />
             {error && (
                 <p className="text-red-400 font-outfit text-sm mt-1">{error}</p>
             )}

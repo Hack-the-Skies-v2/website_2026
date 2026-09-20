@@ -14,10 +14,14 @@ const hackerSchema = z.object({
 		lastName: z.string().trim().min(1, "Last name is required").max(200).transform(stripHtml),
 		preferredName: z.string().trim().max(200).transform(stripHtml),
 		pronouns: z.array(z.string().trim().max(200).transform(stripHtml)),
-		pronounsOther: z.string().trim().max(500).transform(stripHtml).default(""),	
+		pronounsOther: z.string().trim().max(500).transform(stripHtml).default(""),
 		grade: z.string().trim().max(200).transform(stripHtml),
 		phoneNumber: z.string().trim().min(1, "Phone number is required").max(50).transform(stripHtml),
 		email: z.string().trim().min(1, "Email is required").max(320).email("Invalid email").transform(stripHtml),
+		teammates: z
+			.array(z.string().trim().max(200).transform(stripHtml))
+			.transform((names) => names.filter((name) => name.length > 0))
+			.pipe(z.array(z.string()).min(1, "Please list your teammates, or write \"None\" if you're applying on your own")),
 		dateOfBirth: z.string().trim().min(1, "Date of birth is required"),
 		tShirtSize: z.string().trim().min(1, "T-shirt size is required").max(20).transform(stripHtml),
 		city: z.string().trim().min(1, "City is required").max(200).transform(stripHtml),
@@ -26,30 +30,36 @@ const hackerSchema = z.object({
 		dietaryOther: z.string().trim().max(500).transform(stripHtml).default(""),
 		accessibilityAccommodations: z.array(z.string().trim().max(200).transform(stripHtml)),
 		accessibilityOther: z.string().trim().max(500).transform(stripHtml).default(""),
+		heardAboutHTS: z.string().trim().min(1, "This field is required").max(200).transform(stripHtml),
+		heardAboutHTSOther: z.string().trim().max(500).transform(stripHtml).default(""),
 	}),
 	section2: z.object({
 		schoolName: z.string().trim().min(1, "School name is required").max(200).transform(stripHtml),
 		graduationYear: z.string().trim().min(1, "Graduation year is required").max(10).transform(stripHtml),
 		schoolCity: z.string().trim().min(1, "School city is required").max(200).transform(stripHtml),
+		codingExperience: z.string().trim().min(1, "Coding experience is required").max(200).transform(stripHtml),
+		goals: z.array(z.string().trim().max(200).transform(stripHtml)).min(1, "Please select at least one goal"),
+		goalsOther: z.string().trim().max(500).transform(stripHtml).default(""),
+		wantToSee: z.string().trim().min(1, "This field is required").max(1000).transform(stripHtml),
+		favouriteSong: z.string().trim().min(1, "Favourite song is required").max(200).transform(stripHtml),
 	}),
 	section3: z.object({
-		parentName: z.string().trim().min(1, "Parent name is required").max(200).transform(stripHtml),
-		parentEmail: z.string().trim().min(1, "Parent email is required").max(320).email("Invalid email").transform(stripHtml),
-		parentPhone: z.string().trim().min(1, "Parent phone is required").max(50).transform(stripHtml),
-		emergencyContactName: z.string().trim().min(1, "Emergency contact name is required").max(200).transform(stripHtml),
-		emergencyContactPhone: z.string().trim().min(1, "Emergency contact phone is required").max(50).transform(stripHtml),
-		emergencyContactRelationship: z.string().trim().min(1, "Relationship is required").max(200).transform(stripHtml),
-		emergencyContactRelationshipOther: z.string().trim().max(500).transform(stripHtml).default(""),
+		applicationQuestions: z
+			.array(z.string().trim().min(1, "Please answer every application question").max(5000).transform(stripHtml))
+			.length(7),
 	}),
-	section4: z.object({
-		hackathonExperience: z.string().trim().min(1, "Hackathon experience is required").max(200).transform(stripHtml),
-		heardAboutHTS: z.string().trim().min(1, "This field is required").max(200).transform(stripHtml),
-		heardAboutHTSOther: z.string().trim().max(500).transform(stripHtml).default(""),
-	}),
+	section4: z
+		.object({
+			resumePath: z.string().trim().max(300).transform(stripHtml).default(""),
+			resumeName: z.string().trim().max(200).transform(stripHtml).default(""),
+			linkedinPortfolio: z.string().trim().max(500).transform(stripHtml).default(""),
+			githubDevpost: z.string().trim().max(500).transform(stripHtml).default(""),
+			otherComments: z.string().trim().max(2000).transform(stripHtml).default(""),
+		})
+		.refine((s) => s.resumePath || s.linkedinPortfolio || s.githubDevpost, {
+			message: "Please upload a resume or share a LinkedIn / portfolio or GitHub / Devpost link",
+		}),
 	section5: z.object({
-		applicationQuestions: z.array(z.string().trim().max(5000).transform(stripHtml)).length(5),
-	}),
-	section6: z.object({
 		eligibilityConfirm: z.literal(true, { message: "You must confirm eligibility" }),
 		informationConfirm: z.literal(true, { message: "You must confirm information accuracy" }),
 		parentalConfirm: z.literal(true, { message: "You must confirm parental understanding" }),
@@ -84,6 +94,10 @@ export async function submitHackerApplication(data: unknown) {
 
 	const d = result.data;
 
+	if (d.section4.resumePath && !d.section4.resumePath.startsWith(`${user.id}/`)) {
+		return { success: false, error: "Please upload your resume again." };
+	}
+
 	try {
 		const { error } = await supabase.rpc("submit_hacker_application", {
 			p_data: {
@@ -94,6 +108,7 @@ export async function submitHackerApplication(data: unknown) {
 				pronounsOther: d.section1.pronounsOther,
 				grade: d.section1.grade,
 				email: d.section1.email,
+				teammates: d.section1.teammates,
 				phoneNumber: d.section1.phoneNumber,
 				dateOfBirth: d.section1.dateOfBirth,
 				tShirtSize: d.section1.tShirtSize,
@@ -103,28 +118,32 @@ export async function submitHackerApplication(data: unknown) {
 				dietaryOther: d.section1.dietaryOther,
 				accessibilityAccommodations: d.section1.accessibilityAccommodations,
 				accessibilityOther: d.section1.accessibilityOther,
+				heardAboutHTS: d.section1.heardAboutHTS,
+				heardAboutHTSOther: d.section1.heardAboutHTSOther,
 				schoolName: d.section2.schoolName,
 				graduationYear: d.section2.graduationYear,
 				schoolCity: d.section2.schoolCity,
-				parentName: d.section3.parentName,
-				parentEmail: d.section3.parentEmail,
-				parentPhone: d.section3.parentPhone,
-				emergencyContactName: d.section3.emergencyContactName,
-				emergencyContactPhone: d.section3.emergencyContactPhone,
-				emergencyContactRelationship: d.section3.emergencyContactRelationship,
-				emergencyContactRelationshipOther: d.section3.emergencyContactRelationshipOther,
-				hackathonExperience: d.section4.hackathonExperience,
-				heardAboutHTS: d.section4.heardAboutHTS,
-				heardAboutHTSOther: d.section4.heardAboutHTSOther,
-				applicationQuestions1: d.section5.applicationQuestions[0] ?? "",
-				applicationQuestions2: d.section5.applicationQuestions[1] ?? "",
-				applicationQuestions3: d.section5.applicationQuestions[2] ?? "",
-				applicationQuestions4: d.section5.applicationQuestions[3] ?? "",
-				applicationQuestions5: d.section5.applicationQuestions[4] ?? "",
-				eligibilityConfirm: d.section6.eligibilityConfirm,
-				informationConfirm: d.section6.informationConfirm,
-				parentalConfirm: d.section6.parentalConfirm,
-				termsAgreed: d.section6.termsAgreed,
+				codingExperience: d.section2.codingExperience,
+				goals: d.section2.goals,
+				goalsOther: d.section2.goalsOther,
+				wantToSee: d.section2.wantToSee,
+				favouriteSong: d.section2.favouriteSong,
+				applicationQuestions1: d.section3.applicationQuestions[0] ?? "",
+				applicationQuestions2: d.section3.applicationQuestions[1] ?? "",
+				applicationQuestions3: d.section3.applicationQuestions[2] ?? "",
+				applicationQuestions4: d.section3.applicationQuestions[3] ?? "",
+				applicationQuestions5: d.section3.applicationQuestions[4] ?? "",
+				applicationQuestions6: d.section3.applicationQuestions[5] ?? "",
+				applicationQuestions7: d.section3.applicationQuestions[6] ?? "",
+				resumePath: d.section4.resumePath,
+				resumeName: d.section4.resumeName,
+				linkedinPortfolio: d.section4.linkedinPortfolio,
+				githubDevpost: d.section4.githubDevpost,
+				otherComments: d.section4.otherComments,
+				eligibilityConfirm: d.section5.eligibilityConfirm,
+				informationConfirm: d.section5.informationConfirm,
+				parentalConfirm: d.section5.parentalConfirm,
+				termsAgreed: d.section5.termsAgreed,
 			},
 		});
 
