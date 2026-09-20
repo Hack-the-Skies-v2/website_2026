@@ -286,7 +286,7 @@ function AuthContent() {
   };
 
   return (
-    <main className="relative flex min-h-screen flex-col overflow-x-clip bg-[#141123]">
+    <main className="relative flex min-h-screen flex-col overflow-x-hidden bg-[#141123]">
       <Link
         href="/"
         className="
@@ -296,7 +296,6 @@ function AuthContent() {
             px-6 py-2
             font-outfit
             text-base text-white
-            shadow-[0_0_20px_rgba(130,104,180,0.45)]
             transition-colors duration-150
             md:px-8 md:py-3 md:text-lg
             hover:bg-[#8268B4]
@@ -305,45 +304,15 @@ function AuthContent() {
         Return to Home
       </Link>
 
-      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-        <div
-          className="
-            absolute
-            right-[-1rem]
-            top-10
-            w-44
-            rotate-12
-            md:right-6
-            md:top-14
-            md:w-72
-            lg:right-12
-            lg:top-16
-            lg:w-80
-            select-none
-            opacity-70
-          "
-        >
-          <img src="/Constellation.png" alt="" className="h-full w-full" />
-        </div>
-
-        <div
-          className="
-            absolute
-            top-[-80px]
-            left-1/2
-            w-[850px]
-            -translate-x-1/2
-            opacity-20
-            blur-[1px]
-            select-none
-          "
-        >
-          <img src="/Cloud1.webp" alt="" className="h-full w-full" />
-        </div>
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+        <img
+          src="/Constellation.png"
+          alt=""
+          className="absolute right-0 top-10 w-40 opacity-50 md:right-8 md:w-56"
+        />
       </div>
 
-      <div className="z-10 flex flex-1 items-center justify-center px-4 py-16 sm:px-6 lg:px-8">
-        <div className="w-full max-w-md">
+      <div className="relative z-10 mx-auto w-full max-w-md flex-1 px-4 pb-16 pt-24 sm:px-6">
           <div className="mb-8 text-center">
             <Link
               href="/"
@@ -352,15 +321,15 @@ function AuthContent() {
               <img
                 src="/favicon.ico"
                 alt="Hack the Skies Logo"
-                className="w-10 h-10 object-contain drop-shadow-[0_0_15px_rgba(193,185,242,0.5)]"
+                className="h-10 w-10 object-contain"
               />
-              <span className="font-outfit text-3xl font-bold text-primary drop-shadow-[0_0_12px_rgba(193,185,242,0.6)]">
+              <span className="font-outfit text-3xl font-bold text-primary">
                 Hack the Skies
               </span>
             </Link>
           </div>
 
-          <div className="rounded-3xl bg-[#171329]/90 border border-primary/25 p-6 sm:p-8 shadow-[0_0_50px_rgba(107,87,155,0.25)] backdrop-blur-xl">
+          <div className="rounded-3xl border border-primary/25 bg-[#171329] p-6 sm:p-8">
             {mode === "forgot" ? (
               <div className="mb-6 flex items-center justify-between">
                 <button
@@ -390,7 +359,7 @@ function AuthContent() {
               </div>
             ) : (
               <div className="mb-6">
-                <h1 className="font-outfit text-2xl font-bold text-primary drop-shadow-[0_0_10px_rgba(193,185,242,0.4)]">
+                <h1 className="font-outfit text-2xl font-bold text-primary ">
                   {mode === "login" ? "Sign In" : "Sign Up"}
                 </h1>
               </div>
@@ -412,7 +381,7 @@ function AuthContent() {
                     text-primary hover:text-white
                     font-outfit text-sm sm:text-base font-medium
                     shadow-sm
-                    transition-all duration-150
+                    transition-colors duration-150
                     cursor-pointer
                   "
                 >
@@ -475,7 +444,7 @@ function AuthContent() {
                       focus:outline-none
                       focus:ring-2
                       ${errors.email ? "focus:ring-red-400" : "focus:ring-primary"}
-                      transition-all
+                      transition-colors
                     `}
                   />
                   {errors.email && (
@@ -528,7 +497,7 @@ function AuthContent() {
                             ? "focus:ring-red-400"
                             : "focus:ring-primary"
                         }
-                        transition-all
+                        transition-colors
                       `}
                     />
                     <button
@@ -562,11 +531,8 @@ function AuthContent() {
                     py-3.5 px-6
                     font-outfit font-semibold
                     text-base text-white
-                    shadow-[0_0_20px_rgba(130,104,180,0.45)]
-                    transition-all duration-150
+                    transition-colors duration-150
                     hover:bg-[#8268B4]
-                    hover:scale-[1.02]
-                    active:scale-[0.98]
                     cursor-pointer
                     disabled:opacity-60 disabled:cursor-not-allowed
                   "
@@ -607,7 +573,7 @@ function AuthContent() {
                       focus:outline-none
                       focus:ring-2
                       ${errors.fullName ? "focus:ring-red-400" : "focus:ring-primary"}
-                      transition-all
+                      transition-colors
                     `}
                   />
                   {errors.fullName && (
@@ -647,7 +613,7 @@ function AuthContent() {
                       focus:outline-none
                       focus:ring-2
                       ${errors.email ? "focus:ring-red-400" : "focus:ring-primary"}
-                      transition-all
+                      transition-colors
                     `}
                   />
                   {errors.email && (
@@ -691,7 +657,7 @@ function AuthContent() {
                             ? "focus:ring-red-400"
                             : "focus:ring-primary"
                         }
-                        transition-all
+                        transition-colors
                       `}
                     />
                     <button
@@ -752,7 +718,7 @@ function AuthContent() {
                             ? "focus:ring-red-400"
                             : "focus:ring-primary"
                         }
-                        transition-all
+                        transition-colors
                       `}
                     />
                     <button
@@ -827,11 +793,8 @@ function AuthContent() {
                     py-3.5 px-6
                     font-outfit font-semibold
                     text-base text-white
-                    shadow-[0_0_20px_rgba(130,104,180,0.45)]
-                    transition-all duration-150
+                    transition-colors duration-150
                     hover:bg-[#8268B4]
-                    hover:scale-[1.02]
-                    active:scale-[0.98]
                     cursor-pointer
                     disabled:opacity-60 disabled:cursor-not-allowed
                   "
@@ -877,7 +840,7 @@ function AuthContent() {
                       focus:outline-none
                       focus:ring-2
                       ${errors.email ? "focus:ring-red-400" : "focus:ring-primary"}
-                      transition-all
+                      transition-colors
                     `}
                   />
                   {errors.email && (
@@ -898,11 +861,8 @@ function AuthContent() {
                     py-3.5 px-6
                     font-outfit font-semibold
                     text-base text-white
-                    shadow-[0_0_20px_rgba(130,104,180,0.45)]
-                    transition-all duration-150
+                    transition-colors duration-150
                     hover:bg-[#8268B4]
-                    hover:scale-[1.02]
-                    active:scale-[0.98]
                     cursor-pointer
                     disabled:opacity-60 disabled:cursor-not-allowed
                   "
@@ -951,7 +911,6 @@ function AuthContent() {
               )}
             </div>
           </div>
-        </div>
       </div>
 
       <Footer />
