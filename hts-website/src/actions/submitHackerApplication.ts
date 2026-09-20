@@ -30,8 +30,6 @@ const hackerSchema = z.object({
 	}),
 	section2: z.object({
 		schoolName: z.string().trim().min(1, "School name is required").max(200).transform(stripHtml),
-		graduationYear: z.string().trim().min(1, "Graduation year is required").max(10).transform(stripHtml),
-		schoolCity: z.string().trim().min(1, "School city is required").max(200).transform(stripHtml),
 		codingExperience: z.string().trim().min(1, "Coding experience is required").max(200).transform(stripHtml),
 		goals: z.array(z.string().trim().max(200).transform(stripHtml)).min(1, "Please select at least one goal"),
 		goalsOther: z.string().trim().max(500).transform(stripHtml).default(""),
@@ -111,10 +109,6 @@ export async function submitHackerApplication(data: unknown) {
 				heardAboutHTS: d.section1.heardAboutHTS,
 				heardAboutHTSOther: d.section1.heardAboutHTSOther,
 				schoolName: d.section2.schoolName,
-				graduationYear: d.section2.graduationYear,
-				schoolCity: d.section2.schoolCity,
-				// Keep legacy city column filled from school city when contact city is no longer collected.
-				city: d.section2.schoolCity,
 				codingExperience: d.section2.codingExperience,
 				goals: d.section2.goals,
 				goalsOther: d.section2.goalsOther,

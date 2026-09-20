@@ -77,8 +77,6 @@ interface ApplicationData {
     };
     section2: {
         schoolName: string;
-        graduationYear: string;
-        schoolCity: string;
         codingExperience: string;
         goals: string[];
         goalsOther: string;
@@ -123,8 +121,6 @@ const EMPTY_DATA: ApplicationData = {
     },
     section2: {
         schoolName: "",
-        graduationYear: "",
-        schoolCity: "",
         codingExperience: "",
         goals: [],
         goalsOther: "",
@@ -362,10 +358,6 @@ export default function ApplicationForm() {
         const newErrors: Record<string, string> = {};
         if (!data.section2.schoolName.trim())
             newErrors.schoolName = "Please enter your school name.";
-        if (!data.section2.graduationYear)
-            newErrors.graduationYear = "Please select your graduation year.";
-        if (!data.section2.schoolCity.trim())
-            newErrors.schoolCity = "Please enter your school city.";
         if (!data.section2.codingExperience)
             newErrors.codingExperience = "Please select your experience level.";
         if (!data.section2.goals.length)
@@ -1374,7 +1366,6 @@ function Section2({
     errors: Record<string, string>;
 }) {
     const section2 = data.section2;
-    const graduationYears = ["2026", "2027", "2028", "2029", "2030", "2031"];
 
     const handleGoalChange = (option: string) => {
         const newGoals = section2.goals.includes(option)
@@ -1402,33 +1393,6 @@ function Section2({
                 }
                 helperText="Please provide the full name with no abbreviations."
                 error={errors.schoolName}
-                required
-            />
-
-            <div className="grid md:grid-cols-2 gap-6">
-                <FormSelect
-                    label="Expected graduation year"
-                    value={section2.graduationYear}
-                    onChange={(e) =>
-                        updateData({
-                            section2: { ...section2, graduationYear: e.target.value },
-                        })
-                    }
-                    options={["", ...graduationYears]}
-                    error={errors.graduationYear}
-                    required
-                />
-            </div>
-
-            <FormInput
-                label="School city"
-                value={section2.schoolCity}
-                onChange={(e) =>
-                    updateData({
-                        section2: { ...section2, schoolCity: e.target.value },
-                    })
-                }
-                error={errors.schoolCity}
                 required
             />
 
@@ -1842,8 +1806,6 @@ function Section5({
                 onEdit={() => onEditSection(2)}
                 content={[
                     { label: "School name", value: data.section2.schoolName },
-                    { label: "Expected graduation year", value: data.section2.graduationYear },
-                    { label: "School city", value: data.section2.schoolCity },
                 ]}
             />
 

@@ -76,8 +76,7 @@ export default function Privacy() {
                                 address
                             </li>
                             <li>
-                                <strong>School Information:</strong> School name, grade level, expected graduation
-                                year, and school city
+                                <strong>School Information:</strong> School name and grade level
                             </li>
                             <li>
                                 <strong>Preferences and Accommodations:</strong> Dietary restrictions and accessibility

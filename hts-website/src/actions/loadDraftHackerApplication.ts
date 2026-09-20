@@ -22,8 +22,6 @@ export type DraftHackerData = {
 	};
 	section2: {
 		schoolName: string;
-		graduationYear: string;
-		schoolCity: string;
 		codingExperience: string;
 		goals: string[];
 		goalsOther: string;
@@ -84,8 +82,6 @@ export async function loadDraftHackerApplication(): Promise<DraftHackerData> {
 		},
 		section2: {
 			schoolName: draft.school_name ?? "",
-			graduationYear: draft.graduation_year ?? "",
-			schoolCity: draft.school_city ?? "",
 			codingExperience: draft.coding_experience ?? "",
 			goals: draft.goals ?? [],
 			goalsOther: draft.goals_other ?? "",
