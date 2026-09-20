@@ -397,7 +397,7 @@ export default function ApplicationForm() {
     };
 
     const handleRoleContinue = () => {
-        if (!data.section1.role || data.section1.role === "Hacker") {
+        if (!data.section1.role) {
             setErrors({ role: "Please select your role." });
             return;
         }
@@ -558,7 +558,7 @@ export default function ApplicationForm() {
                                     cursor-pointer
 								"
                             >
-                                Back
+                                Return to Role Selection
                             </button>
                         )}
 
@@ -732,7 +732,7 @@ function RoleSelection({
                 <button
                     type="button"
                     onClick={onContinue}
-                    disabled={!role || role === "Hacker"}
+                    disabled={!role}
                     className="cursor-pointer mt-8 ml-auto block rounded-full bg-button px-7 py-3 font-outfit font-semibold text-white shadow-[0_0_20px_rgba(130,104,180,0.45)] transition hover:scale-105 hover:bg-[#8268B4] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
                 >
                     Continue
