@@ -8,6 +8,10 @@ export type DraftHackerData = {
 		firstName: string;
 		lastName: string;
 		preferredName: string;
+		pronouns: string[];
+		pronounsOther: string;
+		grade: string;
+		email: string;
 		phoneNumber: string;
 		dateOfBirth: string;
 		tShirtSize: string;
@@ -20,7 +24,6 @@ export type DraftHackerData = {
 	};
 	section2: {
 		schoolName: string;
-		grade: string;
 		graduationYear: string;
 		schoolCity: string;
 	};
@@ -71,6 +74,10 @@ export async function loadDraftHackerApplication(): Promise<DraftHackerData> {
 			firstName: draft.first_name ?? "",
 			lastName: draft.last_name ?? "",
 			preferredName: draft.preferred_name ?? "",
+			pronouns: draft.pronouns ?? [],
+			pronounsOther: draft.pronouns_other ?? "",
+			grade: draft.grade ?? "",
+			email: draft.email ?? "",
 			phoneNumber: draft.phone_number ?? "",
 			dateOfBirth: draft.date_of_birth ?? "",
 			tShirtSize: draft.t_shirt_size ?? "",
@@ -83,7 +90,6 @@ export async function loadDraftHackerApplication(): Promise<DraftHackerData> {
 		},
 		section2: {
 			schoolName: draft.school_name ?? "",
-			grade: draft.grade ?? "",
 			graduationYear: draft.graduation_year ?? "",
 			schoolCity: draft.school_city ?? "",
 		},

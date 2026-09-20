@@ -33,6 +33,10 @@ interface ApplicationData {
         firstName: string;
         lastName: string;
         preferredName: string;
+        pronouns: string[];
+        pronounsOther: string;
+        grade: string;
+        email: string;
         phoneNumber: string;
         dateOfBirth: string;
         tShirtSize: string;
@@ -45,7 +49,6 @@ interface ApplicationData {
     };
     section2: {
         schoolName: string;
-        grade: string;
         graduationYear: string;
         schoolCity: string;
     };
@@ -80,6 +83,10 @@ const EMPTY_DATA: ApplicationData = {
         firstName: "",
         lastName: "",
         preferredName: "",
+        pronouns: [],
+        pronounsOther: "",
+        grade: "",
+        email: "",
         phoneNumber: "",
         dateOfBirth: "",
         tShirtSize: "",
@@ -92,7 +99,6 @@ const EMPTY_DATA: ApplicationData = {
     },
     section2: {
         schoolName: "",
-        grade: "",
         graduationYear: "",
         schoolCity: "",
     },
@@ -245,6 +251,14 @@ export default function ApplicationForm() {
             newErrors.firstName = "Please enter your first name.";
         if (!data.section1.lastName.trim())
             newErrors.lastName = "Please enter your last name.";
+        if (
+            data.section1.pronouns.includes("Other") &&
+            !data.section1.pronounsOther.trim()
+        )
+            newErrors.pronounsOther = "Please specify your pronouns.";
+        if (!data.section1.grade.length)
+            newErrors.grade = "Please select your grade.";
+        if (!data.section1.email.trim())newErrors.email = "Please enter your email address.";
         if (!data.section1.phoneNumber.trim())
             newErrors.phoneNumber = "Please enter your phone number.";
         else if (!validatePhone(data.section1.phoneNumber))
@@ -276,7 +290,6 @@ export default function ApplicationForm() {
         const newErrors: Record<string, string> = {};
         if (!data.section2.schoolName.trim())
             newErrors.schoolName = "Please enter your school name.";
-        if (!data.section2.grade) newErrors.grade = "Please select your grade.";
         if (!data.section2.graduationYear)
             newErrors.graduationYear = "Please select your graduation year.";
         if (!data.section2.schoolCity.trim())
@@ -558,7 +571,7 @@ export default function ApplicationForm() {
                                     cursor-pointer
 								"
                             >
-                                Return to Role Selection
+                                Back to Role Selection
                             </button>
                         )}
 
@@ -982,6 +995,26 @@ function Section1({
 }) {
     const section1 = data.section1;
 
+    const handlePronounsChange = (option: string) => {
+        const newPronouns = section1.pronouns.includes(option)
+            ? section1.pronouns.filter((p) => p !== option)
+            : [...section1.pronouns, option];
+
+        updateData({
+            section1: { ...section1, pronouns: newPronouns },
+        });
+    };
+
+    const handleGradeChange = (option: string) => {
+        const newGrade = section1.grade === option
+            ? ""
+            : option;
+
+        updateData({
+            section1: { ...section1, grade: newGrade },
+        });
+    };
+
     const handleDietaryChange = (option: string) => {
         const newDietary = section1.dietaryRestrictions.includes(option)
             ? section1.dietaryRestrictions.filter((d) => d !== option)
@@ -1006,7 +1039,7 @@ function Section1({
         <div className="space-y-6">
             <p className="font-outfit text-md uppercase tracking-[0.2em] text-primary/80 mb-6">Answers automatically save</p>
             <h2 className="text-4xl font-outfit font-semibold text-primary mb-8">
-                Personal Information
+                Basic Technical Information
             </h2>
 
             <div className="grid md:grid-cols-2 gap-6">
@@ -1043,6 +1076,87 @@ function Section1({
                     })
                 }
                 helperText="What should we call you? Leave blank if the same as your first name."
+            />
+             <div>
+             <label className="block text-primary font-outfit text-base mb-3">
+                    What are your pronouns?
+                </label>
+                <div className="space-y-2">
+                    {[
+                        "he/him",
+                        "she/her",
+                        "they/them",
+                        "Other",
+                    ].map((option) => (
+                        <label key={option} className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                checked={section1.pronouns.includes(option)}
+                                onChange={() => handlePronounsChange(option)}
+                                className="w-4 h-4 cursor-pointer accent-primary"
+                            />
+                            <span className="text-primary font-outfit">{option}</span>
+                        </label>
+                    ))}
+                </div>
+                {section1.pronouns.includes("Other") && (
+                    <FormInput
+                        label="Please specify"
+                        value={section1.pronounsOther}
+                        onChange={(e) =>
+                            updateData({
+                                section1: { ...section1, pronounsOther: e.target.value },
+                            })
+                        }
+                        error={errors.pronounsOther}
+                        className="mt-3"
+                    />
+                )}
+                {errors.pronouns && (
+                    <p className="text-red-400 font-outfit text-sm mt-1">
+                        {errors.pronouns}
+                    </p>
+                )}
+            </div>
+            
+            <div>
+             <label className="block text-primary font-outfit text-base mb-3">
+                    Grade
+                </label>
+                <div className="space-y-2">
+                    {[
+                        "Grade 9",
+                        "Grade 10",
+                        "Grade 11",
+                        "Grade 12",
+                    ].map((option) => (
+                        <label key={option} className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                checked={section1.grade.includes(option)}
+                                onChange={() => handleGradeChange(option)}
+                                className="w-4 h-4 cursor-pointer accent-primary"
+                            />
+                            <span className="text-primary font-outfit">{option}</span>
+                        </label>
+                    ))}
+                </div>
+                {errors.grade && (
+                    <p className="text-red-400 font-outfit text-sm mt-1">
+                        {errors.grade}
+                    </p>
+                )}
+            </div>
+            <FormInput
+                label="Email (non-school)"
+                value={section1.email}
+                onChange={(e) =>
+                    updateData({
+                        section1: { ...section1, email: e.target.value },
+                    })
+                }
+                error={errors.email}
+                required
             />
 
             <div className="grid md:grid-cols-2 gap-6">
@@ -1255,18 +1369,6 @@ function Section2({
             />
 
             <div className="grid md:grid-cols-2 gap-6">
-                <FormSelect
-                    label="Current grade"
-                    value={section2.grade}
-                    onChange={(e) =>
-                        updateData({
-                            section2: { ...section2, grade: e.target.value },
-                        })
-                    }
-                    options={["", "Grade 9", "Grade 10", "Grade 11", "Grade 12"]}
-                    error={errors.grade}
-                    required
-                />
                 <FormSelect
                     label="Expected graduation year"
                     value={section2.graduationYear}
@@ -1607,6 +1709,19 @@ function Section6({
                         label: "Preferred name",
                         value: data.section1.preferredName || "(not provided)",
                     },
+                    {
+                        label: "Pronouns",
+                        value:
+                            data.section1.pronouns.length > 0
+                                ? data.section1.pronouns.join(", ")
+                                : "None",
+                    },
+                    {
+                        label: "Grade",
+                        value:
+                            data.section1.grade || "None",
+                    },
+                    { label: "Email (non-school)", value: data.section1.email },
                     { label: "Phone number", value: data.section1.phoneNumber },
                     { label: "Date of birth", value: data.section1.dateOfBirth },
                     { label: "T-shirt size", value: data.section1.tShirtSize },
@@ -1645,7 +1760,6 @@ function Section6({
                 onEdit={() => onEditSection(2)}
                 content={[
                     { label: "School name", value: data.section2.schoolName },
-                    { label: "Current grade", value: data.section2.grade },
                     { label: "Expected graduation year", value: data.section2.graduationYear },
                     { label: "School city", value: data.section2.schoolCity },
                 ]}
