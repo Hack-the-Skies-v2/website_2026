@@ -12,22 +12,6 @@ import { uploadHackerResume, removeHackerResume } from "@/actions/uploadHackerRe
 const STORAGE_KEY = "hts_application_draft";
 const AUTO_SAVE_DELAY = 1500;
 
-const CANADIAN_PROVINCES = [
-    "Alberta",
-    "British Columbia",
-    "Manitoba",
-    "New Brunswick",
-    "Newfoundland and Labrador",
-    "Northwest Territories",
-    "Nova Scotia",
-    "Nunavut",
-    "Ontario",
-    "Prince Edward Island",
-    "Quebec",
-    "Saskatchewan",
-    "Yukon",
-];
-
 const TOTAL_SECTIONS = 5;
 const MAX_RESUME_MB = 4;
 const MAX_RESUME_BYTES = MAX_RESUME_MB * 1024 * 1024;
@@ -84,11 +68,6 @@ interface ApplicationData {
         grade: string;
         email: string;
         teammates: string[];
-        phoneNumber: string;
-        dateOfBirth: string;
-        tShirtSize: string;
-        city: string;
-        province: string;
         dietaryRestrictions: string[];
         dietaryOther: string;
         accessibilityAccommodations: string[];
@@ -135,11 +114,6 @@ const EMPTY_DATA: ApplicationData = {
         grade: "",
         email: "",
         teammates: [],
-        phoneNumber: "",
-        dateOfBirth: "",
-        tShirtSize: "",
-        city: "",
-        province: "",
         dietaryRestrictions: [],
         dietaryOther: "",
         accessibilityAccommodations: [],
@@ -341,10 +315,6 @@ export default function ApplicationForm() {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     };
 
-    const validatePhone = (phone: string) => {
-        return /^\d{10}|^\+?\d{1,3}[-.\s]?\d{1,14}$/.test(phone.replace(/\D/g, ""));
-    };
-
     const validateSection1 = () => {
         const newErrors: Record<string, string> = {};
         if (!data.section1.firstName.trim())
@@ -365,17 +335,6 @@ export default function ApplicationForm() {
         if (!data.section1.teammates.some((name) => name.trim()))
             newErrors.teammates =
                 "Please list your teammates, or write \"None\" if you're applying on your own.";
-        if (!data.section1.phoneNumber.trim())
-            newErrors.phoneNumber = "Please enter your phone number.";
-        else if (!validatePhone(data.section1.phoneNumber))
-            newErrors.phoneNumber = "Please enter a valid phone number.";
-        if (!data.section1.dateOfBirth)
-            newErrors.dateOfBirth = "Please select your date of birth.";
-        if (!data.section1.tShirtSize)
-            newErrors.tShirtSize = "Please select your t-shirt size.";
-        if (!data.section1.city.trim()) newErrors.city = "Please enter your city.";
-        if (!data.section1.province)
-            newErrors.province = "Please select your province.";
         if (
             data.section1.dietaryRestrictions.includes("Other") &&
             !data.section1.dietaryOther.trim()
@@ -1250,74 +1209,6 @@ function Section1({
                 required
             />
 
-            <div className="grid md:grid-cols-2 gap-6">
-                <FormInput
-                    label="Phone number"
-                    type="tel"
-                    value={section1.phoneNumber}
-                    onChange={(e) =>
-                        updateData({
-                            section1: { ...section1, phoneNumber: e.target.value },
-                        })
-                    }
-                    error={errors.phoneNumber}
-                    required
-                />
-                <FormSelect
-                    label="T-shirt size"
-                    value={section1.tShirtSize}
-                    onChange={(e) =>
-                        updateData({
-                            section1: { ...section1, tShirtSize: e.target.value },
-                        })
-                    }
-                    options={["", "XS", "S", "M", "L", "XL", "2XL"]}
-                    error={errors.tShirtSize}
-                    required
-                />
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
-                <FormInput
-                    label="City"
-                    value={section1.city}
-                    onChange={(e) =>
-                        updateData({
-                            section1: { ...section1, city: e.target.value },
-                        })
-                    }
-                    error={errors.city}
-                    required
-                />
-                <FormSelect
-                    label="Province"
-                    value={section1.province}
-                    onChange={(e) =>
-                        updateData({
-                            section1: { ...section1, province: e.target.value },
-                        })
-                    }
-                    options={["", ...CANADIAN_PROVINCES]}
-                    error={errors.province}
-                    required
-                />
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
-                <FormInput
-                    label="Date of birth"
-                    type="date"
-                    value={section1.dateOfBirth}
-                    onChange={(e) =>
-                        updateData({
-                            section1: { ...section1, dateOfBirth: e.target.value },
-                        })
-                    }
-                    error={errors.dateOfBirth}
-                    required
-                />
-            </div>
-
             <div>
                 <label className="block text-primary font-outfit text-base mb-3">
                     Dietary restrictions
@@ -1911,11 +1802,6 @@ function Section5({
                     },
                     { label: "Email (non-school)", value: data.section1.email },
                     { label: "Team", value: teammates },
-                    { label: "Phone number", value: data.section1.phoneNumber },
-                    { label: "Date of birth", value: data.section1.dateOfBirth },
-                    { label: "T-shirt size", value: data.section1.tShirtSize },
-                    { label: "City", value: data.section1.city },
-                    { label: "Province", value: data.section1.province },
                     {
                         label: "Dietary restrictions",
                         value:

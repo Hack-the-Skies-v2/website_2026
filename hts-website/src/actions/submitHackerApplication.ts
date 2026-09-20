@@ -16,16 +16,11 @@ const hackerSchema = z.object({
 		pronouns: z.array(z.string().trim().max(200).transform(stripHtml)),
 		pronounsOther: z.string().trim().max(500).transform(stripHtml).default(""),
 		grade: z.string().trim().max(200).transform(stripHtml),
-		phoneNumber: z.string().trim().min(1, "Phone number is required").max(50).transform(stripHtml),
 		email: z.string().trim().min(1, "Email is required").max(320).email("Invalid email").transform(stripHtml),
 		teammates: z
 			.array(z.string().trim().max(200).transform(stripHtml))
 			.transform((names) => names.filter((name) => name.length > 0))
 			.pipe(z.array(z.string()).min(1, "Please list your teammates, or write \"None\" if you're applying on your own")),
-		dateOfBirth: z.string().trim().min(1, "Date of birth is required"),
-		tShirtSize: z.string().trim().min(1, "T-shirt size is required").max(20).transform(stripHtml),
-		city: z.string().trim().min(1, "City is required").max(200).transform(stripHtml),
-		province: z.string().trim().min(1, "Province is required").max(200).transform(stripHtml),
 		dietaryRestrictions: z.array(z.string().trim().max(200).transform(stripHtml)),
 		dietaryOther: z.string().trim().max(500).transform(stripHtml).default(""),
 		accessibilityAccommodations: z.array(z.string().trim().max(200).transform(stripHtml)),
@@ -109,11 +104,6 @@ export async function submitHackerApplication(data: unknown) {
 				grade: d.section1.grade,
 				email: d.section1.email,
 				teammates: d.section1.teammates,
-				phoneNumber: d.section1.phoneNumber,
-				dateOfBirth: d.section1.dateOfBirth,
-				tShirtSize: d.section1.tShirtSize,
-				city: d.section1.city,
-				province: d.section1.province,
 				dietaryRestrictions: d.section1.dietaryRestrictions,
 				dietaryOther: d.section1.dietaryOther,
 				accessibilityAccommodations: d.section1.accessibilityAccommodations,
@@ -123,6 +113,8 @@ export async function submitHackerApplication(data: unknown) {
 				schoolName: d.section2.schoolName,
 				graduationYear: d.section2.graduationYear,
 				schoolCity: d.section2.schoolCity,
+				// Keep legacy city column filled from school city when contact city is no longer collected.
+				city: d.section2.schoolCity,
 				codingExperience: d.section2.codingExperience,
 				goals: d.section2.goals,
 				goalsOther: d.section2.goalsOther,

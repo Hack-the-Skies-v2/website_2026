@@ -72,16 +72,16 @@ export default function Privacy() {
                         </p>
                         <ul className="list-disc list-inside space-y-2 mt-3">
                             <li>
-                                <strong>Personal Information:</strong> First name, last name, preferred name, email
-                                address, phone number, and date of birth
+                                <strong>Personal Information:</strong> First name, last name, preferred name, and email
+                                address
                             </li>
                             <li>
                                 <strong>School Information:</strong> School name, grade level, expected graduation
                                 year, and school city
                             </li>
                             <li>
-                                <strong>Preferences and Accommodations:</strong> T-shirt size, dietary restrictions,
-                                and accessibility accommodations
+                                <strong>Preferences and Accommodations:</strong> Dietary restrictions and accessibility
+                                accommodations
                             </li>
                             <li>
                                 <strong>Parent/Guardian Information:</strong> Name, email address, and phone number

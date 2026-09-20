@@ -13,11 +13,6 @@ export type DraftHackerData = {
 		grade: string;
 		email: string;
 		teammates: string[];
-		phoneNumber: string;
-		dateOfBirth: string;
-		tShirtSize: string;
-		city: string;
-		province: string;
 		dietaryRestrictions: string[];
 		dietaryOther: string;
 		accessibilityAccommodations: string[];
@@ -80,11 +75,6 @@ export async function loadDraftHackerApplication(): Promise<DraftHackerData> {
 			grade: draft.grade ?? "",
 			email: draft.email ?? "",
 			teammates: draft.teammates ?? [],
-			phoneNumber: draft.phone_number ?? "",
-			dateOfBirth: draft.date_of_birth ?? "",
-			tShirtSize: draft.t_shirt_size ?? "",
-			city: draft.city ?? "",
-			province: draft.province ?? "",
 			dietaryRestrictions: draft.dietary_restrictions ?? [],
 			dietaryOther: draft.dietary_other ?? "",
 			accessibilityAccommodations: draft.accessibility_accommodations ?? [],
