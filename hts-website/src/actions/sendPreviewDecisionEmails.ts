@@ -9,7 +9,7 @@ const previewDecisionSchema = z.object({
     .array(
       z.object({
         firstName: z.string().trim().min(1).max(80),
-        type: z.enum(["hacker", "mentor"]),
+        type: z.enum(["hacker", "mentor", "judge"]),
         decision: z.enum(["accepted", "rejected"]),
       }),
     )

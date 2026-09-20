@@ -8,7 +8,7 @@ import { prioritizeForReview } from "@/lib/grading/queue";
 
 export type OrganizerApplication = {
   id: string;
-  type: "hacker" | "mentor";
+  type: "hacker" | "mentor" | "judge";
   status: "pending" | "accepted" | "rejected";
   first_name: string;
   last_name: string;
@@ -105,6 +105,7 @@ export default function OrganizerDashboard({
   const trackCounts = {
     hacker: applications.filter((application) => application.type === "hacker").length,
     mentor: applications.filter((application) => application.type === "mentor").length,
+    judge: applications.filter((application) => application.type === "judge").length,
   };
   const statusCounts = {
     pending: forTrack.filter((application) => application.status === "pending").length,
@@ -223,7 +224,7 @@ export default function OrganizerDashboard({
 
           <div className="ml-auto flex shrink-0 items-center gap-3">
             <div className="flex rounded-full border border-primary/30 p-1">
-              {(["hacker", "mentor"] as const).map((type) => (
+              {(["hacker", "mentor", "judge"] as const).map((type) => (
                 <button
                   key={type}
                   type="button"

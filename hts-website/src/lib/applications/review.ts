@@ -50,9 +50,28 @@ type MentorRow = {
   mentoring_goals: string;
 };
 
+type JudgeRow = {
+  user_id: string;
+  name: string;
+  company_organization: string;
+  job_title: string;
+  strong_project_description: string;
+  professional_background: string;
+  judging_experience: string;
+};
+
+const TYPE_VALUES = [
+  "hacker",
+  "mentor",
+  "judge",
+  "Hacker",
+  "Mentor",
+  "Judge",
+] as const;
+
 function normalizeType(type: string): ApplicationType | null {
   const value = type.trim().toLowerCase();
-  if (value === "hacker" || value === "mentor") return value;
+  if (value === "hacker" || value === "mentor" || value === "judge") return value;
   return null;
 }
 
@@ -61,6 +80,13 @@ function mapStatus(status: string): OrganizerApplication["status"] {
   if (value === "accepted") return "accepted";
   if (value === "rejected") return "rejected";
   return "pending";
+}
+
+function splitName(name: string | null | undefined): { first: string; last: string } {
+  const trimmed = name?.trim() || "";
+  if (!trimmed) return { first: "", last: "" };
+  const parts = trimmed.split(/\s+/);
+  return { first: parts[0] || trimmed, last: parts.slice(1).join(" ") };
 }
 
 function parseAnswers(raw: unknown, type: ApplicationType): string[] {
@@ -78,6 +104,26 @@ function parseAnswers(raw: unknown, type: ApplicationType): string[] {
       return typeof value === "string" ? value : value != null ? String(value) : "";
     });
     if (byId.some((text) => text.trim())) return byId;
+
+    const keyed = [
+      record.technologiesAndTools ?? record.technologies_and_tools,
+      record.mentoringExperience ?? record.mentoring_experience,
+      record.mentoringGoals ?? record.mentoring_goals,
+      record.strongProjectDescription ?? record.strong_project_description,
+      record.professionalBackground ?? record.professional_background,
+      record.judgingExperience ?? record.judging_experience,
+    ]
+      .map((value) => (typeof value === "string" ? value : value != null ? String(value) : ""))
+      .filter((text) => text.trim());
+    if (type === "mentor" && keyed.length >= 3) return keyed.slice(0, 3);
+    if (type === "judge") {
+      const judgeKeyed = [
+        record.strongProjectDescription ?? record.strong_project_description,
+        record.professionalBackground ?? record.professional_background,
+        record.judgingExperience ?? record.judging_experience,
+      ].map((value) => (typeof value === "string" ? value : value != null ? String(value) : ""));
+      if (judgeKeyed.some((text) => text.trim())) return judgeKeyed;
+    }
   }
   return [];
 }
@@ -124,6 +170,20 @@ async function loadGradesByApp(
   return gradesByApp;
 }
 
+function emptyAnswers(type: ApplicationType): string[] {
+  return Array(questionsForType(type).length).fill("");
+}
+
+function pickAnswers(
+  fromAnswers: string[],
+  fallback: string[] | null,
+  type: ApplicationType,
+): string[] {
+  if (fromAnswers.some((text) => text.trim())) return fromAnswers;
+  if (fallback?.some((text) => text.trim())) return fallback;
+  return fromAnswers.length ? fromAnswers : emptyAnswers(type);
+}
+
 export async function listOrganizerApplications(
   organizerId: string,
 ): Promise<OrganizerApplication[]> {
@@ -134,7 +194,7 @@ export async function listOrganizerApplications(
     .select(
       "id, type, status, email, first_name, last_name, school_or_organization, details, answers, submitted_at, notification_sent_at, notification_error",
     )
-    .in("type", ["hacker", "mentor", "Hacker", "Mentor"])
+    .in("type", [...TYPE_VALUES])
     .neq("status", "draft")
     .neq("status", "Draft")
     .order("submitted_at", { ascending: false });
@@ -149,24 +209,32 @@ export async function listOrganizerApplications(
   if (rows.length === 0) return [];
 
   const ids = rows.map((row) => row.id);
-  const [{ data: hackers }, { data: mentors }, gradesByApp] = await Promise.all([
-    supabase
-      .from("hacker_applications")
-      .select(
-        "user_id, first_name, last_name, school_name, application_questions_1, application_questions_2, application_questions_3, application_questions_4, application_questions_5",
-      )
-      .in("user_id", ids),
-    supabase
-      .from("mentor_applications")
-      .select(
-        "user_id, name, university_college, technologies_and_tools, mentoring_experience, mentoring_goals",
-      )
-      .in("user_id", ids),
-    loadGradesByApp(supabase, ids),
-  ]);
+  const [{ data: hackers }, { data: mentors }, { data: judges }, gradesByApp] =
+    await Promise.all([
+      supabase
+        .from("hacker_applications")
+        .select(
+          "user_id, first_name, last_name, school_name, application_questions_1, application_questions_2, application_questions_3, application_questions_4, application_questions_5",
+        )
+        .in("user_id", ids),
+      supabase
+        .from("mentor_applications")
+        .select(
+          "user_id, name, university_college, technologies_and_tools, mentoring_experience, mentoring_goals",
+        )
+        .in("user_id", ids),
+      supabase
+        .from("judge_applications")
+        .select(
+          "user_id, name, company_organization, job_title, strong_project_description, professional_background, judging_experience",
+        )
+        .in("user_id", ids),
+      loadGradesByApp(supabase, ids),
+    ]);
 
   const hackerById = new Map(((hackers ?? []) as HackerRow[]).map((row) => [row.user_id, row]));
   const mentorById = new Map(((mentors ?? []) as MentorRow[]).map((row) => [row.user_id, row]));
+  const judgeById = new Map(((judges ?? []) as JudgeRow[]).map((row) => [row.user_id, row]));
 
   return rows.flatMap((row): OrganizerApplication[] => {
     const type = normalizeType(row.type);
@@ -175,37 +243,35 @@ export async function listOrganizerApplications(
     const appGrades = gradesByApp.get(row.id) ?? [];
     const scores = scoreSummary(appGrades, organizerId, type);
     const fromAnswers = parseAnswers(row.answers, type);
+    const submittedAt = row.submitted_at || new Date().toISOString();
 
     if (type === "hacker") {
       const hacker = hackerById.get(row.id);
-      const answers =
-        fromAnswers.some((text) => text.trim()) || !hacker
-          ? fromAnswers.length
-            ? fromAnswers
-            : Array(questionsForType(type).length).fill("")
-          : [
+      const answers = pickAnswers(
+        fromAnswers,
+        hacker
+          ? [
               hacker.application_questions_1,
               hacker.application_questions_2,
               hacker.application_questions_3,
               hacker.application_questions_4,
               hacker.application_questions_5,
-            ];
-      const firstName = row.first_name || hacker?.first_name || "";
-      const lastName = row.last_name || hacker?.last_name || "";
-      if (!firstName && !lastName && !row.email && !hacker) return [];
-
+            ]
+          : null,
+        type,
+      );
       return [
         {
           id: row.id,
           type: "hacker",
           status: mapStatus(row.status),
-          first_name: firstName || "Applicant",
-          last_name: lastName,
+          first_name: row.first_name || hacker?.first_name || "Applicant",
+          last_name: row.last_name || hacker?.last_name || "",
           email: row.email || "",
           school_or_organization: row.school_or_organization || hacker?.school_name || null,
           details: row.details,
           answers,
-          submitted_at: row.submitted_at || new Date().toISOString(),
+          submitted_at: submittedAt,
           notification_sent_at: row.notification_sent_at,
           notification_error: row.notification_error,
           ...scores,
@@ -213,39 +279,70 @@ export async function listOrganizerApplications(
       ];
     }
 
-    const mentor = mentorById.get(row.id);
-    const mentorAnswers =
-      fromAnswers.some((text) => text.trim()) || !mentor
-        ? fromAnswers.length
-          ? fromAnswers
-          : Array(questionsForType(type).length).fill("")
-        : [
-            mentor.technologies_and_tools,
-            mentor.mentoring_experience,
-            mentor.mentoring_goals,
-          ];
-
-    let firstName = row.first_name || "";
-    let lastName = row.last_name || "";
-    if (!firstName && mentor?.name) {
-      const parts = mentor.name.trim().split(/\s+/);
-      firstName = parts[0] || mentor.name;
-      lastName = parts.slice(1).join(" ");
+    if (type === "mentor") {
+      const mentor = mentorById.get(row.id);
+      const nameParts = splitName(mentor?.name || undefined);
+      const answers = pickAnswers(
+        fromAnswers,
+        mentor
+          ? [
+              mentor.technologies_and_tools,
+              mentor.mentoring_experience,
+              mentor.mentoring_goals,
+            ]
+          : null,
+        type,
+      );
+      return [
+        {
+          id: row.id,
+          type: "mentor",
+          status: mapStatus(row.status),
+          first_name: row.first_name || nameParts.first || "Applicant",
+          last_name: row.last_name || nameParts.last,
+          email: row.email || "",
+          school_or_organization:
+            row.school_or_organization || mentor?.university_college || null,
+          details: row.details,
+          answers,
+          submitted_at: submittedAt,
+          notification_sent_at: row.notification_sent_at,
+          notification_error: row.notification_error,
+          ...scores,
+        },
+      ];
     }
-    if (!firstName && !lastName && !row.email && !mentor) return [];
+
+    const judge = judgeById.get(row.id);
+    const nameParts = splitName(judge?.name || undefined);
+    const answers = pickAnswers(
+      fromAnswers,
+      judge
+        ? [
+            judge.strong_project_description,
+            judge.professional_background,
+            judge.judging_experience,
+          ]
+        : null,
+      type,
+    );
+    const org =
+      row.school_or_organization ||
+      [judge?.company_organization, judge?.job_title].filter(Boolean).join(" · ") ||
+      null;
 
     return [
       {
         id: row.id,
-        type: "mentor",
+        type: "judge",
         status: mapStatus(row.status),
-        first_name: firstName || "Applicant",
-        last_name: lastName,
+        first_name: row.first_name || nameParts.first || "Applicant",
+        last_name: row.last_name || nameParts.last,
         email: row.email || "",
-        school_or_organization: row.school_or_organization || mentor?.university_college || null,
+        school_or_organization: org,
         details: row.details,
-        answers: mentorAnswers,
-        submitted_at: row.submitted_at || new Date().toISOString(),
+        answers,
+        submitted_at: submittedAt,
         notification_sent_at: row.notification_sent_at,
         notification_error: row.notification_error,
         ...scores,
@@ -281,92 +378,27 @@ export async function getOrganizerReviewApplication(
   const row = app as AppRow;
   const questions = questionsForType(type);
   const fromAnswers = parseAnswers(row.answers, type);
+  const list = await listOrganizerApplications(organizerId);
+  const listed = list.find((item) => item.id === applicationId);
 
-  let review: ReviewApplication;
+  const review: ReviewApplication = {
+    id: applicationId,
+    type,
+    status: mapStatus(row.status),
+    first_name: listed?.first_name || row.first_name || "Applicant",
+    last_name: listed?.last_name || row.last_name || "",
+    email: listed?.email || row.email || "",
+    school_or_organization:
+      listed?.school_or_organization || row.school_or_organization || null,
+    details: row.details,
+    answers: answersByQuestion(type, listed?.answers ?? fromAnswers),
+    submitted_at: row.submitted_at || listed?.submitted_at || new Date().toISOString(),
+  };
 
-  if (type === "hacker") {
-    const { data: hacker } = await supabase
-      .from("hacker_applications")
-      .select(
-        "first_name, last_name, school_name, application_questions_1, application_questions_2, application_questions_3, application_questions_4, application_questions_5",
-      )
-      .eq("user_id", applicationId)
-      .maybeSingle();
-
-    const answers =
-      fromAnswers.some((text) => text.trim()) || !hacker
-        ? fromAnswers.length
-          ? fromAnswers
-          : Array(questions.length).fill("")
-        : [
-            hacker.application_questions_1,
-            hacker.application_questions_2,
-            hacker.application_questions_3,
-            hacker.application_questions_4,
-            hacker.application_questions_5,
-          ];
-
-    review = {
-      id: applicationId,
-      type,
-      status: mapStatus(row.status),
-      first_name: row.first_name || hacker?.first_name || "Applicant",
-      last_name: row.last_name || hacker?.last_name || "",
-      email: row.email || "",
-      school_or_organization: row.school_or_organization || hacker?.school_name || null,
-      details: row.details,
-      answers: answersByQuestion(type, answers),
-      submitted_at: row.submitted_at || new Date().toISOString(),
-    };
-  } else {
-    const { data: mentor } = await supabase
-      .from("mentor_applications")
-      .select(
-        "name, university_college, technologies_and_tools, mentoring_experience, mentoring_goals",
-      )
-      .eq("user_id", applicationId)
-      .maybeSingle();
-
-    let firstName = row.first_name || "";
-    let lastName = row.last_name || "";
-    if (!firstName && mentor?.name) {
-      const parts = mentor.name.trim().split(/\s+/);
-      firstName = parts[0] || mentor.name;
-      lastName = parts.slice(1).join(" ");
-    }
-
-    const answers =
-      fromAnswers.some((text) => text.trim()) || !mentor
-        ? fromAnswers.length
-          ? fromAnswers
-          : Array(questions.length).fill("")
-        : [
-            mentor.technologies_and_tools,
-            mentor.mentoring_experience,
-            mentor.mentoring_goals,
-          ];
-
-    review = {
-      id: applicationId,
-      type,
-      status: mapStatus(row.status),
-      first_name: firstName || "Applicant",
-      last_name: lastName,
-      email: row.email || "",
-      school_or_organization: row.school_or_organization || mentor?.university_college || null,
-      details: row.details,
-      answers: answersByQuestion(type, answers),
-      submitted_at: row.submitted_at || new Date().toISOString(),
-    };
-  }
-
-  const [{ data: grades }, list] = await Promise.all([
-    supabase
-      .from("application_grades")
-      .select("grader_id, scores")
-      .eq("application_user_id", applicationId),
-    listOrganizerApplications(organizerId),
-  ]);
+  const { data: grades } = await supabase
+    .from("application_grades")
+    .select("grader_id, scores")
+    .eq("application_user_id", applicationId);
 
   const gradeRows = (grades ?? []) as Pick<GradeRow, "grader_id" | "scores">[];
   const own = gradeRows.find((grade) => grade.grader_id === organizerId);

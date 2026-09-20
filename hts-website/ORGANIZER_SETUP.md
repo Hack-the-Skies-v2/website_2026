@@ -1,6 +1,6 @@
 # Organizer console (live portal applications)
 
-The console at `/organizers` reviews **live** hacker and mentor rows from Supabase `applications` (`id`, `type`, `email`, `answers`, …). Access requires `public.users.admin = true`.
+The console at `/organizers` reviews **live** hacker, mentor, and judge rows from Supabase `applications` (`id`, `type`, `email`, `answers`, …), enriched from `hacker_applications` / `mentor_applications` / `judge_applications` when present. Access requires `public.users.admin = true`.
 
 ## Setup
 

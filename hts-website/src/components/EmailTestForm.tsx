@@ -6,7 +6,7 @@ import { sendTestDecisionEmail } from "@/actions/sendTestDecisionEmail";
 export default function EmailTestForm() {
   const [to, setTo] = useState("");
   const [firstName, setFirstName] = useState("Ali");
-  const [type, setType] = useState<"hacker" | "mentor">("hacker");
+  const [type, setType] = useState<"hacker" | "mentor" | "judge">("hacker");
   const [decision, setDecision] = useState<"accepted" | "rejected">("accepted");
   const [notice, setNotice] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -60,7 +60,7 @@ export default function EmailTestForm() {
       <div>
         <p className="mb-1.5 text-sm text-primary/80">Track</p>
         <div className="flex gap-2">
-          {(["hacker", "mentor"] as const).map((option) => (
+          {(["hacker", "mentor", "judge"] as const).map((option) => (
             <button
               key={option}
               type="button"

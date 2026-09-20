@@ -7,10 +7,11 @@ export type Question = {
   weight: number;
 };
 
-export type ApplicationType = "hacker" | "mentor";
+export type ApplicationType = "hacker" | "mentor" | "judge";
 
 export type OrganizerGrade = {
   applicationId: string;
   graderId: string;
   scores: Record<QuestionId, number>;
+  updatedAt: string;
 };

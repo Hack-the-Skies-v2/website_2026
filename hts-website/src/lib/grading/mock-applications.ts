@@ -163,6 +163,26 @@ const SEEDS: MockSeed[] = [
       "I would bring a calm debugging habit, share notes from workshops, and help first-time hackers get unstuck without taking over their project.",
     ],
   },
+  {
+    id: "88888888-8888-4888-8888-888888888888",
+    type: "judge",
+    status: "pending",
+    first_name: "Alex",
+    last_name: "Rivera",
+    email: "alex.rivera@example.com",
+    school_or_organization: "Northwind Labs · Staff Engineer",
+    submitted_at: "2026-03-17T16:30:00.000Z",
+    average_score: null,
+    grader_count: 0,
+    my_score: null,
+    notification_sent_at: null,
+    notification_error: null,
+    answers: [
+      "A strong project solves a real user problem, ships a working demo, and shows clear tradeoffs the team made under time pressure.",
+      "I build developer tools at Northwind and previously mentored university hackathon teams on product scoping and demo polish.",
+      "I judged a campus pitch night last year and a high-school science fair software category the year before.",
+    ],
+  },
 ];
 
 export function getMockOrganizerApplications(): OrganizerApplication[] {

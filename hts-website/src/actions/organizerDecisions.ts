@@ -18,9 +18,9 @@ function fromAddress() {
   return process.env.RESEND_FROM || "Hack the Skies <noreply@hacktheskies.com>";
 }
 
-function normalizeType(type: string): "hacker" | "mentor" | null {
+function normalizeType(type: string): "hacker" | "mentor" | "judge" | null {
   const value = type.trim().toLowerCase();
-  if (value === "hacker" || value === "mentor") return value;
+  if (value === "hacker" || value === "mentor" || value === "judge") return value;
   return null;
 }
 
@@ -41,7 +41,7 @@ export async function decideApplications(input: unknown) {
     .from("applications")
     .select("id, type, email, first_name")
     .in("id", applicationIds)
-    .in("type", ["hacker", "mentor", "Hacker", "Mentor"]);
+    .in("type", ["hacker", "mentor", "judge", "Hacker", "Mentor", "Judge"]);
 
   if (lookupError || (knownApplications?.length ?? 0) !== applicationIds.length) {
     throw new Error("One or more applications could not be found.");
@@ -107,6 +107,14 @@ export async function decideApplications(input: unknown) {
         .eq("user_id", application.id)
         .maybeSingle();
       firstName = mentor?.name?.trim().split(/\s+/)[0] || firstName;
+    }
+    if (firstName === "there" && type === "judge") {
+      const { data: judge } = await supabase
+        .from("judge_applications")
+        .select("name")
+        .eq("user_id", application.id)
+        .maybeSingle();
+      firstName = judge?.name?.trim().split(/\s+/)[0] || firstName;
     }
 
     const content = applicationDecisionEmail({

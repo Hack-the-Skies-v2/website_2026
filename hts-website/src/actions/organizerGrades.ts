@@ -15,7 +15,7 @@ const gradeSchema = z.object({
 
 function normalizeType(type: string): ApplicationType | null {
   const value = type.trim().toLowerCase();
-  if (value === "hacker" || value === "mentor") return value;
+  if (value === "hacker" || value === "mentor" || value === "judge") return value;
   return null;
 }
 
@@ -34,7 +34,7 @@ export async function submitOrganizerGrade(input: unknown) {
   if (lookupError || !application) throw new Error("Application not found.");
   const type = normalizeType(application.type as string);
   if (!type) {
-    throw new Error("Only hacker and mentor applications can be graded.");
+    throw new Error("Only hacker, mentor, and judge applications can be graded.");
   }
 
   const questions = questionsForType(type);

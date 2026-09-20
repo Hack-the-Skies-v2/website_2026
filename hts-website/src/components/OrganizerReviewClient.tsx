@@ -22,7 +22,7 @@ type Scores = Record<string, number | null>;
 
 export type ReviewApplication = {
   id: string;
-  type: "hacker" | "mentor";
+  type: "hacker" | "mentor" | "judge";
   status: "pending" | "accepted" | "rejected";
   first_name: string;
   last_name: string;

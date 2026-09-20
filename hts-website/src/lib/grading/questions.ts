@@ -45,7 +45,8 @@ export const MENTOR_QUESTIONS: Question[] = [
   {
     id: "mentor-q2",
     position: 2,
-    prompt: "Have you mentored, taught, tutored, or worked with high-school students before? If yes, briefly describe.",
+    prompt:
+      "Have you mentored, taught, tutored, or worked with high-school students before? If yes, briefly describe.",
     weight: 1,
   },
   {
@@ -56,8 +57,33 @@ export const MENTOR_QUESTIONS: Question[] = [
   },
 ];
 
+/** Keep in sync with ApplicationForm judge fields used for review. */
+export const JUDGE_QUESTIONS: Question[] = [
+  {
+    id: "judge-q1",
+    position: 1,
+    prompt: "What makes a strong hackathon project?",
+    weight: 1,
+  },
+  {
+    id: "judge-q2",
+    position: 2,
+    prompt: "Briefly describe your professional background and expertise.",
+    weight: 1,
+  },
+  {
+    id: "judge-q3",
+    position: 3,
+    prompt:
+      "Have you judged a hackathon, competition, pitch competition, science fair, or similar event? If yes, briefly describe.",
+    weight: 1,
+  },
+];
+
 export function questionsForType(type: ApplicationType): Question[] {
-  return type === "mentor" ? MENTOR_QUESTIONS : HACKER_QUESTIONS;
+  if (type === "mentor") return MENTOR_QUESTIONS;
+  if (type === "judge") return JUDGE_QUESTIONS;
+  return HACKER_QUESTIONS;
 }
 
 export function answersByQuestion(

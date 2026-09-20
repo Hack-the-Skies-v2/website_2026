@@ -1,8 +1,17 @@
-import { type NextRequest } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { updateSession } from './lib/supabase/proxy'
 
 export async function proxy(request: NextRequest) {
-  // update user's auth session
+  const { pathname, searchParams } = request.nextUrl
+  const code = searchParams.get('code')
+
+  // Supabase sometimes returns the OAuth code to Site URL (/) instead of /auth/confirm.
+  if (code && pathname !== '/auth/confirm') {
+    const url = request.nextUrl.clone()
+    url.pathname = '/auth/confirm'
+    return NextResponse.redirect(url)
+  }
+
   return await updateSession(request)
 }
 
