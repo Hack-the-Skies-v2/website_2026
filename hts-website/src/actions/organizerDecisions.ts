@@ -38,7 +38,7 @@ export async function decideApplications(input: unknown) {
   const supabase = await createClient();
 
   const { data: knownApplications, error: lookupError } = await supabase
-    .from("applications")
+    .from("application_details_view")
     .select("id, type, email, first_name")
     .in("id", applicationIds)
     .in("type", ["hacker", "mentor", "judge", "Hacker", "Mentor", "Judge"]);
@@ -53,12 +53,18 @@ export async function decideApplications(input: unknown) {
       status: parsed.data.decision,
       decided_at: parsed.data.decision === "pending" ? null : new Date().toISOString(),
     })
-    .in("id", applicationIds)
-    .select("id, type, email, first_name");
+    .in("user_id", applicationIds)
+    .select("user_id");
 
   if (error || (data?.length ?? 0) !== applicationIds.length) {
     throw new Error("The decision could not be saved.");
   }
+
+  // Re-fetch the updated rows from the view so we have fresh email/first_name
+  const { data: updatedApps } = await supabase
+    .from("application_details_view")
+    .select("id, type, email, first_name")
+    .in("id", applicationIds);
 
   if (!sendsEmail) {
     revalidatePath("/organizers");
@@ -72,7 +78,7 @@ export async function decideApplications(input: unknown) {
       .update({
         notification_error: "Decision saved. Email skipped because RESEND_KEY is not set.",
       })
-      .in("id", applicationIds);
+      .in("user_id", applicationIds);
     revalidatePath("/organizers");
     for (const id of applicationIds) revalidatePath(`/organizers/review/${id}`);
     return { decided: data.length, emailed: 0, emailFailures: 0, emailSkipped: true };
@@ -81,7 +87,7 @@ export async function decideApplications(input: unknown) {
   const sentIds: string[] = [];
   const failedIds: string[] = [];
 
-  for (const application of data as {
+  for (const application of (updatedApps ?? []) as {
     id: string;
     type: string;
     email: string | null;
@@ -99,23 +105,8 @@ export async function decideApplications(input: unknown) {
       continue;
     }
 
-    let firstName = application.first_name?.trim() || "there";
-    if (firstName === "there" && type === "mentor") {
-      const { data: mentor } = await supabase
-        .from("mentor_applications")
-        .select("name")
-        .eq("user_id", application.id)
-        .maybeSingle();
-      firstName = mentor?.name?.trim().split(/\s+/)[0] || firstName;
-    }
-    if (firstName === "there" && type === "judge") {
-      const { data: judge } = await supabase
-        .from("judge_applications")
-        .select("name")
-        .eq("user_id", application.id)
-        .maybeSingle();
-      firstName = judge?.name?.trim().split(/\s+/)[0] || firstName;
-    }
+    // first_name is already resolved by the view from the role-specific table
+    const firstName = application.first_name?.trim() || "there";
 
     const content = applicationDecisionEmail({
       firstName,
@@ -137,13 +128,13 @@ export async function decideApplications(input: unknown) {
     await supabase
       .from("applications")
       .update({ notification_sent_at: new Date().toISOString(), notification_error: null })
-      .in("id", sentIds);
+      .in("user_id", sentIds);
   }
   if (failedIds.length) {
     await supabase
       .from("applications")
       .update({ notification_error: "Email delivery failed; retry after checking Resend." })
-      .in("id", failedIds);
+      .in("user_id", failedIds);
   }
 
   revalidatePath("/organizers");

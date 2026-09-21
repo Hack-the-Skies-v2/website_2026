@@ -8,7 +8,7 @@ ALTER TABLE public.applications
   ADD COLUMN IF NOT EXISTS notification_error text;
 
 CREATE TABLE IF NOT EXISTS public.application_grades (
-  application_user_id uuid NOT NULL REFERENCES public.applications(id) ON DELETE CASCADE,
+  application_user_id uuid NOT NULL REFERENCES public.applications(user_id) ON DELETE CASCADE,
   grader_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   scores jsonb NOT NULL DEFAULT '{}'::jsonb,
   updated_at timestamptz NOT NULL DEFAULT now(),

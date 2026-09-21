@@ -329,7 +329,7 @@ export async function listOrganizerApplications(
   const supabase = await createClient();
 
   const { data: apps, error } = await supabase
-    .from("applications")
+    .from("application_details_view")
     .select(
       "id, type, status, email, first_name, last_name, school_or_organization, details, answers, submitted_at, notification_sent_at, notification_error",
     )
@@ -405,10 +405,10 @@ export async function listOrganizerApplications(
           id: row.id,
           type: "hacker",
           status: mapStatus(row.status),
-          first_name: row.first_name || hacker?.first_name || "Applicant",
-          last_name: row.last_name || hacker?.last_name || "",
+          first_name: row.first_name || "Applicant",
+          last_name: row.last_name || "",
           email: row.email || "",
-          school_or_organization: row.school_or_organization || hacker?.school_name || null,
+          school_or_organization: row.school_or_organization || null,
           details: row.details,
           answers: answers.slice(0, questions.length),
           submitted_at: submittedAt,
@@ -439,11 +439,10 @@ export async function listOrganizerApplications(
           id: row.id,
           type: "mentor",
           status: mapStatus(row.status),
-          first_name: row.first_name || nameParts.first || "Applicant",
-          last_name: row.last_name || nameParts.last,
+          first_name: row.first_name || "Applicant",
+          last_name: row.last_name || "",
           email: row.email || "",
-          school_or_organization:
-            row.school_or_organization || mentor?.university_college || null,
+          school_or_organization: row.school_or_organization || null,
           details: row.details,
           answers,
           submitted_at: submittedAt,
@@ -455,7 +454,6 @@ export async function listOrganizerApplications(
     }
 
     const judge = judgeById.get(row.id);
-    const nameParts = splitName(judge?.name || undefined);
     const answers = pickAnswers(
       fromAnswers,
       judge
@@ -468,20 +466,16 @@ export async function listOrganizerApplications(
       type,
     );
     const scores = scoreSummary(appGrades, organizerId, questionsForType(type));
-    const org =
-      row.school_or_organization ||
-      [judge?.company_organization, judge?.job_title].filter(Boolean).join(" · ") ||
-      null;
 
     return [
       {
         id: row.id,
         type: "judge",
         status: mapStatus(row.status),
-        first_name: row.first_name || nameParts.first || "Applicant",
-        last_name: row.last_name || nameParts.last,
+        first_name: row.first_name || "Applicant",
+        last_name: row.last_name || "",
         email: row.email || "",
-        school_or_organization: org,
+        school_or_organization: row.school_or_organization || null,
         details: row.details,
         answers,
         submitted_at: submittedAt,
@@ -506,7 +500,7 @@ export async function getOrganizerReviewApplication(
 } | null> {
   const supabase = await createClient();
   const { data: app, error } = await supabase
-    .from("applications")
+    .from("application_details_view")
     .select(
       "id, type, status, email, first_name, last_name, school_or_organization, details, answers, submitted_at, notification_sent_at, notification_error",
     )
@@ -599,11 +593,10 @@ export async function getOrganizerReviewApplication(
     id: applicationId,
     type,
     status: mapStatus(row.status),
-    first_name: listed?.first_name || row.first_name || "Applicant",
-    last_name: listed?.last_name || row.last_name || "",
-    email: listed?.email || row.email || "",
-    school_or_organization:
-      listed?.school_or_organization || row.school_or_organization || null,
+    first_name: row.first_name || listed?.first_name || "Applicant",
+    last_name: row.last_name || listed?.last_name || "",
+    email: row.email || listed?.email || "",
+    school_or_organization: row.school_or_organization || listed?.school_or_organization || null,
     details: row.details,
     answers: answersByQuestion(type, answerTexts.slice(0, questions.length), questions),
     info,

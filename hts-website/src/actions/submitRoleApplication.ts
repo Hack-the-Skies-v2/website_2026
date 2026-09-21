@@ -100,12 +100,13 @@ export async function submitRoleApplication(
         });
 
         if (error) {
+            console.error("submit_role_application RPC error:", error);
             if (error.code === "23505") return { success: false, error: "You have already submitted this application." };
-            return { success: false, error: "Unable to submit your application right now." };
-            // return { success: false, error: error.message };
+            return { success: false, error: "Unable to submit your application right now. Please try again." };
         }
-    } catch {
-        return { success: false, error: "Unable to submit your application right now." };
+    } catch (err) {
+        console.error("submitRoleApplication caught error:", err);
+        return { success: false, error: "Unable to submit your application right now. Please try again." };
     }
 
     return { success: true };

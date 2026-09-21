@@ -92,7 +92,8 @@ export async function saveDraftHackerApplication(data: {
 		.upsert(draft, { onConflict: "user_id" });
 
 	if (error) {
-		return { success: false, error: error.message };
+		console.error("saveDraftHackerApplication error:", error);
+		return { success: false, error: "Unable to save draft right now." };
 	}
 
 	return { success: true };

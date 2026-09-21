@@ -129,13 +129,15 @@ export async function submitHackerApplication(data: unknown) {
 		});
 
 		if (error) {
+			console.error("submit_hacker_application RPC error:", error);
 			if (error.code === "23505") {
 				return { success: false, error: "You have already submitted an application." };
 			}
-			return { success: false, error: error.message };
+			return { success: false, error: "Unable to submit your application right now. Please try again." };
 		}
-	} catch {
-		return { success: false, error: "Unable to submit your application right now." };
+	} catch (err) {
+		console.error("submitHackerApplication caught error:", err);
+		return { success: false, error: "Unable to submit your application right now. Please try again." };
 	}
 
 	const cookieStore = await cookies();
