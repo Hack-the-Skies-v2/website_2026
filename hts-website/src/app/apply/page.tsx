@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import ApplicationForm from "@/components/ApplicationForm";
 import AccountMenu from "../../components/AccountMenu";
 
+export const dynamic = "force-dynamic";
+
 export default async function Apply({
     searchParams,
 }: {
@@ -24,18 +26,51 @@ export default async function Apply({
         redirect("/auth");
     }
 
-    const { data: application } = await supabase
-        .from("applications")
-        .select("user_id, application_type")
-        .eq("user_id", user.id)
-        .maybeSingle();
+    const [
+        { data: application },
+        { data: hackerApp },
+        { data: judgeApp },
+        { data: mentorApp },
+    ] = await Promise.all([
+        supabase
+            .from("applications")
+            .select("user_id, application_type")
+            .eq("user_id", user.id)
+            .maybeSingle(),
+        supabase
+            .from("hacker_applications")
+            .select("user_id")
+            .eq("user_id", user.id)
+            .maybeSingle(),
+        supabase
+            .from("judge_applications")
+            .select("user_id")
+            .eq("user_id", user.id)
+            .maybeSingle(),
+        supabase
+            .from("mentor_applications")
+            .select("user_id")
+            .eq("user_id", user.id)
+            .maybeSingle(),
+    ]);
 
-    if (application) {
-        if (application.application_type === "judge" || application.application_type === "mentor") {
-            redirect("/jm-portal");
-        }
+    // console.log("[apply/page] user.id:", user.id);
+    // console.log("[apply/page] applications row:", application);
+    // console.log("[apply/page] hackerApp:", hackerApp, "judgeApp:", judgeApp, "mentorApp:", mentorApp);
+
+    const appType = application?.application_type?.toLowerCase();
+
+    if (appType === "judge" || judgeApp) {
+        redirect("/jm-portal");
+    }
+    if (appType === "mentor" || mentorApp) {
+        redirect("/jm-portal");
+    }
+    if (appType === "hacker" || hackerApp || application) {
         redirect("/portal");
     }
+
+    // console.log("[apply/page] no application found — showing form");
 
     return (
         <main className="flex flex-col min-h-screen">
@@ -62,15 +97,15 @@ export default async function Apply({
                 </button>
             </Link>
             <div className="flex-1">
-				<div className="pt-24 pb-12 px-4 sm:px-6 max-w-4xl mx-auto">
-					<h1 className="
+                <div className="pt-24 pb-12 px-4 sm:px-6 max-w-4xl mx-auto">
+                    <h1 className="
 						text-center
 						font-outfit text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-semibold text-primary select-none mb-12">
-						Application Portal
-					</h1>
-				</div>
-				<ApplicationForm />
-			</div>
+                        Application Portal
+                    </h1>
+                </div>
+                <ApplicationForm />
+            </div>
             <Footer />
         </main>
     );
