@@ -20,9 +20,10 @@ export default async function PortalPage() {
 
 	if (!user) redirect("/auth");
 
-	const [{ data: profile }, { data: application }, { data: meals }, { data: workshops }, { data: referralCode }] = await Promise.all([
+	const [{ data: profile }, { data: application }, { data: hackerApp }, { data: meals }, { data: workshops }, { data: referralCode }] = await Promise.all([
 		supabase.from("users").select("hacker, points, qr_code_link").eq("id", user.id).maybeSingle(),
 		supabase.from("applications").select("application_type").eq("user_id", user.id).maybeSingle(),
+		supabase.from("hacker_applications").select("user_id").eq("user_id", user.id).maybeSingle(),
 		supabase.from("meals").select("id, name, starts_at, ends_at").order("starts_at"),
 		supabase.from("workshops").select("id, name, description, room, starts_at, ends_at").order("starts_at"),
 		supabase.rpc("get_my_referral_code"),
@@ -33,7 +34,9 @@ export default async function PortalPage() {
 	}
 
 	const hasSubmittedHackerApp = Boolean(
-		profile?.hacker || application?.application_type === "hacker",
+		profile?.hacker ||
+		application?.application_type === "hacker" ||
+		hackerApp,
 	);
 
 	if (!hasSubmittedHackerApp) {
