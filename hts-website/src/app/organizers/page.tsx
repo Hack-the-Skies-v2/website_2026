@@ -7,7 +7,14 @@ export const dynamic = "force-dynamic";
 
 export default async function OrganizersPage() {
   const organizer = await requireOrganizer();
-  const applications = await listOrganizerApplications(organizer.id);
+
+  let applications: Awaited<ReturnType<typeof listOrganizerApplications>> = [];
+  let loadError: string | null = null;
+  try {
+    applications = await listOrganizerApplications(organizer.id);
+  } catch (error) {
+    loadError = error instanceof Error ? error.message : "Could not load applications.";
+  }
 
   return (
     <main className="min-h-screen px-5 py-10 font-outfit text-primary md:px-10">
@@ -38,7 +45,14 @@ export default async function OrganizersPage() {
             </Link>
           </div>
         </header>
-        <OrganizerDashboard applications={applications} />
+        {loadError ? (
+          <div className="rounded-2xl border border-red-400/40 bg-red-500/10 px-5 py-4 text-red-200">
+            <p className="font-semibold">Organizer console could not load applications.</p>
+            <p className="mt-2 text-sm text-red-100/80">{loadError}</p>
+          </div>
+        ) : (
+          <OrganizerDashboard applications={applications} />
+        )}
       </div>
     </main>
   );

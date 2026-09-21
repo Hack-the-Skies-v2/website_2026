@@ -13,14 +13,15 @@ import type { ReviewApplication, ReviewInfoField } from "@/components/OrganizerR
 
 /** Live portal applications table (prod schema). */
 type AppRow = {
-  id: string;
+  id: string | null;
+  user_id?: string | null;
   type: string;
   status: string;
   email: string | null;
   first_name: string | null;
   last_name: string | null;
   school_or_organization: string | null;
-  details: string | null;
+  details: unknown;
   answers: unknown;
   submitted_at: string | null;
   notification_sent_at: string | null;
@@ -56,9 +57,9 @@ type HackerRow = {
   heard_about_hts_other: string | null;
   application_questions_1: string | null;
   application_questions_2: string | null;
-  application_questions_3: string | null;
-  application_questions_4: string | null;
-  application_questions_5: string | null;
+  application_questions_3?: string | null;
+  application_questions_4?: string | null;
+  application_questions_5?: string | null;
 };
 
 type MentorRow = {
@@ -103,6 +104,68 @@ function normalizeType(type: string): ApplicationType | null {
   const value = type.trim().toLowerCase();
   if (value === "hacker" || value === "mentor" || value === "judge") return value;
   return null;
+}
+
+function resolveAppId(row: Pick<AppRow, "id" | "user_id">): string | null {
+  return row.id || row.user_id || null;
+}
+
+const APP_COLUMNS =
+  "id, user_id, type, application_type, status, email, first_name, last_name, school_or_organization, details, answers, submitted_at, notification_sent_at, notification_error";
+
+const VIEW_COLUMNS =
+  "id, type, status, email, first_name, last_name, school_or_organization, details, answers, submitted_at, notification_sent_at, notification_error";
+
+const HACKER_DETAIL_COLUMNS =
+  "user_id, first_name, last_name, preferred_name, phone_number, date_of_birth, t_shirt_size, city, province, dietary_restrictions, dietary_other, accessibility_accommodations, accessibility_other, school_name, grade, graduation_year, school_city, hackathon_experience, heard_about_hts, heard_about_hts_other, application_questions_1, application_questions_2";
+
+function hackerAnswerFallback(hacker: HackerRow | null | undefined): string[] | null {
+  if (!hacker) return null;
+  return [hacker.application_questions_1 || "", hacker.application_questions_2 || ""];
+}
+
+function normalizeAppRow(row: AppRow & { application_type?: string | null }): AppRow | null {
+  const type = normalizeType(row.type || row.application_type || "");
+  if (!type) return null;
+  const id = resolveAppId(row);
+  if (!id) return null;
+  return { ...row, id, type };
+}
+
+async function loadApplicationRows(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+): Promise<AppRow[]> {
+  const view = await supabase
+    .from("application_details_view")
+    .select(VIEW_COLUMNS)
+    .in("type", [...TYPE_VALUES])
+    .neq("status", "draft")
+    .neq("status", "Draft")
+    .order("submitted_at", { ascending: false });
+
+  if (!view.error && view.data) {
+    return (view.data as AppRow[])
+      .map((row) => normalizeAppRow(row))
+      .filter((row): row is AppRow => Boolean(row));
+  }
+
+  const table = await supabase
+    .from("applications")
+    .select(APP_COLUMNS)
+    .neq("status", "draft")
+    .neq("status", "Draft")
+    .order("submitted_at", { ascending: false });
+
+  if (table.error) {
+    throw new Error(
+      `Could not load applications (${table.error.message}${view.error ? `; view: ${view.error.message}` : ""}).`,
+    );
+  }
+
+  return ((table.data ?? []) as (AppRow & { application_type?: string | null })[])
+    .map((row) => normalizeAppRow(row))
+    .filter((row): row is AppRow => Boolean(row))
+    .filter((row) => normalizeType(row.type));
 }
 
 function mapStatus(status: string): OrganizerApplication["status"] {
@@ -327,35 +390,13 @@ export async function listOrganizerApplications(
   organizerId: string,
 ): Promise<OrganizerApplication[]> {
   const supabase = await createClient();
-
-  const { data: apps, error } = await supabase
-    .from("application_details_view")
-    .select(
-      "id, type, status, email, first_name, last_name, school_or_organization, details, answers, submitted_at, notification_sent_at, notification_error",
-    )
-    .in("type", [...TYPE_VALUES])
-    .neq("status", "draft")
-    .neq("status", "Draft")
-    .order("submitted_at", { ascending: false });
-
-  if (error) {
-    throw new Error(
-      `Could not load applications (${error.message}). Confirm you are an admin and the organizer grades migration is applied.`,
-    );
-  }
-
-  const rows = ((apps ?? []) as AppRow[]).filter((row) => normalizeType(row.type));
+  const rows = await loadApplicationRows(supabase);
   if (rows.length === 0) return [];
 
-  const ids = rows.map((row) => row.id);
+  const ids = [...new Set(rows.map((row) => row.id!).filter(Boolean))];
   const [{ data: hackers }, { data: mentors }, { data: judges }, gradesByApp] =
     await Promise.all([
-      supabase
-        .from("hacker_applications")
-        .select(
-          "user_id, first_name, last_name, preferred_name, phone_number, date_of_birth, t_shirt_size, city, province, dietary_restrictions, dietary_other, accessibility_accommodations, accessibility_other, school_name, grade, graduation_year, school_city, hackathon_experience, heard_about_hts, heard_about_hts_other, application_questions_1, application_questions_2, application_questions_3, application_questions_4, application_questions_5",
-        )
-        .in("user_id", ids),
+      supabase.from("hacker_applications").select(HACKER_DETAIL_COLUMNS).in("user_id", ids),
       supabase
         .from("mentor_applications")
         .select(
@@ -377,67 +418,89 @@ export async function listOrganizerApplications(
 
   return rows.flatMap((row): OrganizerApplication[] => {
     const type = normalizeType(row.type);
-    if (!type) return [];
+    const appId = row.id;
+    if (!type || !appId) return [];
 
-    const appGrades = gradesByApp.get(row.id) ?? [];
-    const fromAnswers = parseAnswers(row.answers, type);
-    const submittedAt = row.submitted_at || new Date().toISOString();
+    try {
+      const appGrades = gradesByApp.get(appId) ?? [];
+      const fromAnswers = parseAnswers(row.answers, type);
+      const submittedAt = row.submitted_at || new Date().toISOString();
 
-    if (type === "hacker") {
-      const hacker = hackerById.get(row.id);
+      if (type === "hacker") {
+        const hacker = hackerById.get(appId);
+        const answers = pickAnswers(fromAnswers, hackerAnswerFallback(hacker), type);
+        const questions = hackerQuestionsForStoredAnswers(answers);
+        const scores = scoreSummary(appGrades, organizerId, questions);
+        return [
+          {
+            id: appId,
+            type: "hacker",
+            status: mapStatus(row.status),
+            first_name: row.first_name || "Applicant",
+            last_name: row.last_name || "",
+            email: row.email || "",
+            school_or_organization: row.school_or_organization || null,
+            details: row.details,
+            answers: answers.slice(0, questions.length),
+            submitted_at: submittedAt,
+            notification_sent_at: row.notification_sent_at,
+            notification_error: row.notification_error,
+            ...scores,
+          },
+        ];
+      }
+
+      if (type === "mentor") {
+        const mentor = mentorById.get(appId);
+        const answers = pickAnswers(
+          fromAnswers,
+          mentor
+            ? [
+                mentor.technologies_and_tools || "",
+                mentor.mentoring_experience || "",
+                mentor.mentoring_goals || "",
+              ]
+            : null,
+          type,
+        );
+        const scores = scoreSummary(appGrades, organizerId, questionsForType(type));
+        return [
+          {
+            id: appId,
+            type: "mentor",
+            status: mapStatus(row.status),
+            first_name: row.first_name || "Applicant",
+            last_name: row.last_name || "",
+            email: row.email || "",
+            school_or_organization: row.school_or_organization || null,
+            details: row.details,
+            answers,
+            submitted_at: submittedAt,
+            notification_sent_at: row.notification_sent_at,
+            notification_error: row.notification_error,
+            ...scores,
+          },
+        ];
+      }
+
+      const judge = judgeById.get(appId);
       const answers = pickAnswers(
         fromAnswers,
-        hacker
+        judge
           ? [
-              hacker.application_questions_1 || "",
-              hacker.application_questions_2 || "",
-              hacker.application_questions_3 || "",
-              hacker.application_questions_4 || "",
-              hacker.application_questions_5 || "",
-            ]
-          : null,
-        type,
-      );
-      const questions = hackerQuestionsForStoredAnswers(answers);
-      const scores = scoreSummary(appGrades, organizerId, questions);
-      return [
-        {
-          id: row.id,
-          type: "hacker",
-          status: mapStatus(row.status),
-          first_name: row.first_name || "Applicant",
-          last_name: row.last_name || "",
-          email: row.email || "",
-          school_or_organization: row.school_or_organization || null,
-          details: row.details,
-          answers: answers.slice(0, questions.length),
-          submitted_at: submittedAt,
-          notification_sent_at: row.notification_sent_at,
-          notification_error: row.notification_error,
-          ...scores,
-        },
-      ];
-    }
-
-    if (type === "mentor") {
-      const mentor = mentorById.get(row.id);
-      const nameParts = splitName(mentor?.name || undefined);
-      const answers = pickAnswers(
-        fromAnswers,
-        mentor
-          ? [
-              mentor.technologies_and_tools || "",
-              mentor.mentoring_experience || "",
-              mentor.mentoring_goals || "",
+              judge.strong_project_description || "",
+              judge.professional_background || "",
+              judge.judging_experience || "",
             ]
           : null,
         type,
       );
       const scores = scoreSummary(appGrades, organizerId, questionsForType(type));
+
       return [
         {
-          id: row.id,
-          type: "mentor",
+          id: appId,
+          type: "judge",
           status: mapStatus(row.status),
           first_name: row.first_name || "Applicant",
           last_name: row.last_name || "",
@@ -451,39 +514,9 @@ export async function listOrganizerApplications(
           ...scores,
         },
       ];
+    } catch {
+      return [];
     }
-
-    const judge = judgeById.get(row.id);
-    const answers = pickAnswers(
-      fromAnswers,
-      judge
-        ? [
-            judge.strong_project_description || "",
-            judge.professional_background || "",
-            judge.judging_experience || "",
-          ]
-        : null,
-      type,
-    );
-    const scores = scoreSummary(appGrades, organizerId, questionsForType(type));
-
-    return [
-      {
-        id: row.id,
-        type: "judge",
-        status: mapStatus(row.status),
-        first_name: row.first_name || "Applicant",
-        last_name: row.last_name || "",
-        email: row.email || "",
-        school_or_organization: row.school_or_organization || null,
-        details: row.details,
-        answers,
-        submitted_at: submittedAt,
-        notification_sent_at: row.notification_sent_at,
-        notification_error: row.notification_error,
-        ...scores,
-      },
-    ];
   });
 }
 
@@ -499,22 +532,34 @@ export async function getOrganizerReviewApplication(
   pendingIds: string[];
 } | null> {
   const supabase = await createClient();
-  const { data: app, error } = await supabase
+
+  let row: AppRow | null = null;
+  const fromView = await supabase
     .from("application_details_view")
-    .select(
-      "id, type, status, email, first_name, last_name, school_or_organization, details, answers, submitted_at, notification_sent_at, notification_error",
-    )
+    .select(VIEW_COLUMNS)
     .eq("id", applicationId)
     .maybeSingle();
+  if (!fromView.error && fromView.data) {
+    row = normalizeAppRow(fromView.data as AppRow);
+  } else {
+    const fromTable = await supabase
+      .from("applications")
+      .select(APP_COLUMNS)
+      .or(`id.eq.${applicationId},user_id.eq.${applicationId}`)
+      .limit(1)
+      .maybeSingle();
+    if (fromTable.error || !fromTable.data) return null;
+    row = normalizeAppRow(fromTable.data as AppRow & { application_type?: string | null });
+  }
 
-  if (error || !app) return null;
-  const type = normalizeType((app as AppRow).type);
+  if (!row) return null;
+  const type = normalizeType(row.type);
   if (!type) return null;
+  const appId = row.id || applicationId;
 
-  const row = app as AppRow;
   const fromAnswers = parseAnswers(row.answers, type);
   const list = await listOrganizerApplications(organizerId);
-  const listed = list.find((item) => item.id === applicationId);
+  const listed = list.find((item) => item.id === appId || item.id === applicationId);
 
   let info: ReviewInfoField[] = [];
   let answerTexts = (listed?.answers as string[] | undefined) ?? fromAnswers;
@@ -522,25 +567,11 @@ export async function getOrganizerReviewApplication(
   if (type === "hacker") {
     const { data: hacker } = await supabase
       .from("hacker_applications")
-      .select(
-        "user_id, first_name, last_name, preferred_name, phone_number, date_of_birth, t_shirt_size, city, province, dietary_restrictions, dietary_other, accessibility_accommodations, accessibility_other, school_name, grade, graduation_year, school_city, hackathon_experience, heard_about_hts, heard_about_hts_other, application_questions_1, application_questions_2, application_questions_3, application_questions_4, application_questions_5",
-      )
-      .eq("user_id", applicationId)
+      .select(HACKER_DETAIL_COLUMNS)
+      .eq("user_id", appId)
       .maybeSingle();
     const hackerRow = hacker as HackerRow | null;
-    answerTexts = pickAnswers(
-      fromAnswers,
-      hackerRow
-        ? [
-            hackerRow.application_questions_1 || "",
-            hackerRow.application_questions_2 || "",
-            hackerRow.application_questions_3 || "",
-            hackerRow.application_questions_4 || "",
-            hackerRow.application_questions_5 || "",
-          ]
-        : null,
-      type,
-    );
+    answerTexts = pickAnswers(fromAnswers, hackerAnswerFallback(hackerRow), type);
     info = buildHackerInfo(row, hackerRow ?? undefined);
   } else if (type === "mentor") {
     const { data: mentor } = await supabase
@@ -548,7 +579,7 @@ export async function getOrganizerReviewApplication(
       .select(
         "user_id, name, university_college, program_and_year_of_study, linkedin_portfolio_github_url, mentoring_areas, technologies_and_tools, mentoring_experience, mentoring_goals, available_for_full_event, times_unavailable",
       )
-      .eq("user_id", applicationId)
+      .eq("user_id", appId)
       .maybeSingle();
     const mentorRow = mentor as MentorRow | null;
     answerTexts = pickAnswers(
@@ -569,7 +600,7 @@ export async function getOrganizerReviewApplication(
       .select(
         "user_id, name, company_organization, job_title, linkedin_url, industry_field, expertise, years_of_professional_experience, strong_project_description, professional_background, judging_experience, available_for_full_judging_period",
       )
-      .eq("user_id", applicationId)
+      .eq("user_id", appId)
       .maybeSingle();
     const judgeRow = judge as JudgeRow | null;
     answerTexts = pickAnswers(
@@ -590,7 +621,7 @@ export async function getOrganizerReviewApplication(
     type === "hacker" ? hackerQuestionsForStoredAnswers(answerTexts) : questionsForType(type);
 
   const review: ReviewApplication = {
-    id: applicationId,
+    id: appId,
     type,
     status: mapStatus(row.status),
     first_name: row.first_name || listed?.first_name || "Applicant",
@@ -606,7 +637,7 @@ export async function getOrganizerReviewApplication(
   const { data: grades } = await supabase
     .from("application_grades")
     .select("grader_id, scores")
-    .eq("application_user_id", applicationId);
+    .eq("application_user_id", appId);
 
   const gradeRows = (grades ?? []) as Pick<GradeRow, "grader_id" | "scores">[];
   const own = gradeRows.find((grade) => grade.grader_id === organizerId);
