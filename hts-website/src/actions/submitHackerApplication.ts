@@ -8,6 +8,8 @@ function stripHtml(value: string): string {
 	return value.replace(/<[^>]*>/g, "");
 }
 
+const MAX_TEAMMATES = 4;
+
 const hackerSchema = z.object({
 	section1: z.object({
 		firstName: z.string().trim().min(1, "First name is required").max(200).transform(stripHtml),
@@ -20,7 +22,11 @@ const hackerSchema = z.object({
 		teammates: z
 			.array(z.string().trim().max(200).transform(stripHtml))
 			.transform((names) => names.filter((name) => name.length > 0))
-			.pipe(z.array(z.string()).min(1, "Please list your teammates, or write \"None\" if you're applying on your own")),
+			.pipe(z.array(z.string()).min(1, "Please list your teammates, or write \"None\" if you're applying on your own"))
+			.refine(
+				(names) => names.filter((name) => name.toLowerCase() !== "none").length <= MAX_TEAMMATES,
+				{ message: `Teams can have at most ${MAX_TEAMMATES} teammates in addition to yourself.` }
+			),
 		dietaryRestrictions: z.array(z.string().trim().max(200).transform(stripHtml)),
 		dietaryOther: z.string().trim().max(500).transform(stripHtml).default(""),
 		accessibilityAccommodations: z.array(z.string().trim().max(200).transform(stripHtml)),

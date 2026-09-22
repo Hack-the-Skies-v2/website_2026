@@ -15,6 +15,13 @@ const AUTO_SAVE_DELAY = 1500;
 const TOTAL_SECTIONS = 5;
 const MAX_RESUME_MB = 4;
 const MAX_RESUME_BYTES = MAX_RESUME_MB * 1024 * 1024;
+const MAX_TEAMMATES = 4;
+
+function countTeammates(teammates: string[]): number {
+    return teammates.filter(
+        (name) => name.trim().length > 0 && name.trim().toLowerCase() !== "none"
+    ).length;
+}
 
 const HEARD_ABOUT_OPTIONS = [
     "Word of Mouth (from an organizer)",
@@ -331,6 +338,8 @@ export default function ApplicationForm() {
         if (!data.section1.teammates.some((name) => name.trim()))
             newErrors.teammates =
                 "Please list your teammates, or write \"None\" if you're applying on your own.";
+        else if (countTeammates(data.section1.teammates) > MAX_TEAMMATES)
+            newErrors.teammates = `Teams can have at most ${MAX_TEAMMATES} teammates in addition to yourself (${MAX_TEAMMATES + 1} total). You listed ${countTeammates(data.section1.teammates)}.`;
         if (
             data.section1.dietaryRestrictions.includes("Other") &&
             !data.section1.dietaryOther.trim()
@@ -1197,10 +1206,19 @@ function Section1({
                         section1: { ...section1, teammates: e.target.value.split(",") },
                     })
                 }
-                helperText='If so, enter their full names, separated by commas. Otherwise, write "None".'
+                helperText={`If so, enter their full names, separated by commas. Otherwise, write "None". Max ${MAX_TEAMMATES} teammates in addition to yourself.`}
                 error={errors.teammates}
                 required
             />
+            <p
+                className={`font-outfit text-sm mt-1 ${
+                    countTeammates(section1.teammates) > MAX_TEAMMATES
+                        ? "text-red-400"
+                        : "text-primary/60"
+                }`}
+            >
+                {countTeammates(section1.teammates)}/{MAX_TEAMMATES} teammates listed
+            </p>
 
             <div>
                 <label className="block text-primary font-outfit text-base mb-3">
