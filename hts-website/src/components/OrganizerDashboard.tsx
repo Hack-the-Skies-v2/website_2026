@@ -100,7 +100,7 @@ export default function OrganizerDashboard({
 
   const visible = byStatus[statusBucket];
   const activeTable = TABLES.find((table) => table.status === statusBucket)!;
-  // Start reviewing always opens the highest-priority pending app (ungraded first).
+  // Start reviewing opens the most recent pending app.
   const startId = byStatus.pending[0]?.id ?? filtered[0]?.id ?? null;
   const trackCounts = {
     hacker: applications.filter((application) => application.type === "hacker").length,

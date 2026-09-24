@@ -47,7 +47,7 @@ export default async function OrganizerReviewPage({ params }: PageProps) {
         <div className="mb-4 text-sm text-white/50">
           Submitted {new Date(loaded.application.submitted_at).toLocaleString()}
           <span className="ml-3 text-white/35">
-            Queue: ungraded first, most graded last
+            Queue: newest first
           </span>
           <Link href="/organizers" className="ml-3 text-primary hover:underline">
             All lists
