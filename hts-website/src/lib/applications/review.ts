@@ -436,10 +436,11 @@ export async function listOrganizerApplications(
             id: appId,
             type: "hacker",
             status: mapStatus(row.status),
-            first_name: row.first_name || "Applicant",
-            last_name: row.last_name || "",
+            first_name: row.first_name || hacker?.first_name || "Applicant",
+            last_name: row.last_name || hacker?.last_name || "",
             email: row.email || "",
-            school_or_organization: row.school_or_organization || null,
+            school_or_organization:
+              row.school_or_organization || hacker?.school_name || null,
             details: row.details,
             answers: answers.slice(0, questions.length),
             submitted_at: submittedAt,
@@ -452,6 +453,7 @@ export async function listOrganizerApplications(
 
       if (type === "mentor") {
         const mentor = mentorById.get(appId);
+        const nameParts = splitName(mentor?.name || undefined);
         const answers = pickAnswers(
           fromAnswers,
           mentor
@@ -469,10 +471,11 @@ export async function listOrganizerApplications(
             id: appId,
             type: "mentor",
             status: mapStatus(row.status),
-            first_name: row.first_name || "Applicant",
-            last_name: row.last_name || "",
+            first_name: row.first_name || nameParts.first || "Applicant",
+            last_name: row.last_name || nameParts.last,
             email: row.email || "",
-            school_or_organization: row.school_or_organization || null,
+            school_or_organization:
+              row.school_or_organization || mentor?.university_college || null,
             details: row.details,
             answers,
             submitted_at: submittedAt,
@@ -484,6 +487,7 @@ export async function listOrganizerApplications(
       }
 
       const judge = judgeById.get(appId);
+      const judgeName = splitName(judge?.name || undefined);
       const answers = pickAnswers(
         fromAnswers,
         judge
@@ -496,16 +500,20 @@ export async function listOrganizerApplications(
         type,
       );
       const scores = scoreSummary(appGrades, organizerId, questionsForType(type));
+      const org =
+        row.school_or_organization ||
+        [judge?.company_organization, judge?.job_title].filter(Boolean).join(" · ") ||
+        null;
 
       return [
         {
           id: appId,
           type: "judge",
           status: mapStatus(row.status),
-          first_name: row.first_name || "Applicant",
-          last_name: row.last_name || "",
+          first_name: row.first_name || judgeName.first || "Applicant",
+          last_name: row.last_name || judgeName.last,
           email: row.email || "",
-          school_or_organization: row.school_or_organization || null,
+          school_or_organization: org,
           details: row.details,
           answers,
           submitted_at: submittedAt,
@@ -563,6 +571,9 @@ export async function getOrganizerReviewApplication(
 
   let info: ReviewInfoField[] = [];
   let answerTexts = (listed?.answers as string[] | undefined) ?? fromAnswers;
+  let detailFirst = "";
+  let detailLast = "";
+  let detailOrg: string | null = null;
 
   if (type === "hacker") {
     const { data: hacker } = await supabase
@@ -571,6 +582,9 @@ export async function getOrganizerReviewApplication(
       .eq("user_id", appId)
       .maybeSingle();
     const hackerRow = hacker as HackerRow | null;
+    detailFirst = hackerRow?.first_name || "";
+    detailLast = hackerRow?.last_name || "";
+    detailOrg = hackerRow?.school_name || null;
     answerTexts = pickAnswers(fromAnswers, hackerAnswerFallback(hackerRow), type);
     info = buildHackerInfo(row, hackerRow ?? undefined);
   } else if (type === "mentor") {
@@ -582,6 +596,10 @@ export async function getOrganizerReviewApplication(
       .eq("user_id", appId)
       .maybeSingle();
     const mentorRow = mentor as MentorRow | null;
+    const nameParts = splitName(mentorRow?.name || undefined);
+    detailFirst = nameParts.first;
+    detailLast = nameParts.last;
+    detailOrg = mentorRow?.university_college || null;
     answerTexts = pickAnswers(
       fromAnswers,
       mentorRow
@@ -603,6 +621,11 @@ export async function getOrganizerReviewApplication(
       .eq("user_id", appId)
       .maybeSingle();
     const judgeRow = judge as JudgeRow | null;
+    const nameParts = splitName(judgeRow?.name || undefined);
+    detailFirst = nameParts.first;
+    detailLast = nameParts.last;
+    detailOrg =
+      [judgeRow?.company_organization, judgeRow?.job_title].filter(Boolean).join(" · ") || null;
     answerTexts = pickAnswers(
       fromAnswers,
       judgeRow
@@ -624,10 +647,12 @@ export async function getOrganizerReviewApplication(
     id: appId,
     type,
     status: mapStatus(row.status),
-    first_name: row.first_name || listed?.first_name || "Applicant",
-    last_name: row.last_name || listed?.last_name || "",
+    first_name:
+      row.first_name || listed?.first_name || detailFirst || "Applicant",
+    last_name: row.last_name || listed?.last_name || detailLast || "",
     email: row.email || listed?.email || "",
-    school_or_organization: row.school_or_organization || listed?.school_or_organization || null,
+    school_or_organization:
+      row.school_or_organization || listed?.school_or_organization || detailOrg || null,
     details: row.details,
     answers: answersByQuestion(type, answerTexts.slice(0, questions.length), questions),
     info,
