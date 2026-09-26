@@ -27,7 +27,7 @@ export default async function OrganizersPage() {
             <h1 className="mt-3 text-4xl font-semibold">Organizer console</h1>
             <p className="mt-2 text-white/65">
               Signed in as {organizer.email}. Live applications from the portal.
-              Queue prioritizes apps you have not graded yet with the fewest ratings first.
+              Newest submissions appear first.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">

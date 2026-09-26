@@ -9,20 +9,12 @@ export type ReviewPriorityApp = {
 };
 
 /**
- * Fair review order: apps you have not graded yet, with the fewest existing
- * grades first, then apps that already have more grades. Oldest submission
- * breaks ties so the queue stays stable.
+ * Review list order: newest submissions first, oldest last.
  */
 export function prioritizeForReview<T extends ReviewPriorityApp>(apps: T[]): T[] {
-  return [...apps].sort((a, b) => {
-    if (a.graded_by_me !== b.graded_by_me) {
-      return a.graded_by_me ? 1 : -1;
-    }
-    if (a.grader_count !== b.grader_count) {
-      return a.grader_count - b.grader_count;
-    }
-    return new Date(a.submitted_at).getTime() - new Date(b.submitted_at).getTime();
-  });
+  return [...apps].sort(
+    (a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime(),
+  );
 }
 
 export function queuePosition(ids: string[], currentId: string) {
