@@ -43,10 +43,7 @@ async function OrganizerSignInGate({
         {params.error === "not_admin" || (user && !organizer) ? (
           <p className="mt-4 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
             {(params.email || user?.email) ?? "This account"} is signed in but not
-            marked admin. In Supabase SQL run:
-            <code className="mt-2 block text-left text-star">
-              update public.users set admin = true where id = &apos;{user?.id ?? "YOUR_USER_UUID"}&apos;;
-            </code>
+            marked admin.
           </p>
         ) : null}
         {params.error === "config" ? (
