@@ -176,7 +176,7 @@ export default function Sponsors() {
 			<DriftingCloud className="bottom-[8%] left-[-4%] h-28 w-56 md:h-36 md:w-80" duration={19} />
 			<DriftingCloud className="right-[-6%] bottom-[14%] h-20 w-44 scale-x-[-1] md:h-28 md:w-64" duration={15} />
 
-			<h2 className="relative z-10 mb-4 px-4 text-center font-pixel text-xl tracking-wider text-primary drop-shadow-[0_0_12px_rgba(193,185,242,0.5)] sm:text-2xl md:text-3xl">
+			<h2 className="relative z-10 mb-4 px-4 text-center font-outfit text-4xl font-semibold text-primary drop-shadow-[0_0_12px_rgba(193,185,242,0.5)] md:text-5xl">
 				Our Sponsors
 			</h2>
 			<p className="relative z-10 mb-12 max-w-xl text-center font-outfit text-sm text-white/60 md:mb-16">

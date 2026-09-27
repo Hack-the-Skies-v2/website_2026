@@ -339,7 +339,7 @@ export default function Team() {
 			<SoftCloud speed={0.42} className="bottom-[6%] left-[-2%] h-32 w-64 md:h-40 md:w-80" />
 			<SoftCloud speed={0.48} className="right-[-4%] bottom-[10%] h-28 w-56 scale-x-[-1] md:h-36 md:w-72" />
 
-			<h2 className="relative z-10 mb-8 px-4 text-center font-pixel text-xl tracking-wider text-primary drop-shadow-[0_0_12px_rgba(193,185,242,0.5)] sm:text-2xl md:mb-14 md:text-3xl">
+			<h2 className="relative z-10 mb-8 px-4 text-center font-outfit text-4xl font-semibold text-primary drop-shadow-[0_0_12px_rgba(193,185,242,0.5)] md:mb-14 md:text-5xl">
 				Meet the Team
 			</h2>
 

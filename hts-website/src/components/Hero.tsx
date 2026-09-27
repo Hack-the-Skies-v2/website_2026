@@ -71,6 +71,30 @@ export default function Hero() {
             >
                 <img src="/Planet1.webp" alt="" className="h-full w-full" />
             </ParallaxLayer>
+            <ParallaxLayer
+                speed={0.4}
+                className="
+                    pointer-events-none
+                    absolute
+                    left-[14%]
+                    top-48
+                    w-14
+                    sm:left-[14%]
+                    sm:top-52
+                    sm:w-16
+                    md:left-[16%]
+                    md:top-56
+                    md:w-20
+                    lg:left-[20%]
+                    lg:top-60
+                    lg:w-24
+                    select-none
+                    opacity-85
+                    planet-float
+                "
+            >
+                <img src="/favicon.ico" alt="Hack the Skies" className="h-full w-full object-contain" />
+            </ParallaxLayer>
             <h1 className="font-outfit text-5xl md:text-5xl lg:text-7xl font-semibold text-primary select-none">
                 Hack the Skies
             </h1>
@@ -97,13 +121,16 @@ export default function Hero() {
                 <span className="drop-shadow-[0_0_15px_rgba(193,185,242,0.8)]">2</span>
                 <span className="drop-shadow-[0_0_15px_rgba(193,185,242,0.8)]">6</span>
             </div>
-            <h1 className="font-outfit text-lg md:text-xl lg:text-3xl text-primary select-none drop-shadow-[0_0_8px_rgba(193,185,242,0.5)] px-4">
+            <p className="font-outfit text-lg md:text-xl lg:text-3xl text-primary select-none drop-shadow-[0_0_8px_rgba(193,185,242,0.5)] px-4">
                 A hackathon founded by high school students,{" "}
                 <span className="hidden md:inline">
                     <br />
                 </span>
                 for high school students.
-            </h1>
+            </p>
+            <p className="mt-4 font-outfit text-base sm:text-xl md:text-2xl font-medium text-primary select-none drop-shadow-[0_0_8px_rgba(193,185,242,0.5)] px-4">
+                Date: October 17-18 &bull; Location: Humber College North Campus
+            </p>
             {/*<p className="font-outfit text-sm md:text-base text-primary/70 mt-4 mb-4 select-none">
                 Judge and Mentor applications are open.
             </p>*/}
