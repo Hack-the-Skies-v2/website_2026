@@ -104,7 +104,7 @@ const SPONSORS = [
 		url: "https://www.backboard.io",
 		logo: "/sponsors/backboardio.png",
 		rel: undefined,
-		size: "sm",
+		size: "md",
 	},
 	{
 		name: "RISE Research",
