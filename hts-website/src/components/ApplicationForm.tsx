@@ -1199,7 +1199,7 @@ function Section1({
             />
 
             <FormInput
-                label="Are you applying with a team?"
+                label="Are you applying with a team? NOTE THAT ALL TEAM MEMBERS MUST APPLY SEPERATELY"
                 value={section1.teammates.join(",")}
                 onChange={(e) =>
                     updateData({
