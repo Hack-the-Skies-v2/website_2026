@@ -354,22 +354,12 @@ function pickAnswers(fromAnswers: string[], fallback: string[] | null, type: App
   });
 }
 
-async function withResumeLink(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  fields: ReviewInfoField[],
-  userId: string,
-  resumePath: string | null | undefined,
-): Promise<ReviewInfoField[]> {
-  const path = resumePath?.trim() || `${userId}/resume.pdf`;
-  const { data, error } = await supabase.storage.from("resumes").createSignedUrl(path, 60 * 60);
-  if (error || !data?.signedUrl) return fields;
-
+function withResumeLink(fields: ReviewInfoField[], userId: string): ReviewInfoField[] {
   const next = fields.filter((field) => field.label !== "Resume");
-  const existing = fields.find((field) => field.label === "Resume");
   next.push({
     label: "Resume",
-    value: existing?.value && !existing.value.includes("/") ? existing.value : "View resume",
-    href: data.signedUrl,
+    value: "Open resume",
+    href: `/api/organizer-resume/${userId}`,
   });
   return next;
 }
@@ -681,7 +671,7 @@ export async function getOrganizerReviewApplication(
     detailOrg = hackerRow?.school_name || null;
     answerTexts = pickAnswers(fromAnswers, hackerAnswerFallback(hackerRow), type);
     info = buildHackerInfo(row, hackerRow ?? undefined);
-    info = await withResumeLink(supabase, info, appId, hackerRow?.resume_path);
+    info = withResumeLink(info, appId);
   } else if (type === "mentor") {
     const { data: mentor } = await supabase
       .from("mentor_applications")

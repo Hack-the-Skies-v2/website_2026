@@ -418,7 +418,16 @@ export default function OrganizerReviewClient({
                     {field.label}
                   </dt>
                   <dd className="mt-1 whitespace-pre-wrap break-words text-sm text-white/85">
-                    {field.href || /^https?:\/\//i.test(field.value) ? (
+                    {field.label === "Resume" && field.href ? (
+                      <a
+                        href={field.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex rounded-full bg-star px-4 py-2 text-sm font-semibold text-[#201b38] hover:brightness-110"
+                      >
+                        Open resume
+                      </a>
+                    ) : field.href || /^https?:\/\//i.test(field.value) ? (
                       <a
                         href={field.href || field.value}
                         target="_blank"
