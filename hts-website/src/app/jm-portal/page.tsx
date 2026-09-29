@@ -30,14 +30,14 @@ export default async function JMPortalPage() {
 		profile?.mentor || application?.application_type === "mentor",
 	);
 
+	if (!isJudge && !isMentor) redirect("/apply");
+
 	const role: "Judge" | "Mentor" | "Judge & Mentor" =
 		isJudge && isMentor
 			? "Judge & Mentor"
 			: isJudge
 				? "Judge"
-				: isMentor
-					? "Mentor"
-					: "Judge & Mentor";
+				: "Mentor";
 
 	return (
 		<JMPortal
@@ -49,3 +49,4 @@ export default async function JMPortalPage() {
 		/>
 	);
 }
+
