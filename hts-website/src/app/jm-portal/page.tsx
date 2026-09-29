@@ -45,6 +45,7 @@ export default async function JMPortalPage() {
 			email={user.email ?? ""}
 			role={role}
 			isJudge={isJudge}
+			status={application?.status ?? "pending"}
 		/>
 	);
 }

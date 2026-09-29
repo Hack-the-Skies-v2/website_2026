@@ -39,15 +39,9 @@ export default function UpdatePasswordPage() {
         >
           <img src="/Constellation.png" alt="" className="h-full w-full" />
         </ParallaxLayer>
-        <ParallaxLayer
-          speed={0.12}
-          className="absolute left-1/2 top-[-80px] w-[850px] -translate-x-1/2 opacity-20"
-        >
-          <img src="/Cloud1.webp" alt="" className="h-full w-full" />
-        </ParallaxLayer>
       </div>
 
-      <section className="relative z-10 w-full max-w-md rounded-3xl border border-primary/25 bg-[#171329]/90 p-6 shadow-[0_0_50px_rgba(107,87,155,0.25)] backdrop-blur-xl sm:p-8">
+      <section className="relative z-10 w-full max-w-md rounded-3xl border border-primary/25 bg-[#171329] p-6 sm:p-8">
         <div className="mb-8 text-center">
           <Link href="/" className="inline-flex items-center gap-3">
             <img

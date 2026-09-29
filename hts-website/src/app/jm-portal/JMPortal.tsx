@@ -11,6 +11,7 @@ type JMPortalProps = {
     email: string;
     role: "Judge" | "Mentor" | "Judge & Mentor";
     isJudge: boolean;
+    status?: string | null;
 };
 
 const tabs: PortalTab[] = ["Application Status", "Schedule", "QR code"];
@@ -20,35 +21,37 @@ export default function JMPortal({
     email,
     role,
     isJudge,
+    status,
 }: JMPortalProps) {
     const [activeTab, setActiveTab] = useState<PortalTab>("Application Status");
+    const displayStatus = status ? status.charAt(0).toUpperCase() + status.slice(1) : "Pending";
 
     return (
-        <main className="relative z-10 min-h-screen font-outfit text-primary">
+        <main className="relative z-10 min-h-screen bg-[#141123] font-outfit text-primary">
             <div className="grid min-h-screen w-full lg:grid-cols-[15rem_1fr]">
-                <aside className="relative border-b border-primary/15 px-5 py-6 lg:border-b-0 lg:border-r lg:px-6">
+                <aside className="relative border-b border-primary/15 bg-[#141123] px-5 py-6 lg:border-b-0 lg:border-r lg:px-6">
                     <div className="mb-8 px-3 pt-2">
-                        <Link href="/" className="group inline-flex items-center gap-2 transition hover:opacity-85">
+                        <Link href="/" className="group inline-flex items-center gap-3 transition hover:opacity-85">
                             <img
                                 src="/favicon.ico"
                                 alt="Hack the Skies"
-                                className="h-5 w-5 object-contain drop-shadow-[0_0_8px_rgba(193,185,242,0.45)] transition group-hover:scale-105"
+                                className="h-6 w-6 object-contain drop-shadow-[0_0_8px_rgba(193,185,242,0.45)] transition group-hover:scale-105"
                             />
-                            <span className="text-xs uppercase tracking-[0.24em] text-primary/50">Hack the Skies</span>
+                            <span className="text-xl font-semibold text-primary">{role} Portal</span>
                         </Link>
-                        <p className="mt-2 text-xl font-semibold text-primary">{role} Portal</p>
                     </div>
 
-                    <nav aria-label="Judge & Mentor portal sections" className="space-y-2">
+                    <nav aria-label="Judge & Mentor portal sections" className="space-y-1">
                         {tabs.map((tab) => (
                             <button
                                 key={tab}
                                 type="button"
                                 onClick={() => setActiveTab(tab)}
-                                className={`w-full rounded-xl px-3 py-3 text-left text-sm transition ${activeTab === tab
-                                    ? "bg-button font-semibold text-white shadow-[0_0_18px_rgba(130,104,180,0.35)]"
-                                    : "text-primary/60 hover:bg-primary/10 hover:text-primary"
-                                    }`}
+                                className={`w-full rounded-xl px-3 py-2.5 text-left text-sm transition cursor-pointer ${
+                                    activeTab === tab
+                                        ? "bg-button font-semibold text-white shadow-[0_0_18px_rgba(130,104,180,0.35)]"
+                                        : "text-primary/60 hover:bg-primary/10 hover:text-primary"
+                                }`}
                             >
                                 {tab}
                             </button>
@@ -58,7 +61,7 @@ export default function JMPortal({
                             <div className="pt-2">
                                 <Link
                                     href="/judge"
-                                    className="flex items-center justify-between rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-3 text-left text-sm font-semibold text-amber-200 shadow-[0_0_18px_rgba(248,212,114,0.15)] transition hover:border-amber-400/50 hover:bg-amber-400/20"
+                                    className="flex items-center justify-between rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2.5 text-left text-sm font-semibold text-amber-200 shadow-[0_0_18px_rgba(248,212,114,0.15)] transition hover:border-amber-400/50 hover:bg-amber-400/20"
                                 >
                                     <span>Judging Portal</span>
                                     <span className="text-xs">↗</span>
@@ -72,18 +75,18 @@ export default function JMPortal({
                     </div>
                 </aside>
 
-                <section className="min-w-0 px-5 py-8 sm:px-8 lg:px-12 lg:py-12">
+                <section className="min-w-0 bg-[#141123] px-5 py-8 sm:px-8 lg:px-12 lg:py-12">
                     <header className="mb-8 border-b border-primary/15 pb-6">
-                        <h1 className="mt-2 text-3xl font-semibold text-primary sm:text-4xl">{activeTab}</h1>
+                        <h1 className="text-2xl font-semibold text-primary sm:text-3xl">{activeTab}</h1>
                     </header>
 
                     {activeTab === "Application Status" && (
                         <div className="max-w-3xl space-y-6">
-                            <div className="rounded-2xl border border-primary/15 bg-[#221c38] p-6">
+                            <div className="rounded-2xl border border-primary/20 bg-[#141123] p-6">
                                 <div className="flex items-center justify-between">
-                                    <p className="font-semibold text-primary">{role} Application</p>
-                                    <span className="rounded-full border border-star/30 bg-star/15 px-3 py-1 text-xs font-semibold text-star">
-                                        Pending
+                                    <p className="font-semibold text-primary">{role} Application Status</p>
+                                    <span className="text-sm font-medium text-neutral-300">
+                                        {displayStatus}
                                     </span>
                                 </div>
                             </div>
@@ -91,13 +94,13 @@ export default function JMPortal({
                     )}
 
                     {activeTab === "Schedule" && (
-                        <div className="flex min-h-64 max-w-2xl flex-col items-center justify-center rounded-2xl border border-primary/15 bg-[#221c38] p-8 text-center sm:p-12">
+                        <div className="flex min-h-64 max-w-2xl flex-col items-center justify-center rounded-2xl border border-primary/20 bg-[#141123] p-8 text-center sm:p-12">
                             <h2 className="text-2xl font-semibold text-primary sm:text-3xl">Coming Soon</h2>
                         </div>
                     )}
 
                     {activeTab === "QR code" && (
-                        <div className="flex min-h-64 max-w-2xl flex-col items-center justify-center rounded-2xl border border-primary/15 bg-[#221c38] p-8 text-center sm:p-12">
+                        <div className="flex min-h-64 max-w-2xl flex-col items-center justify-center rounded-2xl border border-primary/20 bg-[#141123] p-8 text-center sm:p-12">
                             <h2 className="text-2xl font-semibold text-primary sm:text-3xl">Coming Soon</h2>
                         </div>
                     )}

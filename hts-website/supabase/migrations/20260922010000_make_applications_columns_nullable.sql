@@ -1,8 +1,3 @@
--- Migration: Make non-essential columns on public.applications nullable
--- Preserves NOT NULL on identity/type columns: user_id, id, application_type, type.
--- Any other column (e.g. first_name, last_name, email, school_or_organization, details, answers, etc.)
--- that might exist with a NOT NULL constraint is altered to DROP NOT NULL.
-
 DO $$
 DECLARE
   r RECORD;

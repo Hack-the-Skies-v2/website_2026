@@ -292,7 +292,7 @@ function AuthContent() {
   };
 
   return (
-    <main className="relative flex min-h-screen flex-col overflow-x-hidden bg-[#141123]">
+    <main className="relative flex min-h-screen flex-col overflow-x-hidden">
       <Link
         href="/"
         className="
@@ -942,7 +942,7 @@ export default function Auth() {
   return (
     <Suspense
       fallback={
-        <main className="flex min-h-screen items-center justify-center bg-[#141123]">
+        <main className="flex min-h-screen items-center justify-center">
           <div className="font-outfit text-lg text-primary/70">Loading…</div>
         </main>
       }

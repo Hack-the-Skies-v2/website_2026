@@ -1148,6 +1148,7 @@ function Section1({
                             })
                         }
                         error={errors.pronounsOther}
+                        required
                         className="mt-3"
                     />
                 )}
@@ -1160,7 +1161,7 @@ function Section1({
 
             <div>
                 <label className="block text-primary font-outfit text-base mb-3">
-                    Grade
+                    Grade <span className="text-red-400">*</span>
                 </label>
                 <div className="space-y-2">
                     {[
@@ -1255,6 +1256,7 @@ function Section1({
                             })
                         }
                         error={errors.dietaryOther}
+                        required
                         className="mt-3"
                     />
                 )}
@@ -1291,17 +1293,21 @@ function Section1({
                     ))}
                 </div>
                 {section1.accessibilityAccommodations.includes("Other") && (
-                    <textarea
-                        value={section1.accessibilityOther}
-                        onChange={(e) =>
-                            updateData({
-                                section1: { ...section1, accessibilityOther: e.target.value },
-                            })
-                        }
-                        placeholder="Please describe any accommodations you may need."
-                        className="
+                    <div className="mt-3">
+                        <label className="block text-primary font-outfit text-base mb-1">
+                            Please describe any accommodations you may need <span className="text-red-400">*</span>
+                        </label>
+                        <textarea
+                            value={section1.accessibilityOther}
+                            onChange={(e) =>
+                                updateData({
+                                    section1: { ...section1, accessibilityOther: e.target.value },
+                                })
+                            }
+                            placeholder="Please describe any accommodations you may need."
+                            required
+                            className="
 							w-full
-							mt-3
 							p-3
 							border border-primary
 							rounded-lg
@@ -1313,8 +1319,9 @@ function Section1({
 							focus:ring-2
 							focus:ring-primary
 						"
-                        rows={4}
-                    />
+                            rows={4}
+                        />
+                    </div>
                 )}
                 {errors.accessibilityAccommodations && (
                     <p className="text-red-400 font-outfit text-sm mt-1">
@@ -1362,6 +1369,7 @@ function Section1({
                             })
                         }
                         error={errors.heardAboutHTSOther}
+                        required
                         className="mt-3"
                     />
                 )}
@@ -1478,6 +1486,7 @@ function Section2({
                             })
                         }
                         error={errors.goalsOther}
+                        required
                         className="mt-3"
                     />
                 )}
@@ -1642,7 +1651,7 @@ function Section4({
             <div>
                 <p className="font-outfit text-base text-primary">
                     You must do at least one of the following: upload a resume, or share a
-                    LinkedIn / portfolio or GitHub / Devpost link.
+                    LinkedIn / portfolio or GitHub / Devpost link. <span className="text-red-400">*</span>
                 </p>
                 {errors.wrapUp && (
                     <p className="text-red-400 font-outfit text-sm mt-2">{errors.wrapUp}</p>
@@ -1908,7 +1917,7 @@ function Section5({
                         >
                             Privacy Policy
                         </a>
-                        .
+                        . <span className="text-red-400">*</span>
                     </span>
                 </label>
                 {errors.termsAgreed && (
@@ -1933,7 +1942,7 @@ function Section5({
                     />
                     <span className="text-primary font-outfit text-base">
                         I confirm that I am currently enrolled in high school and meet the
-                        eligibility requirements for Hack the Skies.
+                        eligibility requirements for Hack the Skies. <span className="text-red-400">*</span>
                     </span>
                 </label>
                 {errors.eligibilityConfirm && (
@@ -1957,7 +1966,7 @@ function Section5({
                         className="w-5 h-5 mt-1 cursor-pointer accent-primary flex-shrink-0"
                     />
                     <span className="text-primary font-outfit text-base">
-                        I confirm that the information provided in this application is accurate.
+                        I confirm that the information provided in this application is accurate. <span className="text-red-400">*</span>
                     </span>
                 </label>
                 {errors.informationConfirm && (
@@ -1982,7 +1991,7 @@ function Section5({
                     />
                     <span className="text-primary font-outfit text-base">
                         I understand that parent/guardian consent may be required for
-                        participation.
+                        participation. <span className="text-red-400">*</span>
                     </span>
                 </label>
                 {errors.parentalConfirm && (

@@ -22,7 +22,7 @@
 	--color-star: var(--star);
 }
 
-body::before {
+body:not(.no-stars)::before {
 	content: "";
 	position: fixed;
 	inset: 0;
@@ -33,7 +33,7 @@ body::before {
 	pointer-events: none;
 }
 
-body::after {
+body:not(.no-stars)::after {
 	content: "";
 	position: fixed;
 	inset: 0;

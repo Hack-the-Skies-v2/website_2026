@@ -1,7 +1,3 @@
--- Remove application question columns that are no longer asked on the hacker application form.
--- ApplicationForm.tsx now only asks 2 application questions (application_questions_1 and application_questions_2).
--- application_questions_3, application_questions_4, and application_questions_5 are no longer used.
-
 ALTER TABLE public.hacker_applications
   DROP COLUMN IF EXISTS application_questions_3,
   DROP COLUMN IF EXISTS application_questions_4,
@@ -12,7 +8,6 @@ ALTER TABLE public.draft_hacker_applications
   DROP COLUMN IF EXISTS application_questions_4,
   DROP COLUMN IF EXISTS application_questions_5;
 
--- Update submit_hacker_application to remove dropped question columns
 CREATE OR REPLACE FUNCTION public.submit_hacker_application(p_data JSONB)
 RETURNS VOID
 LANGUAGE plpgsql

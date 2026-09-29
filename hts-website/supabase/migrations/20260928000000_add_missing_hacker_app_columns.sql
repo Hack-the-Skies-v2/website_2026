@@ -1,7 +1,3 @@
--- Add columns that the current hacker application form collects but were never stored
--- in hacker_applications. These fields exist in draft_hacker_applications already but
--- were missing from the final submissions table and the submit_hacker_application RPC.
-
 ALTER TABLE public.hacker_applications
   ADD COLUMN IF NOT EXISTS pronouns              TEXT[],
   ADD COLUMN IF NOT EXISTS pronouns_other        TEXT,
@@ -18,7 +14,6 @@ ALTER TABLE public.hacker_applications
   ADD COLUMN IF NOT EXISTS github_devpost        TEXT,
   ADD COLUMN IF NOT EXISTS other_comments        TEXT;
 
--- Rewrite submit_hacker_application to include all fields the current form collects.
 CREATE OR REPLACE FUNCTION public.submit_hacker_application(p_data JSONB)
 RETURNS VOID
 LANGUAGE plpgsql

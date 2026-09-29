@@ -17,12 +17,12 @@ type AppRow = {
   user_id?: string | null;
   type: string;
   status: string;
-  email: string | null;
-  first_name: string | null;
-  last_name: string | null;
-  school_or_organization: string | null;
-  details: unknown;
-  answers: unknown;
+  email?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  school_or_organization?: string | null;
+  details?: unknown;
+  answers?: unknown;
   submitted_at: string | null;
   notification_sent_at: string | null;
   notification_error: string | null;
@@ -43,25 +43,17 @@ type HackerRow = {
   pronouns_other: string | null;
   email: string | null;
   teammates: string[] | null;
-  phone_number: string | null;
-  date_of_birth: string | null;
-  t_shirt_size: string | null;
-  city: string | null;
-  province: string | null;
   dietary_restrictions: string[] | null;
   dietary_other: string | null;
   accessibility_accommodations: string[] | null;
   accessibility_other: string | null;
   school_name: string | null;
   grade: string | null;
-  graduation_year: string | null;
-  school_city: string | null;
   coding_experience: string | null;
   goals: string[] | null;
   goals_other: string | null;
   want_to_see: string | null;
   favourite_song: string | null;
-  hackathon_experience: string | null;
   heard_about_hts: string | null;
   heard_about_hts_other: string | null;
   application_questions_1: string | null;
@@ -71,9 +63,6 @@ type HackerRow = {
   linkedin_portfolio: string | null;
   github_devpost: string | null;
   other_comments: string | null;
-  application_questions_3?: string | null;
-  application_questions_4?: string | null;
-  application_questions_5?: string | null;
 };
 
 type MentorRow = {
@@ -125,13 +114,13 @@ function resolveAppId(row: Pick<AppRow, "id" | "user_id">): string | null {
 }
 
 const APP_COLUMNS =
-  "id, user_id, type, application_type, status, email, first_name, last_name, school_or_organization, details, answers, submitted_at, notification_sent_at, notification_error";
+  "id, user_id, type, application_type, status, submitted_at, notification_sent_at, notification_error";
 
 const VIEW_COLUMNS =
   "id, type, status, email, first_name, last_name, school_or_organization, details, answers, submitted_at, notification_sent_at, notification_error";
 
 const HACKER_DETAIL_COLUMNS =
-  "user_id, first_name, last_name, preferred_name, pronouns, pronouns_other, email, teammates, phone_number, date_of_birth, t_shirt_size, city, province, dietary_restrictions, dietary_other, accessibility_accommodations, accessibility_other, school_name, grade, graduation_year, school_city, coding_experience, goals, goals_other, want_to_see, favourite_song, hackathon_experience, heard_about_hts, heard_about_hts_other, application_questions_1, application_questions_2, resume_path, resume_name, linkedin_portfolio, github_devpost, other_comments";
+  "user_id, first_name, last_name, preferred_name, pronouns, pronouns_other, email, teammates, dietary_restrictions, dietary_other, accessibility_accommodations, accessibility_other, school_name, grade, coding_experience, goals, goals_other, want_to_see, favourite_song, heard_about_hts, heard_about_hts_other, application_questions_1, application_questions_2, resume_path, resume_name, linkedin_portfolio, github_devpost, other_comments";
 
 function hackerAnswerFallback(hacker: HackerRow | null | undefined): string[] | null {
   if (!hacker) return null;
@@ -320,11 +309,6 @@ function buildHackerInfo(row: AppRow, hacker: HackerRow | undefined): ReviewInfo
   pushField(fields, "Pronouns (other)", hacker?.pronouns_other ?? bag.pronounsOther ?? bag.pronouns_other);
   pushField(fields, "Email", hacker?.email ?? bag.email);
   pushField(fields, "Applying with teammates", hacker?.teammates ?? bag.teammates);
-  pushField(fields, "Phone", hacker?.phone_number ?? bag.phoneNumber);
-  pushField(fields, "Date of birth", hacker?.date_of_birth ?? bag.dateOfBirth);
-  pushField(fields, "T-shirt size", hacker?.t_shirt_size ?? bag.tShirtSize);
-  pushField(fields, "City", hacker?.city ?? bag.city);
-  pushField(fields, "Province", hacker?.province ?? bag.province);
   pushField(fields, "Dietary restrictions", hacker?.dietary_restrictions ?? bag.dietaryRestrictions);
   pushField(fields, "Dietary (other)", hacker?.dietary_other ?? bag.dietaryOther);
   pushField(
@@ -339,8 +323,6 @@ function buildHackerInfo(row: AppRow, hacker: HackerRow | undefined): ReviewInfo
   );
   pushField(fields, "School", hacker?.school_name ?? bag.schoolName);
   pushField(fields, "Grade", hacker?.grade ?? bag.grade);
-  pushField(fields, "Graduation year", hacker?.graduation_year ?? bag.graduationYear);
-  pushField(fields, "School city", hacker?.school_city ?? bag.schoolCity);
   pushField(fields, "Coding experience", hacker?.coding_experience ?? bag.codingExperience ?? bag.coding_experience);
   pushField(fields, "Goals", hacker?.goals ?? bag.goals);
   pushField(fields, "Goals (other)", hacker?.goals_other ?? bag.goalsOther ?? bag.goals_other);
@@ -352,7 +334,6 @@ function buildHackerInfo(row: AppRow, hacker: HackerRow | undefined): ReviewInfo
     "Heard about HTS (other)",
     hacker?.heard_about_hts_other ?? bag.heardAboutHTSOther,
   );
-  pushField(fields, "Hackathon experience", hacker?.hackathon_experience ?? bag.hackathonExperience);
   pushField(fields, "LinkedIn / Portfolio", hacker?.linkedin_portfolio ?? bag.linkedinPortfolio ?? bag.linkedin_portfolio);
   pushField(fields, "GitHub / Devpost", hacker?.github_devpost ?? bag.githubDevpost ?? bag.github_devpost);
   pushField(fields, "Resume", hacker?.resume_name ?? bag.resumeName ?? hacker?.resume_path ?? bag.resume_name ?? bag.resumePath);
@@ -453,7 +434,7 @@ export async function listOrganizerApplications(
             status: mapStatus(row.status),
             first_name: row.first_name || hacker?.first_name || "Applicant",
             last_name: row.last_name || hacker?.last_name || "",
-            email: row.email || "",
+            email: row.email || hacker?.email || "",
             school_or_organization:
               row.school_or_organization || hacker?.school_name || null,
             details: row.details,
@@ -665,7 +646,7 @@ export async function getOrganizerReviewApplication(
     first_name:
       row.first_name || listed?.first_name || detailFirst || "Applicant",
     last_name: row.last_name || listed?.last_name || detailLast || "",
-    email: row.email || listed?.email || "",
+    email: row.email || listed?.email || hackerRow?.email || "",
     school_or_organization:
       row.school_or_organization || listed?.school_or_organization || detailOrg || null,
     details: row.details,
