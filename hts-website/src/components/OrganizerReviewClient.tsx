@@ -23,6 +23,7 @@ type Scores = Record<string, number | null>;
 export type ReviewInfoField = {
   label: string;
   value: string;
+  href?: string;
 };
 
 export type ReviewApplication = {
@@ -416,10 +417,10 @@ export default function OrganizerReviewClient({
                   <dt className="text-[11px] font-semibold uppercase tracking-wider text-primary/70">
                     {field.label}
                   </dt>
-                  <dd className="mt-1 whitespace-pre-wrap text-sm text-white/85">
-                    {/^https?:\/\//i.test(field.value) ? (
+                  <dd className="mt-1 whitespace-pre-wrap break-words text-sm text-white/85">
+                    {field.href || /^https?:\/\//i.test(field.value) ? (
                       <a
-                        href={field.value}
+                        href={field.href || field.value}
                         target="_blank"
                         rel="noreferrer"
                         className="text-star underline-offset-2 hover:underline break-all"

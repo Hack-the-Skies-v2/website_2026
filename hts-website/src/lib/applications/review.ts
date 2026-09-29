@@ -130,8 +130,7 @@ const APP_COLUMNS =
 const VIEW_COLUMNS =
   "id, type, status, email, first_name, last_name, school_or_organization, details, answers, submitted_at, notification_sent_at, notification_error";
 
-const HACKER_DETAIL_COLUMNS =
-  "user_id, first_name, last_name, preferred_name, pronouns, pronouns_other, email, teammates, phone_number, date_of_birth, t_shirt_size, city, province, dietary_restrictions, dietary_other, accessibility_accommodations, accessibility_other, school_name, grade, graduation_year, school_city, coding_experience, goals, goals_other, want_to_see, favourite_song, hackathon_experience, heard_about_hts, heard_about_hts_other, application_questions_1, application_questions_2, resume_path, resume_name, linkedin_portfolio, github_devpost, other_comments";
+const HACKER_DETAIL_COLUMNS = "*";
 
 function hackerAnswerFallback(hacker: HackerRow | null | undefined): string[] | null {
   if (!hacker) return null;
@@ -355,6 +354,26 @@ function pickAnswers(fromAnswers: string[], fallback: string[] | null, type: App
   });
 }
 
+async function withResumeLink(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  fields: ReviewInfoField[],
+  userId: string,
+  resumePath: string | null | undefined,
+): Promise<ReviewInfoField[]> {
+  const path = resumePath?.trim() || `${userId}/resume.pdf`;
+  const { data, error } = await supabase.storage.from("resumes").createSignedUrl(path, 60 * 60);
+  if (error || !data?.signedUrl) return fields;
+
+  const next = fields.filter((field) => field.label !== "Resume");
+  const existing = fields.find((field) => field.label === "Resume");
+  next.push({
+    label: "Resume",
+    value: existing?.value && !existing.value.includes("/") ? existing.value : "View resume",
+    href: data.signedUrl,
+  });
+  return next;
+}
+
 function buildHackerInfo(row: AppRow, hacker: HackerRow | undefined): ReviewInfoField[] {
   const answers = recordFromUnknown(row.answers);
   const details = recordFromUnknown(row.details);
@@ -371,8 +390,8 @@ function buildHackerInfo(row: AppRow, hacker: HackerRow | undefined): ReviewInfo
   pushField(fields, "T-shirt size", hacker?.t_shirt_size ?? bag.tShirtSize);
   pushField(fields, "City", hacker?.city ?? bag.city);
   pushField(fields, "Province", hacker?.province ?? bag.province);
-  pushField(fields, "Dietary restrictions", hacker?.dietary_restrictions ?? bag.dietaryRestrictions);
-  pushField(fields, "Dietary (other)", hacker?.dietary_other ?? bag.dietaryOther);
+  pushField(fields, "Dietary restrictions", hacker?.dietary_restrictions ?? bag.dietaryRestrictions ?? bag.dietary_restrictions);
+  pushField(fields, "Dietary (other)", hacker?.dietary_other ?? bag.dietaryOther ?? bag.dietary_other);
   pushField(
     fields,
     "Accessibility accommodations",
@@ -390,8 +409,16 @@ function buildHackerInfo(row: AppRow, hacker: HackerRow | undefined): ReviewInfo
   pushField(fields, "Coding experience", hacker?.coding_experience ?? bag.codingExperience ?? bag.coding_experience);
   pushField(fields, "Goals", hacker?.goals ?? bag.goals);
   pushField(fields, "Goals (other)", hacker?.goals_other ?? bag.goalsOther ?? bag.goals_other);
-  pushField(fields, "Want to see at HTS", hacker?.want_to_see ?? bag.wantToSee ?? bag.want_to_see);
-  pushField(fields, "Favourite song", hacker?.favourite_song ?? bag.favouriteSong ?? bag.favourite_song);
+  pushField(
+    fields,
+    "Is there anything you want to see happen at Hack the Skies?",
+    hacker?.want_to_see ?? bag.wantToSee ?? bag.want_to_see,
+  );
+  pushField(
+    fields,
+    "What is your favourite song?",
+    hacker?.favourite_song ?? bag.favouriteSong ?? bag.favourite_song,
+  );
   pushField(fields, "Heard about HTS", hacker?.heard_about_hts ?? bag.heardAboutHTS);
   pushField(
     fields,
@@ -401,7 +428,11 @@ function buildHackerInfo(row: AppRow, hacker: HackerRow | undefined): ReviewInfo
   pushField(fields, "Hackathon experience", hacker?.hackathon_experience ?? bag.hackathonExperience);
   pushField(fields, "LinkedIn / Portfolio", hacker?.linkedin_portfolio ?? bag.linkedinPortfolio ?? bag.linkedin_portfolio);
   pushField(fields, "GitHub / Devpost", hacker?.github_devpost ?? bag.githubDevpost ?? bag.github_devpost);
-  pushField(fields, "Resume", hacker?.resume_name ?? bag.resumeName ?? hacker?.resume_path ?? bag.resume_name ?? bag.resumePath);
+  pushField(
+    fields,
+    "Resume",
+    hacker?.resume_name ?? bag.resumeName ?? hacker?.resume_path ?? bag.resumePath ?? bag.resume_path,
+  );
   pushField(fields, "Other comments", hacker?.other_comments ?? bag.otherComments ?? bag.other_comments);
   return fields;
 }
@@ -650,6 +681,7 @@ export async function getOrganizerReviewApplication(
     detailOrg = hackerRow?.school_name || null;
     answerTexts = pickAnswers(fromAnswers, hackerAnswerFallback(hackerRow), type);
     info = buildHackerInfo(row, hackerRow ?? undefined);
+    info = await withResumeLink(supabase, info, appId, hackerRow?.resume_path);
   } else if (type === "mentor") {
     const { data: mentor } = await supabase
       .from("mentor_applications")
