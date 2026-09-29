@@ -23,6 +23,7 @@ type Scores = Record<string, number | null>;
 export type ReviewInfoField = {
   label: string;
   value: string;
+  href?: string;
 };
 
 export type ReviewApplication = {
@@ -359,16 +360,16 @@ export default function OrganizerReviewClient({
       </div>
 
       {tab === "questions" ? (
-      <div className={`grid gap-5 ${questions.length <= 2 ? "md:grid-cols-2" : "md:grid-cols-2 lg:grid-cols-3"}`}>
+      <div className="flex flex-col gap-5">
         {application.answers.map(({ question, text }, index) => (
           <article
             key={question.id}
-            className="flex min-h-[22rem] flex-col rounded-2xl border border-primary/25 bg-[#201b38]/90 p-5"
+            className="flex flex-col rounded-2xl border border-primary/25 bg-[#201b38]/90 p-5"
           >
             <p className="text-[11px] font-bold uppercase tracking-widest text-star">Q{index + 1}</p>
             <h3 className="mt-1 text-sm font-semibold text-white">{question.prompt}</h3>
-            <p className="mt-3 flex-1 whitespace-pre-wrap text-sm leading-relaxed text-white/75">
-              {text || <span className="italic text-white/35">No response.</span>}
+            <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-white/75">
+              {text || <span className="italic text-white/35">Not filled</span>}
             </p>
             <div className="mt-4 border-t border-primary/15 pt-3">
               <div className="flex items-baseline justify-between">
@@ -416,10 +417,21 @@ export default function OrganizerReviewClient({
                   <dt className="text-[11px] font-semibold uppercase tracking-wider text-primary/70">
                     {field.label}
                   </dt>
-                  <dd className="mt-1 whitespace-pre-wrap text-sm text-white/85">
-                    {/^https?:\/\//i.test(field.value) ? (
+                  <dd className="mt-1 whitespace-pre-wrap break-words text-sm text-white/85">
+                    {field.value === "Not filled" || field.value === "Not uploaded" ? (
+                      <span className="italic text-white/40">{field.value}</span>
+                    ) : field.label === "Resume" && field.href ? (
                       <a
-                        href={field.value}
+                        href={field.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex rounded-full bg-star px-4 py-2 text-sm font-semibold text-[#201b38] hover:brightness-110"
+                      >
+                        Open resume
+                      </a>
+                    ) : field.href || /^https?:\/\//i.test(field.value) ? (
+                      <a
+                        href={field.href || field.value}
                         target="_blank"
                         rel="noreferrer"
                         className="text-star underline-offset-2 hover:underline break-all"

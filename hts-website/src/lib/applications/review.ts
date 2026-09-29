@@ -135,6 +135,45 @@ function normalizeAppRow(row: AppRow & { application_type?: string | null }): Ap
   return { ...row, id, type };
 }
 
+async function mergeStoredAnswers(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  rows: AppRow[],
+): Promise<AppRow[]> {
+  const ids = [...new Set(rows.map((row) => row.id).filter((id): id is string => Boolean(id)))];
+  if (ids.length === 0) return rows;
+
+  const { data, error } = await supabase
+    .from("applications")
+    .select("user_id, answers, details")
+    .in("user_id", ids);
+
+  if (error || !data) return rows;
+
+  const byId = new Map(
+    (data as { user_id: string; answers: unknown; details: unknown }[]).map((row) => [
+      row.user_id,
+      row,
+    ]),
+  );
+
+  return rows.map((row) => {
+    const stored = row.id ? byId.get(row.id) : undefined;
+    if (!stored) return row;
+    const answers = hasAnswerText(row.answers) ? row.answers : stored.answers ?? row.answers;
+    const details = hasAnswerText(row.details) ? row.details : stored.details ?? row.details;
+    return { ...row, answers, details };
+  });
+}
+
+function hasAnswerText(raw: unknown): boolean {
+  if (typeof raw === "string") return raw.trim().length > 0;
+  if (Array.isArray(raw)) return raw.some((item) => asText(item));
+  if (raw && typeof raw === "object") {
+    return Object.values(raw as Record<string, unknown>).some((value) => asText(value));
+  }
+  return false;
+}
+
 async function loadApplicationRows(
   supabase: Awaited<ReturnType<typeof createClient>>,
 ): Promise<AppRow[]> {
@@ -147,9 +186,10 @@ async function loadApplicationRows(
     .order("submitted_at", { ascending: false });
 
   if (!view.error && view.data) {
-    return (view.data as AppRow[])
+    const rows = (view.data as AppRow[])
       .map((row) => normalizeAppRow(row))
       .filter((row): row is AppRow => Boolean(row));
+    return mergeStoredAnswers(supabase, rows);
   }
 
   const table = await supabase
@@ -193,7 +233,17 @@ function asText(value: unknown): string {
   return String(value).trim();
 }
 
-function pushField(fields: ReviewInfoField[], label: string, value: unknown) {
+function pushField(
+  fields: ReviewInfoField[],
+  label: string,
+  value: unknown,
+  emptyLabel = "Not filled",
+) {
+  const text = asText(value);
+  fields.push({ label, value: text || emptyLabel });
+}
+
+function pushIfPresent(fields: ReviewInfoField[], label: string, value: unknown) {
   const text = asText(value);
   if (!text) return;
   fields.push({ label, value: text });
@@ -293,9 +343,26 @@ async function loadGradesByApp(
 }
 
 function pickAnswers(fromAnswers: string[], fallback: string[] | null, type: ApplicationType): string[] {
-  if (fromAnswers.some((text) => text.trim())) return fromAnswers;
-  if (fallback?.some((text) => text.trim())) return fallback;
-  return fromAnswers.length ? fromAnswers : Array(questionsForType(type).length).fill("");
+  const primary = fromAnswers.some((text) => text.trim()) ? fromAnswers : [];
+  const secondary = fallback?.some((text) => text?.trim()) ? fallback : [];
+  const length = Math.max(primary.length, secondary.length);
+  if (length === 0) return Array(questionsForType(type).length).fill("");
+  return Array.from({ length }, (_, index) => {
+    const left = primary[index]?.trim() || "";
+    const right = secondary[index]?.trim() || "";
+    return left.length >= right.length ? left || right : right;
+  });
+}
+
+function withResumeLink(fields: ReviewInfoField[], userId: string): ReviewInfoField[] {
+  return fields.map((field) => {
+    if (field.label !== "Resume" || field.value === "Not uploaded") return field;
+    return {
+      ...field,
+      value: "Open resume",
+      href: `/api/organizer-resume/${userId}`,
+    };
+  });
 }
 
 function buildHackerInfo(row: AppRow, hacker: HackerRow | undefined): ReviewInfoField[] {
@@ -323,20 +390,35 @@ function buildHackerInfo(row: AppRow, hacker: HackerRow | undefined): ReviewInfo
   );
   pushField(fields, "School", hacker?.school_name ?? bag.schoolName);
   pushField(fields, "Grade", hacker?.grade ?? bag.grade);
+
   pushField(fields, "Coding experience", hacker?.coding_experience ?? bag.codingExperience ?? bag.coding_experience);
   pushField(fields, "Goals", hacker?.goals ?? bag.goals);
   pushField(fields, "Goals (other)", hacker?.goals_other ?? bag.goalsOther ?? bag.goals_other);
-  pushField(fields, "Want to see at HTS", hacker?.want_to_see ?? bag.wantToSee ?? bag.want_to_see);
-  pushField(fields, "Favourite song", hacker?.favourite_song ?? bag.favouriteSong ?? bag.favourite_song);
+  pushField(
+    fields,
+    "Is there anything you want to see happen at Hack the Skies?",
+    hacker?.want_to_see ?? bag.wantToSee ?? bag.want_to_see,
+  );
+  pushField(
+    fields,
+    "What is your favourite song?",
+    hacker?.favourite_song ?? bag.favouriteSong ?? bag.favourite_song,
+  );
   pushField(fields, "Heard about HTS", hacker?.heard_about_hts ?? bag.heardAboutHTS);
   pushField(
     fields,
     "Heard about HTS (other)",
     hacker?.heard_about_hts_other ?? bag.heardAboutHTSOther,
   );
+
   pushField(fields, "LinkedIn / Portfolio", hacker?.linkedin_portfolio ?? bag.linkedinPortfolio ?? bag.linkedin_portfolio);
   pushField(fields, "GitHub / Devpost", hacker?.github_devpost ?? bag.githubDevpost ?? bag.github_devpost);
-  pushField(fields, "Resume", hacker?.resume_name ?? bag.resumeName ?? hacker?.resume_path ?? bag.resume_name ?? bag.resumePath);
+  pushField(
+    fields,
+    "Resume",
+    hacker?.resume_name ?? bag.resumeName ?? hacker?.resume_path ?? bag.resumePath ?? bag.resume_path,
+    "Not uploaded",
+  );
   pushField(fields, "Other comments", hacker?.other_comments ?? bag.otherComments ?? bag.other_comments);
   return fields;
 }
@@ -560,6 +642,8 @@ export async function getOrganizerReviewApplication(
   const type = normalizeType(row.type);
   if (!type) return null;
   const appId = row.id || applicationId;
+  const [merged] = await mergeStoredAnswers(supabase, [{ ...row, id: appId }]);
+  row = merged ?? row;
 
   const fromAnswers = parseAnswers(row.answers, type);
   const list = await listOrganizerApplications(organizerId);
@@ -583,6 +667,7 @@ export async function getOrganizerReviewApplication(
     detailOrg = hackerRow?.school_name || null;
     answerTexts = pickAnswers(fromAnswers, hackerAnswerFallback(hackerRow), type);
     info = buildHackerInfo(row, hackerRow ?? undefined);
+    info = withResumeLink(info, appId);
   } else if (type === "mentor") {
     const { data: mentor } = await supabase
       .from("mentor_applications")
