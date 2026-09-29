@@ -42,14 +42,14 @@ export default async function OrganizerReviewPage({ params }: PageProps) {
   const href = (peerId: string) => `/organizers/review/${peerId}`;
 
   return (
-    <main className="min-h-screen px-5 py-10 font-outfit text-primary md:px-10">
+    <main className="min-h-screen bg-white px-6 py-10 font-sans text-neutral-900 md:px-12">
       <div className="mx-auto max-w-[100rem]">
-        <div className="mb-4 text-sm text-white/50">
+        <div className="mb-4 text-sm text-neutral-500">
           Submitted {new Date(loaded.application.submitted_at).toLocaleString()}
-          <span className="ml-3 text-white/35">
+          <span className="ml-3 text-neutral-400">
             Queue: newest first
           </span>
-          <Link href="/organizers" className="ml-3 text-primary hover:underline">
+          <Link href="/organizers" className="ml-3 text-neutral-700 hover:text-neutral-900 hover:underline">
             All lists
           </Link>
         </div>

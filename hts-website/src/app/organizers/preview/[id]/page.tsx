@@ -49,25 +49,24 @@ export default async function OrganizerPreviewReviewPage({ params }: PageProps) 
   const href = (peerId: string) => `/organizers/preview/${peerId}`;
 
   return (
-    <main className="min-h-screen px-5 py-10 font-outfit text-primary md:px-10">
+    <main className="min-h-screen bg-white px-6 py-10 font-sans text-neutral-900 md:px-12">
       <div className="mx-auto max-w-[100rem]">
-        <div className="mb-4 flex flex-wrap items-center gap-3 text-sm text-white/50">
-          <span className="rounded-full bg-star/20 px-3 py-1 text-xs font-medium text-star">
+        <div className="mb-4 flex flex-wrap items-center gap-3 text-sm text-neutral-500">
+          <span className="rounded-md border border-neutral-200 bg-neutral-100 px-2.5 py-1 text-xs text-neutral-700">
             Preview · mock data
           </span>
           <Link
             href="/organizers"
-            className="rounded-full border border-primary/40 px-3 py-1 text-xs font-medium text-primary hover:bg-primary/10"
+            className="rounded-md border border-neutral-300 bg-white px-3 py-1 text-xs font-medium text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900"
           >
             ← Live organizer console
           </Link>
           <Link
             href="/organizers/preview"
-            className="rounded-full border border-primary/40 px-3 py-1 text-xs font-medium text-primary hover:bg-primary/10"
+            className="rounded-md border border-neutral-300 bg-white px-3 py-1 text-xs font-medium text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900"
           >
             Mock list
           </Link>
-          <span>Use the Questions / Details tabs below</span>
           <span>Submitted {new Date(application.submitted_at).toLocaleString()}</span>
         </div>
         <OrganizerReviewClient

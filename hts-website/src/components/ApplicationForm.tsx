@@ -926,7 +926,7 @@ function MentorApplicationForm({ onBack }: { onBack: () => void }) {
                 <p className="font-outfit text-md text-primary/80 mb-6">
                     Become a Hack the Skies 2026 Mentor!
                     <br />
-                    As a mentor at Hack the Skies, you’ll support high-school students throughout our two-day in-person hackathon on October 17th and 18th, as well as an optional (online) opening ceremony on October 16th. You’ll help teams brainstorm ideas, troubleshoot technical challenges, explore new tools, and turn their ideas into working projects, no matter their experience level. You don’t need to have all the answers. We’re looking for university students who are approachable, enthusiastic, and excited to help the next generation of students learn, build, and have fun.
+                    As a mentor at Hack the Skies, you’ll support high-school students throughout our two-day in-person hackathon on October 17th and 18th. You’ll help teams brainstorm ideas, troubleshoot technical challenges, explore new tools, and turn their ideas into working projects, no matter their experience level. You don’t need to have all the answers. We’re looking for university students who are approachable, enthusiastic, and excited to help the next generation of students learn, build, and have fun.
                 </p>
                 <p className="font-outfit text-md uppercase tracking-[0.2em] text-primary/80 mb-6">Answers do not save</p>
                 <h2 className="mb-6 font-outfit text-2xl font-semibold text-primary">Basic Information</h2>
@@ -1076,6 +1076,9 @@ function Section1({
 
     return (
         <div className="space-y-6">
+            <p className="font-outfit text-md text-primary/80 mb-6">
+                Hack the Skies 2026 takes place in person on October 17-18 at Humber College Etobicoke (205 Humber College Blvd, Etobicoke, ON M9W 5L7) from 9:00 AM to 9:00 PM each day. This is not an overnight event. Free lunch will be provided!
+            </p>
             <p className="font-outfit text-md uppercase tracking-[0.2em] text-primary/80 mb-6">Answers automatically save</p>
             <h2 className="text-4xl font-outfit font-semibold text-primary mb-8">
                 Basic Technical Information
@@ -1200,7 +1203,7 @@ function Section1({
             />
 
             <FormInput
-                label="Are you applying with a team? NOTE THAT ALL TEAM MEMBERS MUST APPLY SEPERATELY"
+                label="Are you applying with a team? NOTE THAT ALL TEAM MEMBERS MUST APPLY SEPARATELY"
                 value={section1.teammates.join(",")}
                 onChange={(e) =>
                     updateData({
@@ -1212,11 +1215,10 @@ function Section1({
                 required
             />
             <p
-                className={`font-outfit text-sm mt-1 ${
-                    countTeammates(section1.teammates) > MAX_TEAMMATES
-                        ? "text-red-400"
-                        : "text-primary/60"
-                }`}
+                className={`font-outfit text-sm mt-1 ${countTeammates(section1.teammates) > MAX_TEAMMATES
+                    ? "text-red-400"
+                    : "text-primary/60"
+                    }`}
             >
                 {countTeammates(section1.teammates)}/{MAX_TEAMMATES} teammates listed
             </p>

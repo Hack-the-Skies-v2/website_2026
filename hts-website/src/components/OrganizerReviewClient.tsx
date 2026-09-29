@@ -60,7 +60,6 @@ export default function OrganizerReviewClient({
   preview?: boolean;
   previousHref?: string | null;
   nextHref?: string | null;
-  /** After Accept / Reject / Not sure, go here (usually the next app). */
   advanceHref?: string | null;
   listHref?: string;
   position?: number | null;
@@ -92,7 +91,7 @@ export default function OrganizerReviewClient({
     setConfirming(null);
     setNotice(null);
     setTab("questions");
-  }, [application.id]); // eslint-disable-line react-hooks/exhaustive-deps -- reset only when the applicant changes
+  }, [application.id]);
 
   const composite = compositeScore(
     Object.fromEntries(
@@ -210,55 +209,55 @@ export default function OrganizerReviewClient({
   };
 
   const statusColor = {
-    pending: "text-amber-200",
-    accepted: "text-emerald-300",
-    rejected: "text-rose-300",
+    pending: "text-neutral-600",
+    accepted: "text-neutral-900 font-medium",
+    rejected: "text-neutral-600",
   }[application.status];
 
   const navClass =
-    "rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors";
+    "rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors";
 
   return (
     <div className="space-y-6">
-      <nav className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/25 bg-[#201b38]/90 px-4 py-2.5">
+      <nav className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-transparent px-4 py-2.5">
         <div className="flex items-center gap-1">
           {previousHref ? (
-            <Link href={previousHref} className={`${navClass} text-primary hover:bg-primary/10`}>
+            <Link href={previousHref} className={`${navClass} text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900`}>
               ← Previous
             </Link>
           ) : (
-            <span className={`${navClass} text-white/25`}>← Previous</span>
+            <span className={`${navClass} text-neutral-300`}>← Previous</span>
           )}
-          <span className="px-2 font-mono text-xs tabular-nums text-white/45">
+          <span className="px-2 font-mono text-xs tabular-nums text-neutral-500">
             {position != null ? `${position} / ${total}` : `- / ${total}`}
           </span>
           {nextHref ? (
-            <Link href={nextHref} className={`${navClass} text-primary hover:bg-primary/10`}>
+            <Link href={nextHref} className={`${navClass} text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900`}>
               Next →
             </Link>
           ) : (
-            <span className={`${navClass} text-white/25`}>Next →</span>
+            <span className={`${navClass} text-neutral-300`}>Next →</span>
           )}
         </div>
-        <Link href={listHref} className={`${navClass} text-white/55 hover:bg-primary/10 hover:text-white`}>
+        <Link href={listHref} className={`${navClass} text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900`}>
           Back to list
         </Link>
       </nav>
 
-      <header className="flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-primary/25 bg-[#201b38]/90 p-5">
+      <section className="flex flex-wrap items-start justify-between gap-4 rounded-lg border border-neutral-200 bg-transparent p-5">
         <div className="min-w-0 flex-1">
-          <p className="text-xs uppercase tracking-[0.16em] text-primary/70">
+          <p className="text-xs uppercase tracking-wider text-neutral-500">
             {application.type} application
           </p>
-          <h1 className="mt-2 text-3xl font-semibold text-white">
+          <h1 className="mt-1 text-2xl font-semibold text-neutral-900">
             {application.first_name} {application.last_name}
           </h1>
-          <p className="mt-1 text-sm text-white/60">
+          <p className="mt-1 text-sm text-neutral-500">
             {application.school_or_organization || "No school listed"} · {application.email}
           </p>
-          <p className={`mt-3 text-sm font-semibold capitalize ${statusColor}`}>
+          <p className={`mt-3 text-sm capitalize ${statusColor}`}>
             {application.status}
-            <span className="ml-3 font-normal text-white/50">
+            <span className="ml-3 font-normal text-neutral-400">
               Rated by {liveCount} organizer{liveCount === 1 ? "" : "s"}
             </span>
           </p>
@@ -266,19 +265,19 @@ export default function OrganizerReviewClient({
           <div className="mt-4 flex flex-wrap items-center gap-2">
             {confirming ? (
               <>
-                <span className="text-sm text-white/80">{confirmCopy[confirming]}</span>
+                <span className="text-sm text-neutral-700">{confirmCopy[confirming]}</span>
                 <button
                   type="button"
                   disabled={isPending}
                   onClick={() => decide(confirming)}
-                  className="rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-[#201b38] disabled:opacity-40"
+                  className="rounded-md bg-neutral-900 px-3.5 py-1.5 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-40"
                 >
                   {isPending ? "Saving…" : "Confirm"}
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfirming(null)}
-                  className="text-sm text-white/60 hover:text-white"
+                  className="text-sm text-neutral-500 hover:text-neutral-900"
                 >
                   Cancel
                 </button>
@@ -288,56 +287,56 @@ export default function OrganizerReviewClient({
                 <button
                   type="button"
                   onClick={() => setConfirming("accepted")}
-                  className="rounded-full border border-emerald-400/50 px-4 py-1.5 text-sm font-medium text-emerald-200 hover:bg-emerald-500/15"
+                  className="rounded-md border border-neutral-300 bg-white px-3.5 py-1.5 text-sm font-medium text-neutral-800 hover:bg-neutral-50"
                 >
                   Accept
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfirming("rejected")}
-                  className="rounded-full border border-rose-400/50 px-4 py-1.5 text-sm font-medium text-rose-200 hover:bg-rose-500/15"
+                  className="rounded-md border border-neutral-300 bg-white px-3.5 py-1.5 text-sm font-medium text-neutral-800 hover:bg-neutral-50"
                 >
                   Reject
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfirming("pending")}
-                  className="rounded-full border border-amber-400/50 px-4 py-1.5 text-sm font-medium text-amber-200 hover:bg-amber-500/15"
+                  className="rounded-md border border-neutral-300 bg-white px-3.5 py-1.5 text-sm font-medium text-neutral-800 hover:bg-neutral-50"
                 >
                   Not sure
                 </button>
               </>
             )}
-            {notice ? <p role="status" className="text-sm text-white/75">{notice}</p> : null}
+            {notice ? <p role="status" className="text-sm text-neutral-700">{notice}</p> : null}
           </div>
         </div>
 
         <div className="flex w-36 flex-col items-end text-right">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-primary/60">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
             {composite != null ? "Final score" : "Composite"}
           </span>
-          <span className="font-mono text-4xl font-semibold tabular-nums text-star">
+          <span className="font-mono text-3xl font-semibold tabular-nums text-neutral-900">
             {composite != null ? composite.toFixed(2) : "-"}
           </span>
-          <span className="text-[11px] text-white/45">
+          <span className="text-[11px] text-neutral-400">
             {composite != null ? `out of ${SCORE_MAX}` : `${scored} of ${questions.length} scored`}
           </span>
           <div className="mt-2 flex h-4 items-center gap-2">
             {saveState !== "idle" ? (
-              <span className={`text-[11px] ${saveState === "error" ? "text-rose-300" : "text-white/45"}`}>
+              <span className={`text-[11px] ${saveState === "error" ? "text-neutral-500" : "text-neutral-400"}`}>
                 {saveState === "saving" ? "Saving…" : saveState === "saved" ? "Saved" : "Not saved"}
               </span>
             ) : null}
             {scored > 0 && saveState !== "saving" ? (
-              <button type="button" onClick={clearAll} className="text-[11px] text-white/50 underline-offset-2 hover:text-rose-300 hover:underline">
+              <button type="button" onClick={clearAll} className="text-[11px] text-neutral-500 underline-offset-2 hover:text-neutral-900 hover:underline">
                 Clear
               </button>
             ) : null}
           </div>
         </div>
-      </header>
+      </section>
 
-      <div className="flex rounded-full border border-primary/30 p-1 w-fit">
+      <div className="flex rounded-md border border-neutral-200 bg-neutral-100 p-0.5 w-fit">
         {(
           [
             { id: "questions" as const, label: "Questions" },
@@ -348,10 +347,10 @@ export default function OrganizerReviewClient({
             key={item.id}
             type="button"
             onClick={() => setTab(item.id)}
-            className={`rounded-full px-5 py-2 text-sm font-medium transition ${
+            className={`rounded px-4 py-1.5 text-sm transition ${
               tab === item.id
-                ? "bg-star text-[#201b38]"
-                : "text-primary hover:bg-primary/10"
+                ? "bg-white font-medium text-neutral-900 shadow-sm"
+                : "text-neutral-600 hover:text-neutral-900"
             }`}
           >
             {item.label}
@@ -364,25 +363,25 @@ export default function OrganizerReviewClient({
         {application.answers.map(({ question, text }, index) => (
           <article
             key={question.id}
-            className="flex flex-col rounded-2xl border border-primary/25 bg-[#201b38]/90 p-5"
+            className="flex flex-col rounded-lg border border-neutral-200 bg-transparent p-5"
           >
-            <p className="text-[11px] font-bold uppercase tracking-widest text-star">Q{index + 1}</p>
-            <h3 className="mt-1 text-sm font-semibold text-white">{question.prompt}</h3>
-            <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-white/75">
-              {text || <span className="italic text-white/35">Not filled</span>}
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">Q{index + 1}</p>
+            <h3 className="mt-1 text-sm font-semibold text-neutral-900">{question.prompt}</h3>
+            <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-neutral-700">
+              {text || <span className="italic text-neutral-400">Not filled</span>}
             </p>
-            <div className="mt-4 border-t border-primary/15 pt-3">
+            <div className="mt-4 border-t border-neutral-200 pt-3">
               <div className="flex items-baseline justify-between">
-                <span className="text-xs text-white/40">
+                <span className="text-xs text-neutral-400">
                   {Math.round((question.weight / weightTotal) * 100)}% of composite
                 </span>
-                <span className="font-mono text-sm tabular-nums text-white">
+                <span className="font-mono text-sm tabular-nums text-neutral-900">
                   {scores[question.id] == null ? (
-                    <span className="text-white/30">-</span>
+                    <span className="text-neutral-400">-</span>
                   ) : (
                     scores[question.id]!.toFixed(1)
                   )}
-                  <span className="text-white/40">/{SCORE_MAX}</span>
+                  <span className="text-neutral-400">/{SCORE_MAX}</span>
                 </span>
               </div>
               <input
@@ -395,16 +394,16 @@ export default function OrganizerReviewClient({
                   setScore(question.id, positionToScore(Number(event.target.value)))
                 }
                 aria-label={`Question ${index + 1} score out of ${SCORE_MAX}`}
-                className="mt-2 h-1.5 w-full cursor-pointer accent-[var(--star)]"
+                className="mt-2 h-1.5 w-full cursor-pointer accent-neutral-900"
               />
             </div>
           </article>
         ))}
       </div>
       ) : (
-        <section className="rounded-2xl border border-primary/25 bg-[#201b38]/90 p-5 md:p-6">
-          <h2 className="text-lg font-semibold text-white">Application details</h2>
-          <p className="mt-1 text-sm text-white/55">
+        <section className="rounded-lg border border-neutral-200 bg-transparent p-5 md:p-6">
+          <h2 className="text-lg font-semibold text-neutral-900">Application details</h2>
+          <p className="mt-1 text-sm text-neutral-500">
             Restrictions, multiple-choice answers, links, and other profile fields.
           </p>
           {application.info?.length ? (
@@ -412,20 +411,20 @@ export default function OrganizerReviewClient({
               {application.info.map((field) => (
                 <div
                   key={`${field.label}:${field.value.slice(0, 24)}`}
-                  className="rounded-xl border border-primary/15 bg-[#171329]/70 px-4 py-3"
+                  className="rounded-md border border-neutral-200 bg-transparent px-4 py-3"
                 >
-                  <dt className="text-[11px] font-semibold uppercase tracking-wider text-primary/70">
+                  <dt className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
                     {field.label}
                   </dt>
-                  <dd className="mt-1 whitespace-pre-wrap break-words text-sm text-white/85">
+                  <dd className="mt-1 whitespace-pre-wrap break-words text-sm text-neutral-800">
                     {field.value === "Not filled" || field.value === "Not uploaded" ? (
-                      <span className="italic text-white/40">{field.value}</span>
+                      <span className="italic text-neutral-400">{field.value}</span>
                     ) : field.label === "Resume" && field.href ? (
                       <a
                         href={field.href}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex rounded-full bg-star px-4 py-2 text-sm font-semibold text-[#201b38] hover:brightness-110"
+                        className="inline-flex rounded-md border border-neutral-300 bg-neutral-100 px-3.5 py-1.5 text-sm font-medium text-neutral-800 hover:bg-neutral-200"
                       >
                         Open resume
                       </a>
@@ -434,7 +433,7 @@ export default function OrganizerReviewClient({
                         href={field.href || field.value}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-star underline-offset-2 hover:underline break-all"
+                        className="text-neutral-700 underline underline-offset-2 hover:text-neutral-900 break-all"
                       >
                         {field.value}
                       </a>
@@ -446,7 +445,7 @@ export default function OrganizerReviewClient({
               ))}
             </dl>
           ) : (
-            <p className="mt-6 text-sm italic text-white/40">
+            <p className="mt-6 text-sm italic text-neutral-400">
               No extra details on file for this application.
             </p>
           )}

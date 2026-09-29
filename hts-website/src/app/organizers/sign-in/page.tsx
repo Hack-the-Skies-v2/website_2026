@@ -1,6 +1,4 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import OrganizerSignIn from "@/components/OrganizerSignIn";
 import { getOrganizer } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
@@ -19,20 +17,18 @@ async function OrganizerSignInGate({
 }: {
     searchParams: Promise<{ error?: string; email?: string }>;
 }) {
-    const params = await searchParams;
+    await searchParams;
     const organizer = await getOrganizer();
     if (organizer) {
         redirect("/organizers");
     }
 
     const supabase = await createClient();
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
+    await supabase.auth.getUser();
 
     return (
-        <main className="min-h-screen px-5 py-16 font-outfit text-primary md:px-10">
-            <p>Get out</p>
+        <main className="min-h-screen bg-white px-6 py-16 font-sans text-neutral-600 md:px-12">
+            <p>Access restricted.</p>
         </main>
     );
 }

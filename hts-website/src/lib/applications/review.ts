@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   answersByQuestion,
   hackerQuestionsForStoredAnswers,
@@ -177,7 +178,8 @@ function hasAnswerText(raw: unknown): boolean {
 async function loadApplicationRows(
   supabase: Awaited<ReturnType<typeof createClient>>,
 ): Promise<AppRow[]> {
-  const view = await supabase
+  const admin = createAdminClient();
+  const view = await admin
     .from("application_details_view")
     .select(VIEW_COLUMNS)
     .in("type", [...TYPE_VALUES])
@@ -618,9 +620,10 @@ export async function getOrganizerReviewApplication(
   pendingIds: string[];
 } | null> {
   const supabase = await createClient();
+  const admin = createAdminClient();
 
   let row: AppRow | null = null;
-  const fromView = await supabase
+  const fromView = await admin
     .from("application_details_view")
     .select(VIEW_COLUMNS)
     .eq("id", applicationId)

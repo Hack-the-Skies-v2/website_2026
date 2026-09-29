@@ -6,6 +6,7 @@ import { requireOrganizer } from "@/lib/auth";
 import { applicationDecisionEmail, type ApplicationDecision } from "@/lib/application-emails";
 import { resend } from "@/lib/resend";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export type OrganizerDecision = "accepted" | "rejected" | "pending";
 
@@ -36,8 +37,9 @@ export async function decideApplications(input: unknown) {
   const sendsEmail = parsed.data.decision !== "pending";
   const applicationIds = [...new Set(parsed.data.applicationIds)];
   const supabase = await createClient();
+  const admin = createAdminClient();
 
-  const { data: knownApplications, error: lookupError } = await supabase
+  const { data: knownApplications, error: lookupError } = await admin
     .from("application_details_view")
     .select("id, type, email, first_name")
     .in("id", applicationIds)
@@ -61,7 +63,7 @@ export async function decideApplications(input: unknown) {
   }
 
   // Re-fetch the updated rows from the view so we have fresh email/first_name
-  const { data: updatedApps } = await supabase
+  const { data: updatedApps } = await admin
     .from("application_details_view")
     .select("id, type, email, first_name")
     .in("id", applicationIds);

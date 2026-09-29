@@ -28,9 +28,9 @@ export default function EmailTestForm() {
   }
 
   return (
-    <div className="mx-auto max-w-lg space-y-5 rounded-2xl border border-primary/25 bg-[#201b38]/90 p-6">
+    <div className="space-y-5 rounded-lg border border-neutral-200 bg-transparent p-6">
       <div>
-        <label className="mb-1.5 block text-sm text-primary/80" htmlFor="test-to">
+        <label className="mb-1.5 block text-xs uppercase tracking-wider text-neutral-500" htmlFor="test-to">
           Send to
         </label>
         <input
@@ -38,37 +38,37 @@ export default function EmailTestForm() {
           type="email"
           value={to}
           onChange={(event) => setTo(event.target.value)}
-          className="field"
+          className="w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 outline-none focus:border-neutral-400"
           placeholder="you@example.com"
           autoComplete="email"
         />
       </div>
 
       <div>
-        <label className="mb-1.5 block text-sm text-primary/80" htmlFor="test-name">
+        <label className="mb-1.5 block text-xs uppercase tracking-wider text-neutral-500" htmlFor="test-name">
           First name in email
         </label>
         <input
           id="test-name"
           value={firstName}
           onChange={(event) => setFirstName(event.target.value)}
-          className="field"
+          className="w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 outline-none focus:border-neutral-400"
           placeholder="Ali"
         />
       </div>
 
       <div>
-        <p className="mb-1.5 text-sm text-primary/80">Track</p>
+        <p className="mb-1.5 text-xs uppercase tracking-wider text-neutral-500">Track</p>
         <div className="flex gap-2">
           {(["hacker", "mentor", "judge"] as const).map((option) => (
             <button
               key={option}
               type="button"
               onClick={() => setType(option)}
-              className={`rounded-full px-4 py-2 text-sm capitalize ${
+              className={`rounded px-3.5 py-1.5 text-sm capitalize transition ${
                 type === option
-                  ? "bg-star text-[#201b38]"
-                  : "border border-primary/40 text-primary"
+                  ? "bg-neutral-900 font-medium text-white"
+                  : "border border-neutral-200 bg-white text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50"
               }`}
             >
               {option}
@@ -78,15 +78,15 @@ export default function EmailTestForm() {
       </div>
 
       <div>
-        <p className="mb-1.5 text-sm text-primary/80">Decision</p>
+        <p className="mb-1.5 text-xs uppercase tracking-wider text-neutral-500">Decision</p>
         <div className="flex gap-2">
           <button
             type="button"
             onClick={() => setDecision("accepted")}
-            className={`rounded-full px-4 py-2 text-sm ${
+            className={`rounded px-3.5 py-1.5 text-sm transition ${
               decision === "accepted"
-                ? "bg-emerald-600 text-white"
-                : "border border-emerald-400/40 text-emerald-200"
+                ? "bg-neutral-900 font-medium text-white"
+                : "border border-neutral-200 bg-white text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50"
             }`}
           >
             Acceptance
@@ -94,10 +94,10 @@ export default function EmailTestForm() {
           <button
             type="button"
             onClick={() => setDecision("rejected")}
-            className={`rounded-full px-4 py-2 text-sm ${
+            className={`rounded px-3.5 py-1.5 text-sm transition ${
               decision === "rejected"
-                ? "bg-rose-700 text-white"
-                : "border border-rose-400/40 text-rose-200"
+                ? "bg-neutral-900 font-medium text-white"
+                : "border border-neutral-200 bg-white text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50"
             }`}
           >
             Rejection
@@ -109,13 +109,13 @@ export default function EmailTestForm() {
         type="button"
         disabled={isPending || !to.trim()}
         onClick={send}
-        className="w-full rounded-full bg-primary px-5 py-3 font-semibold text-[#201b38] disabled:opacity-40"
+        className="w-full rounded-md bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:opacity-40"
       >
         {isPending ? "Sending…" : `Send ${decision} ${type} test email`}
       </button>
 
       {notice ? (
-        <p role="status" className="text-sm text-white/80">
+        <p role="status" className="text-sm text-neutral-700">
           {notice}
         </p>
       ) : null}

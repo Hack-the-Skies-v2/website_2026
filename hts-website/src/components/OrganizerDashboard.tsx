@@ -37,19 +37,19 @@ const TABLES: {
     status: "pending",
     title: "Pending",
     subtitle: "Not sure / still deciding. Least graded apps shown first",
-    activeClass: "bg-amber-400 text-[#201b38]",
+    activeClass: "bg-white font-medium text-neutral-900 shadow-sm",
   },
   {
     status: "accepted",
     title: "Accepted",
     subtitle: "Accepted applicants",
-    activeClass: "bg-emerald-400 text-[#201b38]",
+    activeClass: "bg-white font-medium text-neutral-900 shadow-sm",
   },
   {
     status: "rejected",
     title: "Rejected",
     subtitle: "Rejected applicants",
-    activeClass: "bg-rose-400 text-[#201b38]",
+    activeClass: "bg-white font-medium text-neutral-900 shadow-sm",
   },
 ];
 
@@ -100,7 +100,6 @@ export default function OrganizerDashboard({
 
   const visible = byStatus[statusBucket];
   const activeTable = TABLES.find((table) => table.status === statusBucket)!;
-  // Start reviewing opens the most recent pending app.
   const startId = byStatus.pending[0]?.id ?? filtered[0]?.id ?? null;
   const trackCounts = {
     hacker: applications.filter((application) => application.type === "hacker").length,
@@ -207,32 +206,32 @@ export default function OrganizerDashboard({
 
   return (
     <div className="space-y-6">
-      <section className="rounded-2xl border border-primary/25 bg-[#201b38]/90 p-4 md:p-5">
+      <section className="rounded-lg border border-neutral-200 bg-transparent p-4 md:p-5">
         <div className="flex flex-wrap items-center justify-between gap-x-10 gap-y-3">
           {startId ? (
             <Link
               href={`${reviewBasePath}/${startId}`}
-              className="rounded-full bg-star px-5 py-2.5 text-sm font-semibold text-[#201b38] transition hover:bg-[#ffe08a]"
+              className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-neutral-800"
             >
               Start reviewing {track}s →
             </Link>
           ) : (
-            <span className="rounded-full border border-primary/25 px-4 py-2 text-sm text-white/40">
+            <span className="rounded-md border border-neutral-200 px-4 py-2 text-sm text-neutral-400">
               No {track}s to review
             </span>
           )}
 
           <div className="ml-auto flex shrink-0 items-center gap-3">
-            <div className="flex rounded-full border border-primary/30 p-1">
+            <div className="flex rounded-md border border-neutral-200 bg-neutral-100 p-0.5">
               {(["hacker", "mentor", "judge"] as const).map((type) => (
                 <button
                   key={type}
                   type="button"
                   onClick={() => switchTrack(type)}
-                  className={`rounded-full px-5 py-2 text-sm font-medium capitalize transition ${
+                  className={`rounded px-3.5 py-1.5 text-sm capitalize transition ${
                     track === type
-                      ? "bg-star text-[#201b38]"
-                      : "text-primary hover:bg-primary/10"
+                      ? "bg-white font-medium text-neutral-900 shadow-sm"
+                      : "text-neutral-600 hover:text-neutral-900"
                   }`}
                 >
                   {type}s ({trackCounts[type]})
@@ -243,24 +242,24 @@ export default function OrganizerDashboard({
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              className="field !w-48 shrink-0 sm:!w-56"
+              className="w-48 shrink-0 rounded-md border border-neutral-200 bg-white px-3 py-1.5 text-sm text-neutral-900 placeholder-neutral-400 outline-none focus:border-neutral-400 sm:w-56"
               placeholder={`Search ${track}s…`}
               aria-label={`Search ${track} applications`}
             />
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-primary/15 pt-4">
-          <div className="flex w-full flex-wrap rounded-full border border-primary/30 p-1 sm:w-auto">
+        <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-neutral-200 pt-4">
+          <div className="flex w-full flex-wrap rounded-md border border-neutral-200 bg-neutral-100 p-0.5 sm:w-auto">
             {TABLES.map((table) => (
               <button
                 key={table.status}
                 type="button"
                 onClick={() => switchStatus(table.status)}
-                className={`rounded-full px-5 py-2 text-sm font-medium transition ${
+                className={`rounded px-3.5 py-1.5 text-sm transition ${
                   statusBucket === table.status
                     ? table.activeClass
-                    : "text-primary hover:bg-primary/10"
+                    : "text-neutral-600 hover:text-neutral-900"
                 }`}
               >
                 {table.title} ({statusCounts[table.status]})
@@ -269,13 +268,13 @@ export default function OrganizerDashboard({
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-primary/15 pt-4">
-          <span className="text-sm text-white/55">{selectedVisible.length} selected</span>
+        <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-neutral-200 pt-4">
+          <span className="text-sm text-neutral-500">{selectedVisible.length} selected</span>
           <button
             type="button"
             disabled={isPending || selectedVisible.length === 0}
             onClick={() => decide("accepted")}
-            className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+            className="rounded-md border border-neutral-300 bg-white px-3.5 py-1.5 text-sm font-medium text-neutral-800 hover:bg-neutral-50 disabled:opacity-30"
           >
             Accept
           </button>
@@ -283,11 +282,11 @@ export default function OrganizerDashboard({
             type="button"
             disabled={isPending || selectedVisible.length === 0}
             onClick={() => decide("rejected")}
-            className="rounded-full bg-rose-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+            className="rounded-md border border-neutral-300 bg-white px-3.5 py-1.5 text-sm font-medium text-neutral-800 hover:bg-neutral-50 disabled:opacity-30"
           >
             Reject
           </button>
-          {notice ? <p role="status" className="text-sm text-white/80">{notice}</p> : null}
+          {notice ? <p role="status" className="text-sm text-neutral-700">{notice}</p> : null}
         </div>
       </section>
 
@@ -343,26 +342,21 @@ function StatusTable({
 }) {
   const allSelected =
     applications.length > 0 && applications.every((application) => selected.has(application.id));
-  const accent = {
-    pending: "border-amber-400/35",
-    accepted: "border-emerald-400/35",
-    rejected: "border-rose-400/35",
-  }[status];
 
   return (
-    <section className={`overflow-hidden rounded-2xl border bg-[#201b38]/90 ${accent}`}>
-      <div className="flex flex-wrap items-end justify-between gap-2 border-b border-primary/15 px-5 py-4">
+    <section className="overflow-hidden rounded-lg border border-neutral-200 bg-transparent">
+      <div className="flex flex-wrap items-end justify-between gap-2 border-b border-neutral-200 px-5 py-4">
         <div>
-          <h2 className="text-lg font-semibold text-white">
+          <h2 className="text-base font-semibold text-neutral-900">
             {title}{" "}
-            <span className="text-white/45">({applications.length})</span>
+            <span className="text-neutral-400">({applications.length})</span>
           </h2>
-          <p className="mt-1 text-sm text-white/50">{subtitle}</p>
+          <p className="mt-1 text-xs text-neutral-500">{subtitle}</p>
         </div>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[800px] text-left text-sm">
-          <thead className="border-b border-primary/15 text-primary/70">
+          <thead className="border-b border-neutral-200 text-xs uppercase tracking-wider text-neutral-500">
             <tr>
               <th className="px-4 py-3">
                 <input
@@ -371,6 +365,7 @@ function StatusTable({
                   onChange={onToggleAll}
                   disabled={applications.length === 0}
                   aria-label={`Select all in ${title}`}
+                  className="rounded border-neutral-300 accent-neutral-900"
                 />
               </th>
               <th className="px-4 py-3">Applicant</th>
@@ -380,11 +375,11 @@ function StatusTable({
               <th className="px-4 py-3" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-primary/10">
+          <tbody className="divide-y divide-neutral-100">
             {applications.map((application) => (
               <tr
                 key={application.id}
-                className={selected.has(application.id) ? "bg-primary/10" : "hover:bg-white/[0.03]"}
+                className={selected.has(application.id) ? "bg-neutral-50" : "hover:bg-neutral-50/60"}
               >
                 <td className="px-4 py-3">
                   <input
@@ -392,43 +387,44 @@ function StatusTable({
                     checked={selected.has(application.id)}
                     onChange={() => onToggle(application.id)}
                     aria-label={`Select ${application.first_name} ${application.last_name}`}
+                    className="rounded border-neutral-300 accent-neutral-900"
                   />
                 </td>
                 <td className="px-4 py-3">
                   <Link
                     href={`${reviewBasePath}/${application.id}`}
-                    className="font-medium text-white hover:text-star"
+                    className="font-medium text-neutral-900 hover:underline"
                   >
                     {application.first_name} {application.last_name}
                   </Link>
-                  <span className="mt-1 block text-white/55">
+                  <span className="mt-0.5 block text-xs text-neutral-500">
                     {application.school_or_organization || "-"}
                   </span>
                 </td>
-                <td className="px-4 py-3 font-mono tabular-nums text-white/80">
+                <td className="px-4 py-3 font-mono tabular-nums text-neutral-800">
                   {application.average_score != null ? application.average_score.toFixed(1) : "-"}
-                  <span className="mt-1 block text-xs text-white/45">
+                  <span className="mt-0.5 block text-xs text-neutral-400">
                     {application.grader_count
                       ? `${application.grader_count} rating${application.grader_count === 1 ? "" : "s"}`
                       : "unscored"}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-white/70">
+                <td className="px-4 py-3 text-neutral-600">
                   {new Date(application.submitted_at).toLocaleDateString()}
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-4 py-3 text-xs">
                   {application.notification_error ? (
-                    <span className="text-rose-200">Failed</span>
+                    <span className="text-neutral-500">Failed</span>
                   ) : application.notification_sent_at ? (
-                    <span className="text-emerald-200">Sent</span>
+                    <span className="text-neutral-800">Sent</span>
                   ) : (
-                    <span className="text-white/50">Not sent</span>
+                    <span className="text-neutral-400">Not sent</span>
                   )}
                 </td>
                 <td className="px-4 py-3 text-right">
                   <Link
                     href={`${reviewBasePath}/${application.id}`}
-                    className="text-sm font-medium text-star hover:underline"
+                    className="text-sm font-medium text-neutral-700 hover:text-neutral-900 hover:underline"
                   >
                     Review
                   </Link>
@@ -439,7 +435,7 @@ function StatusTable({
         </table>
       </div>
       {applications.length === 0 ? (
-        <p className="p-8 text-center text-white/45">No {title.toLowerCase()} applications in this track.</p>
+        <p className="p-8 text-center text-neutral-400">No {title.toLowerCase()} applications in this track.</p>
       ) : null}
     </section>
   );
