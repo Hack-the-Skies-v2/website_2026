@@ -243,7 +243,17 @@ function asText(value: unknown): string {
   return String(value).trim();
 }
 
-function pushField(fields: ReviewInfoField[], label: string, value: unknown) {
+function pushField(
+  fields: ReviewInfoField[],
+  label: string,
+  value: unknown,
+  emptyLabel = "Not filled",
+) {
+  const text = asText(value);
+  fields.push({ label, value: text || emptyLabel });
+}
+
+function pushIfPresent(fields: ReviewInfoField[], label: string, value: unknown) {
   const text = asText(value);
   if (!text) return;
   fields.push({ label, value: text });
@@ -355,13 +365,14 @@ function pickAnswers(fromAnswers: string[], fallback: string[] | null, type: App
 }
 
 function withResumeLink(fields: ReviewInfoField[], userId: string): ReviewInfoField[] {
-  const next = fields.filter((field) => field.label !== "Resume");
-  next.push({
-    label: "Resume",
-    value: "Open resume",
-    href: `/api/organizer-resume/${userId}`,
+  return fields.map((field) => {
+    if (field.label !== "Resume" || field.value === "Not uploaded") return field;
+    return {
+      ...field,
+      value: "Open resume",
+      href: `/api/organizer-resume/${userId}`,
+    };
   });
-  return next;
 }
 
 function buildHackerInfo(row: AppRow, hacker: HackerRow | undefined): ReviewInfoField[] {
@@ -375,11 +386,11 @@ function buildHackerInfo(row: AppRow, hacker: HackerRow | undefined): ReviewInfo
   pushField(fields, "Pronouns (other)", hacker?.pronouns_other ?? bag.pronounsOther ?? bag.pronouns_other);
   pushField(fields, "Email", hacker?.email ?? bag.email);
   pushField(fields, "Applying with teammates", hacker?.teammates ?? bag.teammates);
-  pushField(fields, "Phone", hacker?.phone_number ?? bag.phoneNumber);
-  pushField(fields, "Date of birth", hacker?.date_of_birth ?? bag.dateOfBirth);
-  pushField(fields, "T-shirt size", hacker?.t_shirt_size ?? bag.tShirtSize);
-  pushField(fields, "City", hacker?.city ?? bag.city);
-  pushField(fields, "Province", hacker?.province ?? bag.province);
+  pushIfPresent(fields, "Phone", hacker?.phone_number ?? bag.phoneNumber);
+  pushIfPresent(fields, "Date of birth", hacker?.date_of_birth ?? bag.dateOfBirth);
+  pushIfPresent(fields, "T-shirt size", hacker?.t_shirt_size ?? bag.tShirtSize);
+  pushIfPresent(fields, "City", hacker?.city ?? bag.city);
+  pushIfPresent(fields, "Province", hacker?.province ?? bag.province);
   pushField(fields, "Dietary restrictions", hacker?.dietary_restrictions ?? bag.dietaryRestrictions ?? bag.dietary_restrictions);
   pushField(fields, "Dietary (other)", hacker?.dietary_other ?? bag.dietaryOther ?? bag.dietary_other);
   pushField(
@@ -394,8 +405,8 @@ function buildHackerInfo(row: AppRow, hacker: HackerRow | undefined): ReviewInfo
   );
   pushField(fields, "School", hacker?.school_name ?? bag.schoolName);
   pushField(fields, "Grade", hacker?.grade ?? bag.grade);
-  pushField(fields, "Graduation year", hacker?.graduation_year ?? bag.graduationYear);
-  pushField(fields, "School city", hacker?.school_city ?? bag.schoolCity);
+  pushIfPresent(fields, "Graduation year", hacker?.graduation_year ?? bag.graduationYear);
+  pushIfPresent(fields, "School city", hacker?.school_city ?? bag.schoolCity);
   pushField(fields, "Coding experience", hacker?.coding_experience ?? bag.codingExperience ?? bag.coding_experience);
   pushField(fields, "Goals", hacker?.goals ?? bag.goals);
   pushField(fields, "Goals (other)", hacker?.goals_other ?? bag.goalsOther ?? bag.goals_other);
@@ -415,13 +426,14 @@ function buildHackerInfo(row: AppRow, hacker: HackerRow | undefined): ReviewInfo
     "Heard about HTS (other)",
     hacker?.heard_about_hts_other ?? bag.heardAboutHTSOther,
   );
-  pushField(fields, "Hackathon experience", hacker?.hackathon_experience ?? bag.hackathonExperience);
+  pushIfPresent(fields, "Hackathon experience", hacker?.hackathon_experience ?? bag.hackathonExperience);
   pushField(fields, "LinkedIn / Portfolio", hacker?.linkedin_portfolio ?? bag.linkedinPortfolio ?? bag.linkedin_portfolio);
   pushField(fields, "GitHub / Devpost", hacker?.github_devpost ?? bag.githubDevpost ?? bag.github_devpost);
   pushField(
     fields,
     "Resume",
     hacker?.resume_name ?? bag.resumeName ?? hacker?.resume_path ?? bag.resumePath ?? bag.resume_path,
+    "Not uploaded",
   );
   pushField(fields, "Other comments", hacker?.other_comments ?? bag.otherComments ?? bag.other_comments);
   return fields;

@@ -369,7 +369,7 @@ export default function OrganizerReviewClient({
             <p className="text-[11px] font-bold uppercase tracking-widest text-star">Q{index + 1}</p>
             <h3 className="mt-1 text-sm font-semibold text-white">{question.prompt}</h3>
             <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-white/75">
-              {text || <span className="italic text-white/35">No response.</span>}
+              {text || <span className="italic text-white/35">Not filled</span>}
             </p>
             <div className="mt-4 border-t border-primary/15 pt-3">
               <div className="flex items-baseline justify-between">
@@ -418,7 +418,9 @@ export default function OrganizerReviewClient({
                     {field.label}
                   </dt>
                   <dd className="mt-1 whitespace-pre-wrap break-words text-sm text-white/85">
-                    {field.label === "Resume" && field.href ? (
+                    {field.value === "Not filled" || field.value === "Not uploaded" ? (
+                      <span className="italic text-white/40">{field.value}</span>
+                    ) : field.label === "Resume" && field.href ? (
                       <a
                         href={field.href}
                         target="_blank"
