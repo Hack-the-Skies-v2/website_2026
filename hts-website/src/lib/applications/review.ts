@@ -731,7 +731,7 @@ export async function getOrganizerReviewApplication(
     first_name:
       row.first_name || listed?.first_name || detailFirst || "Applicant",
     last_name: row.last_name || listed?.last_name || detailLast || "",
-    email: row.email || listed?.email || hackerRow?.email || "",
+    email: row.email || listed?.email || "",
     school_or_organization:
       row.school_or_organization || listed?.school_or_organization || detailOrg || null,
     details: row.details,
