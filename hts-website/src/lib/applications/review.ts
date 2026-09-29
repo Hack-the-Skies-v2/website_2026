@@ -146,6 +146,45 @@ function normalizeAppRow(row: AppRow & { application_type?: string | null }): Ap
   return { ...row, id, type };
 }
 
+async function mergeStoredAnswers(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  rows: AppRow[],
+): Promise<AppRow[]> {
+  const ids = [...new Set(rows.map((row) => row.id).filter((id): id is string => Boolean(id)))];
+  if (ids.length === 0) return rows;
+
+  const { data, error } = await supabase
+    .from("applications")
+    .select("user_id, answers, details")
+    .in("user_id", ids);
+
+  if (error || !data) return rows;
+
+  const byId = new Map(
+    (data as { user_id: string; answers: unknown; details: unknown }[]).map((row) => [
+      row.user_id,
+      row,
+    ]),
+  );
+
+  return rows.map((row) => {
+    const stored = row.id ? byId.get(row.id) : undefined;
+    if (!stored) return row;
+    const answers = hasAnswerText(row.answers) ? row.answers : stored.answers ?? row.answers;
+    const details = hasAnswerText(row.details) ? row.details : stored.details ?? row.details;
+    return { ...row, answers, details };
+  });
+}
+
+function hasAnswerText(raw: unknown): boolean {
+  if (typeof raw === "string") return raw.trim().length > 0;
+  if (Array.isArray(raw)) return raw.some((item) => asText(item));
+  if (raw && typeof raw === "object") {
+    return Object.values(raw as Record<string, unknown>).some((value) => asText(value));
+  }
+  return false;
+}
+
 async function loadApplicationRows(
   supabase: Awaited<ReturnType<typeof createClient>>,
 ): Promise<AppRow[]> {
@@ -158,9 +197,10 @@ async function loadApplicationRows(
     .order("submitted_at", { ascending: false });
 
   if (!view.error && view.data) {
-    return (view.data as AppRow[])
+    const rows = (view.data as AppRow[])
       .map((row) => normalizeAppRow(row))
       .filter((row): row is AppRow => Boolean(row));
+    return mergeStoredAnswers(supabase, rows);
   }
 
   const table = await supabase
@@ -304,9 +344,15 @@ async function loadGradesByApp(
 }
 
 function pickAnswers(fromAnswers: string[], fallback: string[] | null, type: ApplicationType): string[] {
-  if (fromAnswers.some((text) => text.trim())) return fromAnswers;
-  if (fallback?.some((text) => text.trim())) return fallback;
-  return fromAnswers.length ? fromAnswers : Array(questionsForType(type).length).fill("");
+  const primary = fromAnswers.some((text) => text.trim()) ? fromAnswers : [];
+  const secondary = fallback?.some((text) => text?.trim()) ? fallback : [];
+  const length = Math.max(primary.length, secondary.length);
+  if (length === 0) return Array(questionsForType(type).length).fill("");
+  return Array.from({ length }, (_, index) => {
+    const left = primary[index]?.trim() || "";
+    const right = secondary[index]?.trim() || "";
+    return left.length >= right.length ? left || right : right;
+  });
 }
 
 function buildHackerInfo(row: AppRow, hacker: HackerRow | undefined): ReviewInfoField[] {
@@ -579,6 +625,8 @@ export async function getOrganizerReviewApplication(
   const type = normalizeType(row.type);
   if (!type) return null;
   const appId = row.id || applicationId;
+  const [merged] = await mergeStoredAnswers(supabase, [{ ...row, id: appId }]);
+  row = merged ?? row;
 
   const fromAnswers = parseAnswers(row.answers, type);
   const list = await listOrganizerApplications(organizerId);

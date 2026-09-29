@@ -359,15 +359,15 @@ export default function OrganizerReviewClient({
       </div>
 
       {tab === "questions" ? (
-      <div className={`grid gap-5 ${questions.length <= 2 ? "md:grid-cols-2" : "md:grid-cols-2 lg:grid-cols-3"}`}>
+      <div className="flex flex-col gap-5">
         {application.answers.map(({ question, text }, index) => (
           <article
             key={question.id}
-            className="flex min-h-[22rem] flex-col rounded-2xl border border-primary/25 bg-[#201b38]/90 p-5"
+            className="flex flex-col rounded-2xl border border-primary/25 bg-[#201b38]/90 p-5"
           >
             <p className="text-[11px] font-bold uppercase tracking-widest text-star">Q{index + 1}</p>
             <h3 className="mt-1 text-sm font-semibold text-white">{question.prompt}</h3>
-            <p className="mt-3 flex-1 whitespace-pre-wrap text-sm leading-relaxed text-white/75">
+            <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-white/75">
               {text || <span className="italic text-white/35">No response.</span>}
             </p>
             <div className="mt-4 border-t border-primary/15 pt-3">
