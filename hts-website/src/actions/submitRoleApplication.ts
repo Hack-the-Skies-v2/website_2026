@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { processReferralCookie } from "@/lib/referral";
 
 const baseSchema = z.object({
     name: z.string().trim().min(1).max(200),
@@ -108,6 +109,8 @@ export async function submitRoleApplication(
         console.error("submitRoleApplication caught error:", err);
         return { success: false, error: "Unable to submit your application right now. Please try again." };
     }
+
+    await processReferralCookie(supabase);
 
     return { success: true };
 }

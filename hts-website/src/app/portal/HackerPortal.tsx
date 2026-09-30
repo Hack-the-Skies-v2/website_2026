@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import AccountMenu from "@/components/AccountMenu";
 
@@ -29,12 +29,19 @@ const tabs: PortalTab[] = ["Application Status", "Schedule", "Points", "Shop", "
 
 function ReferralCard({ referralCode }: { referralCode: string }) {
     const [copied, setCopied] = useState(false);
+    const [origin, setOrigin] = useState("");
 
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
-    const referralUrl = `${origin}/apply?ref=${referralCode}`;
+    useEffect(() => {
+        setOrigin(window.location.origin);
+    }, []);
+
+    const referralUrl = origin
+        ? `${origin}/apply?ref=${referralCode}`
+        : `/apply?ref=${referralCode}`;
 
     function handleCopy() {
-        navigator.clipboard.writeText(referralUrl).then(() => {
+        const fullUrl = `${window.location.origin}/apply?ref=${referralCode}`;
+        navigator.clipboard.writeText(fullUrl).then(() => {
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         });

@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import AccountMenu from "@/components/AccountMenu";
 import { createClient } from "@/lib/supabase/server";
+import { HTS_REF_COOKIE, recordReferral } from "@/lib/referral";
 import HackerPortal from "./HackerPortal";
 
 type ScheduleItem = {
@@ -20,6 +22,15 @@ export default async function PortalPage() {
 
 	if (!user) redirect("/auth");
 
+	const cookieStore = await cookies();
+	const cookieRef = cookieStore.get(HTS_REF_COOKIE)?.value;
+	if (cookieRef) {
+		await recordReferral(cookieRef, supabase);
+		try {
+			cookieStore.delete(HTS_REF_COOKIE);
+		} catch {}
+	}
+
 	const [{ data: profile, error: profileErr }, { data: application, error: appErr }, { data: hackerApp, error: hackerAppErr }, { data: meals }, { data: workshops }, { data: referralCode }] = await Promise.all([
 		supabase.from("users").select("hacker, points, qr_code_link").eq("id", user.id).maybeSingle(),
 		supabase.from("applications").select("application_type").eq("user_id", user.id).maybeSingle(),
@@ -29,13 +40,7 @@ export default async function PortalPage() {
 		supabase.rpc("get_my_referral_code"),
 	]);
 
-	// console.log("[portal/page] user.id:", user.id);
-	// console.log("[portal/page] profile:", profile, "| error:", profileErr?.message);
-	// console.log("[portal/page] applications row:", application, "| error:", appErr?.message);
-	// console.log("[portal/page] hacker_applications row:", hackerApp, "| error:", hackerAppErr?.message);
-
 	if (application?.application_type === "judge" || application?.application_type === "mentor") {
-		// console.log("[portal/page] judge/mentor detected → redirecting to /jm-portal");
 		redirect("/jm-portal");
 	}
 
@@ -45,13 +50,7 @@ export default async function PortalPage() {
 		hackerApp,
 	);
 
-	// console.log("[portal/page] hasSubmittedHackerApp:", hasSubmittedHackerApp,
-	// 	"(profile.hacker:", profile?.hacker,
-	// 	"| application_type:", application?.application_type,
-	// 	"| hackerApp:", hackerApp, ")");
-
 	if (!hasSubmittedHackerApp) {
-		// console.log("[portal/page] NOT a hacker → redirecting to /apply");
 		redirect("/apply");
 	}
 

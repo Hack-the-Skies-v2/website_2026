@@ -4,6 +4,7 @@ import { z } from "zod";
 import { cookies, headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { processReferralCookie } from "@/lib/referral";
 
 const emailSchema = z.string().trim().toLowerCase().pipe(z.email().max(254));
 const passwordSchema = z.string().min(1, "Password is required").max(128);
@@ -46,7 +47,7 @@ const updatePasswordSchema = z
         message: "Passwords do not match",
     });
 
-type AuthResult = { success: true } | { success: false; error: string };
+type AuthResult = { success: true; referralRecorded?: boolean } | { success: false; error: string };
 type OAuthResult =
     | { success: true; url: string }
     | { success: false; error: string };
@@ -69,15 +70,45 @@ function safeNextPath(nextPath: string) {
         : "/apply";
 }
 
+function formatSiteUrl(url: string): string {
+    let sanitized = url.trim().replace(/\/+$/, "");
+    if (!/^https?:\/\//i.test(sanitized)) {
+        const isLocal =
+            sanitized.startsWith("localhost") ||
+            sanitized.startsWith("127.0.0.1") ||
+            sanitized.startsWith("[::1]");
+        sanitized = `${isLocal ? "http" : "https"}://${sanitized}`;
+    }
+    return sanitized;
+}
+
 async function requestOrigin() {
-    const headerStore = await headers();
-    const host =
-        headerStore.get("x-forwarded-host")?.split(",")[0]?.trim() ||
-        headerStore.get("host")?.split(",")[0]?.trim();
-    const proto =
-        headerStore.get("x-forwarded-proto")?.split(",")[0]?.trim() || "https";
-    if (host) return `${proto}://${host}`;
-    return process.env.NEXT_PUBLIC_SITE_URL || "https://www.hacktheskies.com";
+    try {
+        const headerStore = await headers();
+        const host =
+            headerStore.get("x-forwarded-host")?.split(",")[0]?.trim() ||
+            headerStore.get("host")?.split(",")[0]?.trim();
+        const forwardedProto = headerStore
+            .get("x-forwarded-proto")
+            ?.split(",")[0]
+            ?.trim();
+
+        if (host) {
+            const isLocal =
+                host.startsWith("localhost") ||
+                host.startsWith("127.0.0.1") ||
+                host.startsWith("[::1]");
+            const proto = forwardedProto || (isLocal ? "http" : "https");
+            return `${proto}://${host}`;
+        }
+    } catch { }
+
+    const envUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+    if (envUrl) {
+        return formatSiteUrl(envUrl);
+    }
+
+    return "https://www.hacktheskies.com";
 }
 
 export async function signInWithEmail(
@@ -89,9 +120,13 @@ export async function signInWithEmail(
 
     const supabase = await createClient();
     const { error } = await supabase.auth.signInWithPassword(result.data);
-    return error
-        ? { success: false, error: "Invalid email or password" }
-        : { success: true };
+    if (error) {
+        return { success: false, error: "Invalid email or password" };
+    }
+
+    const referralResult = await processReferralCookie(supabase);
+
+    return { success: true, referralRecorded: referralResult.recorded };
 }
 
 export async function signInWithGoogle(
@@ -113,8 +148,7 @@ export async function signInWithGoogle(
         const { data, error } = await supabase.auth.signInWithOAuth({
             provider: "google",
             options: {
-                // Keep callback URL stable for Supabase allow-list; next is in the cookie.
-                redirectTo: `${origin}/auth/confirm?next=${encodeURIComponent(safeNext)}`,
+                redirectTo: `${origin}/auth/confirm`,
             },
         });
 
@@ -145,18 +179,25 @@ export async function signUpNewUser(
     if (!result.success) return validationError(result);
 
     const supabase = await createClient();
-    const { error } = await supabase.auth.signUp({
+    const origin = await requestOrigin();
+    const { data, error } = await supabase.auth.signUp({
         email: result.data.email,
         password: result.data.password,
         options: {
             data: { full_name: result.data.fullName },
-            emailRedirectTo: "https://hacktheskies.com/auth/confirm",
+            emailRedirectTo: `${origin}/auth/confirm`,
         },
     });
 
-    return error
-        ? { success: false, error: "Unable to create your account" }
-        : { success: true };
+    if (error) {
+        return { success: false, error: "Unable to create your account" };
+    }
+
+    if (data?.session) {
+        await processReferralCookie(supabase);
+    }
+
+    return { success: true };
 }
 
 export async function resetPassword(email: string): Promise<AuthResult> {
@@ -164,10 +205,11 @@ export async function resetPassword(email: string): Promise<AuthResult> {
     if (!result.success) return validationError(result);
 
     const supabase = await createClient();
+    const origin = await requestOrigin();
     const { error } = await supabase.auth.resetPasswordForEmail(
         result.data.email,
         {
-            redirectTo: "https://hacktheskies.com/auth/update-password",
+            redirectTo: `${origin}/auth/update-password`,
         },
     );
 

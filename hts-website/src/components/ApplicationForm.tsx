@@ -56,7 +56,6 @@ const GOAL_OPTIONS = [
     "Other",
 ];
 
-// Earlier versions of the form asked five other questions ahead of these two.
 const LEGACY_QUESTION_COUNT = 5;
 
 const APPLICATION_QUESTIONS = [
@@ -232,7 +231,11 @@ function clearApplicationDraft() {
     }
 }
 
-export default function ApplicationForm() {
+export default function ApplicationForm({
+    referrerEmail,
+}: {
+    referrerEmail?: string | null;
+} = {}) {
     const router = useRouter();
     const [currentSection, setCurrentSection] = useState(0);
     const [data, setData] = useState<ApplicationData>(EMPTY_DATA);
@@ -520,11 +523,11 @@ export default function ApplicationForm() {
     }
 
     if (data.section1.role === "Judge") {
-        return <JudgeApplicationForm onBack={handleBack} />;
+        return <JudgeApplicationForm onBack={handleBack} referrerEmail={referrerEmail} />;
     }
 
     if (data.section1.role === "Mentor") {
-        return <MentorApplicationForm onBack={handleBack} />;
+        return <MentorApplicationForm onBack={handleBack} referrerEmail={referrerEmail} />;
     }
 
     return (
@@ -586,6 +589,7 @@ export default function ApplicationForm() {
                             updateData={updateData}
                             errors={errors}
                             onEditSection={handleEditSection}
+                            referrerEmail={referrerEmail}
                         />
                     )}
 
@@ -873,7 +877,13 @@ function RoleApplicationShell({
     );
 }
 
-function JudgeApplicationForm({ onBack }: { onBack: () => void }) {
+function JudgeApplicationForm({
+    onBack,
+    referrerEmail,
+}: {
+    onBack: () => void;
+    referrerEmail?: string | null;
+}) {
     const expertise = ["Software / Technology", "AI / Machine Learning", "Data", "Aerospace / Aviation", "Business / Entrepreneurship", "Product Management", "Design / UX", "Finance", "Marketing", "Cybersecurity", "Engineering", "Other"];
 
     return (
@@ -911,13 +921,19 @@ function JudgeApplicationForm({ onBack }: { onBack: () => void }) {
             <div>
                 <h2 className="mb-6 font-outfit text-2xl font-semibold text-primary">Availability</h2>
                 <RoleSelect name="availableForFullJudgingPeriod" label="Are you available for the full judging period?" options={["", "Yes", "No"]} required />
-                <RoleAgreements submitLabel="Submit Judge Application" />
+                <RoleAgreements submitLabel="Submit Judge Application" referrerEmail={referrerEmail} />
             </div>
         </RoleApplicationShell>
     );
 }
 
-function MentorApplicationForm({ onBack }: { onBack: () => void }) {
+function MentorApplicationForm({
+    onBack,
+    referrerEmail,
+}: {
+    onBack: () => void;
+    referrerEmail?: string | null;
+}) {
     const areas = ["Programming / Software Development", "AI / Machine Learning", "Web Development", "App Development", "Data Science", "Cybersecurity", "UI/UX & Design", "Entrepreneurship / Business", "Pitching / Presentations", "Product Development", "Other"];
 
     return (
@@ -950,7 +966,7 @@ function MentorApplicationForm({ onBack }: { onBack: () => void }) {
                     <RoleSelect name="availableForFullEvent" label="Are you available for the full Hack the Skies event?" options={["", "Yes", "No"]} required />
                     <RoleInput name="timesUnavailable" label="Times you will be unavailable (optional)" />
                 </div>
-                <RoleAgreements submitLabel="Submit Mentor Application" />
+                <RoleAgreements submitLabel="Submit Mentor Application" referrerEmail={referrerEmail} />
             </div>
         </RoleApplicationShell>
     );
@@ -985,7 +1001,13 @@ function RoleTextArea({ name, label, placeholder, required }: { name: string; la
     );
 }
 
-function RoleAgreements({ submitLabel }: { submitLabel: string }) {
+function RoleAgreements({
+    submitLabel,
+    referrerEmail,
+}: {
+    submitLabel: string;
+    referrerEmail?: string | null;
+}) {
     const [agreements, setAgreements] = useState({
         terms: false,
         eligibility: false,
@@ -1016,6 +1038,13 @@ function RoleAgreements({ submitLabel }: { submitLabel: string }) {
                 <input type="checkbox" name="participationConfirmed" value="true" required checked={agreements.participation} onChange={() => toggle("participation")} className="cursor-pointer mt-1 h-5 w-5 shrink-0 accent-primary" />
                 <span>I understand that participation is subject to approval and event policies.</span>
             </label>
+            {referrerEmail && (
+                <div className="flex items-center gap-3 pt-3 border-t border-primary/20">
+                    <span className="text-primary font-outfit text-base">
+                        Referred by: <span className="font-semibold text-white">{referrerEmail}</span>
+                    </span>
+                </div>
+            )}
             <button type="submit" className="cursor-pointer mt-5 rounded-full bg-button px-7 py-3 font-outfit font-semibold text-white shadow-[0_0_20px_rgba(130,104,180,0.45)] transition hover:bg-[#8268B4]">
                 {submitLabel}
             </button>
@@ -1754,11 +1783,13 @@ function Section5({
     updateData,
     errors,
     onEditSection,
+    referrerEmail,
 }: {
     data: ApplicationData;
     updateData: (updates: Partial<ApplicationData>) => void;
     errors: Record<string, string>;
     onEditSection: (section: number) => void;
+    referrerEmail?: string | null;
 }) {
     const section5 = data.section5;
     const teammates = data.section1.teammates
@@ -2000,6 +2031,14 @@ function Section5({
                     <p className="text-red-400 font-outfit text-sm">
                         {errors.parentalConfirm}
                     </p>
+                )}
+
+                {referrerEmail && (
+                    <div className="flex items-center gap-3 pt-3 border-t border-primary/20">
+                        <span className="text-primary font-outfit text-base">
+                            Referred by: <span className="font-semibold text-white">{referrerEmail}</span>
+                        </span>
+                    </div>
                 )}
             </div>
         </div>

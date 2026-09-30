@@ -2,8 +2,11 @@ import Link from "next/link";
 import Footer from "@/components/Footer";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import ApplicationForm from "@/components/ApplicationForm";
 import AccountMenu from "../../components/AccountMenu";
+import ReferralToast from "@/components/ReferralToast";
+import { HTS_REF_COOKIE, recordReferral, getReferrerEmail } from "@/lib/referral";
 
 export const dynamic = "force-dynamic";
 
@@ -15,15 +18,53 @@ export default async function Apply({
     const params = await searchParams;
     const ref = typeof params.ref === "string" ? params.ref : null;
 
-    if (ref) {
-        redirect(`/api/referral?code=${encodeURIComponent(ref)}`);
-    }
-
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    if (!user) {
-        redirect("/auth");
+    if (user) {
+        if (ref) {
+            const cookieStore = await cookies();
+            try { cookieStore.delete(HTS_REF_COOKIE); } catch { }
+
+            const result = await recordReferral(ref, supabase);
+            if (result.success || result.isAlreadyReferredByThisUser) {
+                redirect("/apply?referral=success");
+            } else if (result.isAlreadyReferred) {
+                redirect("/apply?referral=already_referred");
+            } else if (result.isSelfReferral) {
+                redirect("/apply?referral=self");
+            } else if (result.isInvalidCode) {
+                redirect("/apply?referral=invalid");
+            } else {
+                redirect("/apply");
+            }
+        }
+    } else {
+        if (ref) {
+            redirect(`/api/referral?ref=${encodeURIComponent(ref)}`);
+        }
+        redirect("/auth?next=/apply");
+    }
+
+    const cookieStore = await cookies();
+    const cookieRef = cookieStore.get(HTS_REF_COOKIE)?.value;
+    if (cookieRef) {
+        try {
+            cookieStore.delete(HTS_REF_COOKIE);
+        } catch { }
+
+        const result = await recordReferral(cookieRef, supabase);
+        if (result.success || result.isAlreadyReferredByThisUser) {
+            redirect("/apply?referral=success");
+        } else if (result.isAlreadyReferred) {
+            redirect("/apply?referral=already_referred");
+        } else if (result.isSelfReferral) {
+            redirect("/apply?referral=self");
+        } else if (result.isInvalidCode) {
+            redirect("/apply?referral=invalid");
+        } else {
+            redirect("/apply");
+        }
     }
 
     const [
@@ -54,10 +95,6 @@ export default async function Apply({
             .maybeSingle(),
     ]);
 
-    // console.log("[apply/page] user.id:", user.id);
-    // console.log("[apply/page] applications row:", application);
-    // console.log("[apply/page] hackerApp:", hackerApp, "judgeApp:", judgeApp, "mentorApp:", mentorApp);
-
     const appType = application?.application_type?.toLowerCase();
 
     if (appType === "judge" || judgeApp) {
@@ -70,7 +107,7 @@ export default async function Apply({
         redirect("/portal");
     }
 
-    // console.log("[apply/page] no application found — showing form");
+    const referrerEmail = await getReferrerEmail();
 
     return (
         <main className="flex flex-col min-h-screen">
@@ -97,16 +134,17 @@ export default async function Apply({
                 </button>
             </Link>
             <div className="flex-1">
-                <div className="pt-24 pb-12 px-4 sm:px-6 max-w-4xl mx-auto">
+                <div className="pt-24 pb-8 px-4 sm:px-6 max-w-4xl mx-auto">
                     <h1 className="
 						text-center
-						font-outfit text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-semibold text-primary select-none mb-12">
+						font-outfit text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-semibold text-primary select-none mb-8">
                         Application Portal
                     </h1>
                 </div>
-                <ApplicationForm />
+                <ApplicationForm referrerEmail={referrerEmail} />
             </div>
             <Footer />
+            <ReferralToast />
         </main>
     );
 }

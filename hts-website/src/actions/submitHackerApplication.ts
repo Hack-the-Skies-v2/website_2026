@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { cookies } from "next/headers";
+import { processReferralCookie } from "@/lib/referral";
 
 function stripHtml(value: string): string {
 	return value.replace(/<[^>]*>/g, "");
@@ -65,12 +65,6 @@ const hackerSchema = z.object({
 		termsAgreed: z.literal(true, { message: "You must agree to the terms" }),
 	}),
 });
-
-const refCodeSchema = z
-	.string()
-	.min(1)
-	.max(32)
-	.regex(/^[A-Za-z0-9+/=_-]+$/);
 
 export async function submitHackerApplication(data: unknown) {
 	const result = hackerSchema.safeParse(data);
@@ -146,26 +140,7 @@ export async function submitHackerApplication(data: unknown) {
 		return { success: false, error: "Unable to submit your application right now. Please try again." };
 	}
 
-	const cookieStore = await cookies();
-	const rawRef = cookieStore.get("hts_ref")?.value;
-
-	cookieStore.delete("hts_ref");
-	cookieStore.set("hts_ref", "", {
-		httpOnly: true,
-		secure: process.env.NODE_ENV === "production",
-		sameSite: "lax",
-		path: "/",
-		maxAge: 0,
-	});
-
-	if (rawRef) {
-		const refResult = refCodeSchema.safeParse(rawRef);
-		if (refResult.success) {
-			try {
-				await supabase.rpc("record_referral", { p_code: refResult.data });
-			} catch {}
-		}
-	}
+	await processReferralCookie(supabase);
 
 	return { success: true };
 }

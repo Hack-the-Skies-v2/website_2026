@@ -74,23 +74,23 @@ export default function AccountMenu({ email, label, placement = "top-left", them
     return (
         <>
             <div ref={menuRef} className={`font-outfit ${placement === "top-left" ? "fixed left-4 top-4 z-50" : "relative"}`}>
-            <button
-                type="button"
-                onClick={() => setIsOpen((open) => !open)}
-                aria-expanded={isOpen}
-                aria-haspopup="true"
-                className={buttonClass}
-            >
-                <span className="block truncate font-semibold">{label ?? email}</span>
-                {label && <span className={`mt-1 block truncate text-xs ${theme === "light" ? "text-neutral-500" : "text-primary/50"}`}>{email}</span>}
-            </button>
+                <button
+                    type="button"
+                    onClick={() => setIsOpen((open) => !open)}
+                    aria-expanded={isOpen}
+                    aria-haspopup="true"
+                    className={buttonClass}
+                >
+                    <span className="block truncate font-semibold">{label ?? email}</span>
+                    {label && <span className={`mt-1 block truncate text-xs ${theme === "light" ? "text-neutral-500" : "text-primary/50"}`}>{email}</span>}
+                </button>
 
-            {isOpen && (
-                <div className={dropdownClass}>
-                    <p className={`mb-1 break-words text-xs ${theme === "light" ? "text-neutral-500" : "text-primary/60"}`}>Signed in as</p>
-                    <p className="mb-4 break-words text-sm font-medium">{email}</p>
+                {isOpen && (
+                    <div className={dropdownClass}>
+                        <p className={`mb-1 break-words text-xs ${theme === "light" ? "text-neutral-500" : "text-primary/60"}`}>Signed in as</p>
+                        <p className="mb-4 break-words text-sm font-medium">{email}</p>
 
-                    <div className={`space-y-2 border-t pt-4 ${theme === "light" ? "border-neutral-200" : "border-primary/15"}`}>
+                        <div className={`space-y-2 border-t pt-4 ${theme === "light" ? "border-neutral-200" : "border-primary/15"}`}>
                             <form action={logout}>
                                 <button
                                     type="submit"
@@ -110,9 +110,9 @@ export default function AccountMenu({ email, label, placement = "top-left", them
                             >
                                 Delete account
                             </button>
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
             </div>
 
             {isDeleteConfirmationOpen && (
@@ -142,11 +142,10 @@ export default function AccountMenu({ email, label, placement = "top-left", them
                             <button
                                 type="submit"
                                 disabled={countdown > 0}
-                                className={`flex-1 rounded-lg px-3 py-2 text-sm transition-colors ${
-                                    countdown > 0
+                                className={`flex-1 rounded-lg px-3 py-2 text-sm transition-colors ${countdown > 0
                                         ? "cursor-not-allowed bg-red-900/40 text-red-200/60"
                                         : "bg-red-700/80 text-white hover:bg-red-600 cursor-pointer"
-                                }`}
+                                    }`}
                             >
                                 Delete account
                             </button>

@@ -1,6 +1,7 @@
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
+import { HTS_REF_COOKIE, recordReferral } from "@/lib/referral";
 
 const allowedTypes = ["signup", "email", "recovery"] as const;
 type AllowedOtpType = (typeof allowedTypes)[number];
@@ -47,6 +48,31 @@ function redirectToPath(request: NextRequest, pathname: string, search = "") {
   return response;
 }
 
+async function handleReferralAttribution(
+  request: NextRequest,
+  response: NextResponse,
+  supabase: ReturnType<typeof createConfirmClient>
+): Promise<boolean> {
+  const refCode = request.cookies.get(HTS_REF_COOKIE)?.value;
+  if (refCode) {
+    const res = await recordReferral(refCode, supabase);
+    response.cookies.delete(HTS_REF_COOKIE);
+    response.cookies.set(HTS_REF_COOKIE, "", { path: "/", maxAge: 0 });
+    return res.success || !!res.isAlreadyReferredByThisUser;
+  }
+  return false;
+}
+
+function appendReferralSuccess(response: NextResponse): NextResponse {
+  const location = response.headers.get("location");
+  if (location) {
+    const url = new URL(location);
+    url.searchParams.set("referral", "success");
+    response.headers.set("location", url.toString());
+  }
+  return response;
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
@@ -60,14 +86,16 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      return response;
+      const attributed = await handleReferralAttribution(request, response, supabase);
+      return attributed ? appendReferralSuccess(response) : response;
     }
 
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (user) {
-      return response;
+      const attributed = await handleReferralAttribution(request, response, supabase);
+      return attributed ? appendReferralSuccess(response) : response;
     }
   }
 
@@ -84,8 +112,13 @@ export async function GET(request: NextRequest) {
 
     if (!error) {
       if (type === "recovery" || data.session) {
+        if (type !== "recovery") {
+          const attributed = await handleReferralAttribution(request, response, supabase);
+          return attributed ? appendReferralSuccess(response) : response;
+        }
         return response;
       }
+      await handleReferralAttribution(request, response, supabase);
       return redirectToPath(request, "/auth", "confirmed=1");
     }
   }

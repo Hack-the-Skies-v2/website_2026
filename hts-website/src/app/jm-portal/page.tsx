@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { HTS_REF_COOKIE, recordReferral } from "@/lib/referral";
 import JMPortal from "./JMPortal";
 
 export default async function JMPortalPage() {
@@ -9,6 +11,15 @@ export default async function JMPortalPage() {
 	} = await supabase.auth.getUser();
 
 	if (!user) redirect("/auth");
+
+	const cookieStore = await cookies();
+	const cookieRef = cookieStore.get(HTS_REF_COOKIE)?.value;
+	if (cookieRef) {
+		await recordReferral(cookieRef, supabase);
+		try {
+			cookieStore.delete(HTS_REF_COOKIE);
+		} catch {}
+	}
 
 	const [{ data: profile }, { data: application }] = await Promise.all([
 		supabase
