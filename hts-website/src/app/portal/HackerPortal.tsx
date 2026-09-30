@@ -51,7 +51,7 @@ function ReferralCard({ referralCode }: { referralCode: string }) {
         <div className="rounded-2xl border border-primary/20 bg-[#141123] p-6 space-y-4">
             <div>
                 <p className="font-semibold text-primary">Your Referral Link</p>
-                <p className="mt-1 text-sm text-primary/60">Share this link to earn points for every accepted hacker you refer.</p>
+                <p className="mt-1 text-sm text-primary/60">Share this link to earn points for each referral when they check in to the event, which you can redeem for prizes later at the event.</p>
             </div>
             <div className="flex items-center gap-2 rounded-xl border border-primary/20 bg-[#141123] px-4 py-2.5">
                 <span className="min-w-0 flex-1 truncate font-mono text-sm text-primary/80 select-all">
@@ -97,11 +97,10 @@ export default function HackerPortal({
                                 key={tab}
                                 type="button"
                                 onClick={() => setActiveTab(tab)}
-                                className={`w-full rounded-xl px-3 py-2.5 text-left text-sm transition cursor-pointer ${
-                                    activeTab === tab
-                                        ? "bg-button font-semibold text-white shadow-[0_0_18px_rgba(130,104,180,0.35)]"
-                                        : "text-primary/60 hover:bg-primary/10 hover:text-primary"
-                                }`}
+                                className={`w-full rounded-xl px-3 py-2.5 text-left text-sm transition cursor-pointer ${activeTab === tab
+                                    ? "bg-button font-semibold text-white shadow-[0_0_18px_rgba(130,104,180,0.35)]"
+                                    : "text-primary/60 hover:bg-primary/10 hover:text-primary"
+                                    }`}
                             >
                                 {tab}
                             </button>
@@ -138,8 +137,18 @@ export default function HackerPortal({
                     )}
 
                     {activeTab === "Points" && (
-                        <div className="flex min-h-64 max-w-2xl flex-col items-center justify-center rounded-2xl border border-primary/20 bg-[#141123] p-8 text-center sm:p-12">
-                            <h2 className="text-2xl font-semibold text-primary sm:text-3xl">Coming Soon</h2>
+                        <div className="max-w-3xl space-y-6">
+                            <div className="rounded-2xl border border-primary/20 bg-[#141123] p-6 sm:p-8">
+                                <p className="text-sm font-medium text-primary/60">Current Balance</p>
+                                <div className="mt-2 flex items-baseline gap-2">
+                                    <span className="text-4xl font-bold text-primary sm:text-5xl">{points}</span>
+                                    <span className="text-lg font-medium text-primary/70">Points</span>
+                                </div>
+                                <p className="mt-4 text-sm leading-relaxed text-primary/70">
+                                    You will earn points for each referral when they check in, which you can redeem for prizes later at the event. You can also earn points from workshops, games, and other opportunities.
+                                </p>
+                            </div>
+                            {referralCode && <ReferralCard referralCode={referralCode} />}
                         </div>
                     )}
 
