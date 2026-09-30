@@ -306,3 +306,9 @@ form[data-validation-attempted="true"] textarea:invalid {
 		opacity: 0.75;
 	}
 }
+
+/* Hide browser default password reveal and clear buttons (e.g. Edge/Windows black eye button) */
+input::-ms-reveal,
+input::-ms-clear {
+	display: none;
+}

@@ -262,5 +262,18 @@ export async function deleteCurrentUser(): Promise<never> {
         throw new Error("Unable to delete your account");
     }
 
+    try {
+        await supabase.auth.signOut();
+    } catch {}
+
+    try {
+        const cookieStore = await cookies();
+        for (const cookie of cookieStore.getAll()) {
+            if (cookie.name.includes("sb-") || cookie.name.includes("auth") || cookie.name === "hts_ref") {
+                cookieStore.delete(cookie.name);
+            }
+        }
+    } catch {}
+
     redirect("/auth");
 }

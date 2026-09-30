@@ -130,8 +130,13 @@ function AuthContent() {
         let cancelled = false;
         const supabase = createClient();
 
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            if (!cancelled && session?.user) router.replace(nextPath);
+        supabase.auth.getUser().then(({ data: { user }, error }) => {
+            if (cancelled) return;
+            if (user && !error) {
+                router.replace(nextPath);
+            } else {
+                supabase.auth.signOut().catch(() => {});
+            }
         });
 
         return () => {
