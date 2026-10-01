@@ -104,11 +104,16 @@ export default function ScheduleManager({ initialEvents }: { initialEvents: Sche
 
         startTransition(async () => {
             try {
+                const values = {
+                    ...form,
+                    startTime: new Date(form.startTime).toISOString(),
+                    endTime: new Date(form.endTime).toISOString(),
+                };
                 if (editingId) {
-                    await updateScheduleEvent({ ...form, id: editingId });
+                    await updateScheduleEvent({ ...values, id: editingId });
                     setNotice("Event updated.");
                 } else {
-                    await createScheduleEvent(form);
+                    await createScheduleEvent(values);
                     setNotice("Event added.");
                 }
                 setIsOpen(false);
