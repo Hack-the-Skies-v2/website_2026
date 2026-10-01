@@ -32,10 +32,9 @@ export default async function PortalPage() {
 		} catch {}
 	}
 
-	const [{ data: profile }, { data: meals }, { data: workshops }, { data: referralCode }] = await Promise.all([
+	const [{ data: profile }, { data: events }, { data: referralCode }] = await Promise.all([
 		supabase.from("users").select("hacker, points, qr_code_link").eq("id", user.id).maybeSingle(),
-		supabase.from("meals").select("id, name, starts_at, ends_at").order("starts_at"),
-		supabase.from("workshops").select("id, name, description, room, starts_at, ends_at").order("starts_at"),
+		supabase.from("schedule_events").select("id, title, description, type, start_time, end_time, location").order("start_time"),
 		supabase.rpc("get_my_referral_code"),
 	]);
 
@@ -49,10 +48,15 @@ export default async function PortalPage() {
 		redirect("/apply");
 	}
 
-	const schedule: ScheduleItem[] = [
-		...(workshops ?? []).map((item) => ({ id: item.id, name: item.name, description: item.description, startsAt: item.starts_at, endsAt: item.ends_at, location: item.room, type: "Workshop" as const })),
-		...(meals ?? []).map((item) => ({ id: item.id, name: item.name, description: "Time to refuel and connect with other hackers.", startsAt: item.starts_at, endsAt: item.ends_at, location: "Dining hall", type: "Meal" as const })),
-	].sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+	const schedule: ScheduleItem[] = (events ?? []).map((item) => ({
+		id: item.id,
+		name: item.title,
+		description: item.description ?? "",
+		startsAt: item.start_time,
+		endsAt: item.end_time,
+		location: item.location ?? "",
+		type: item.type === "meal" ? "Meal" : "Workshop",
+	}));
 
 	return (
 		<>

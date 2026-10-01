@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import {
 	Geist,
 	Geist_Mono,
@@ -50,7 +51,10 @@ export default function RootLayout({
 			lang="en"
 			className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} ${libre.variable} ${pixel.variable} h-full antialiased`}
 		>
-			<body className="min-h-full flex flex-col">{children}</body>
+			<body className="min-h-full flex flex-col">
+				{children}
+				<Analytics />
+			</body>
 		</html>
 	);
 }

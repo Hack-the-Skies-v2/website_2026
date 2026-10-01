@@ -177,7 +177,7 @@ export default function OrganizerDashboard({
               href={`${reviewBasePath}/${startId}`}
               className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-neutral-800"
             >
-              Start reviewing {track}s →
+              Start reviewing {track}s
             </Link>
           ) : (
             <span className="rounded-md border border-neutral-200 px-4 py-2 text-sm text-neutral-400">

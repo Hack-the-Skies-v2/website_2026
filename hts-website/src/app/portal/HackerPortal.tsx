@@ -148,7 +148,6 @@ export default function HackerPortal({
                                     You will earn points for each referral when they check in, which you can redeem for prizes later at the event. You can also earn points from workshops, games, and other opportunities.
                                 </p>
                             </div>
-                            {referralCode && <ReferralCard referralCode={referralCode} />}
                         </div>
                     )}
 
