@@ -149,7 +149,6 @@ export default function ScheduleManager({ initialEvents }: { initialEvents: Sche
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <h2 className="text-xl font-semibold text-neutral-900">Schedule</h2>
-                    <p className="mt-1 text-sm text-neutral-500">Manage the event schedule shown in the participant portal.</p>
                 </div>
                 <button type="button" onClick={openCreate} className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800">
                     Add Event
