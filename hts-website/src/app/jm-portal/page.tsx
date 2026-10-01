@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { HTS_REF_COOKIE, recordReferral } from "@/lib/referral";
+import { getApplicationAccess } from "@/lib/applications/access";
 import JMPortal from "./JMPortal";
 
 export default async function JMPortalPage() {
@@ -21,25 +22,8 @@ export default async function JMPortalPage() {
 		} catch {}
 	}
 
-	const [{ data: profile }, { data: application }] = await Promise.all([
-		supabase
-			.from("users")
-			.select("judge, mentor")
-			.eq("id", user.id)
-			.maybeSingle(),
-		supabase
-			.from("applications")
-			.select("application_type, status")
-			.eq("user_id", user.id)
-			.maybeSingle(),
-	]);
-
-	const isJudge = Boolean(
-		profile?.judge || application?.application_type === "judge",
-	);
-	const isMentor = Boolean(
-		profile?.mentor || application?.application_type === "mentor",
-	);
+	const access = await getApplicationAccess(supabase, user.id);
+	const { isJudge, isMentor } = access;
 
 	if (!isJudge && !isMentor) redirect("/apply");
 
@@ -56,7 +40,7 @@ export default async function JMPortalPage() {
 			email={user.email ?? ""}
 			role={role}
 			isJudge={isJudge}
-			status={application?.status ?? "pending"}
+			status={access.applicationStatus ?? "pending"}
 		/>
 	);
 }

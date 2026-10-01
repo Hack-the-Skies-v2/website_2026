@@ -63,8 +63,7 @@ export default function JMPortal({
                                     href="/judge"
                                     className="flex items-center justify-between rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2.5 text-left text-sm font-semibold text-amber-200 shadow-[0_0_18px_rgba(248,212,114,0.15)] transition hover:border-amber-400/50 hover:bg-amber-400/20"
                                 >
-                                    <span>Judging Portal</span>
-                                    <span className="text-xs">↗</span>
+                                    <span>Judging Portal</span> 
                                 </Link>
                             </div>
                         )}

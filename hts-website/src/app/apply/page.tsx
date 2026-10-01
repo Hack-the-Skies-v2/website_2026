@@ -7,6 +7,7 @@ import ApplicationForm from "@/components/ApplicationForm";
 import AccountMenu from "../../components/AccountMenu";
 import ReferralToast from "@/components/ReferralToast";
 import { HTS_REF_COOKIE, recordReferral, getReferrerEmail } from "@/lib/referral";
+import { getApplicationAccess } from "@/lib/applications/access";
 
 export const dynamic = "force-dynamic";
 
@@ -67,43 +68,12 @@ export default async function Apply({
         }
     }
 
-    const [
-        { data: application },
-        { data: hackerApp },
-        { data: judgeApp },
-        { data: mentorApp },
-    ] = await Promise.all([
-        supabase
-            .from("applications")
-            .select("user_id, application_type")
-            .eq("user_id", user.id)
-            .maybeSingle(),
-        supabase
-            .from("hacker_applications")
-            .select("user_id")
-            .eq("user_id", user.id)
-            .maybeSingle(),
-        supabase
-            .from("judge_applications")
-            .select("user_id")
-            .eq("user_id", user.id)
-            .maybeSingle(),
-        supabase
-            .from("mentor_applications")
-            .select("user_id")
-            .eq("user_id", user.id)
-            .maybeSingle(),
-    ]);
+    const access = await getApplicationAccess(supabase, user.id);
 
-    const appType = application?.application_type?.toLowerCase();
-
-    if (appType === "judge" || judgeApp) {
+    if (access.isJudge || access.isMentor) {
         redirect("/jm-portal");
     }
-    if (appType === "mentor" || mentorApp) {
-        redirect("/jm-portal");
-    }
-    if (appType === "hacker" || hackerApp || application) {
+    if (access.isHacker) {
         redirect("/portal");
     }
 

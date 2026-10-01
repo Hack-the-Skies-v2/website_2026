@@ -869,7 +869,7 @@ function RoleApplicationShell({
                     {children}
                     {areasError && <p role="alert" className="font-outfit text-sm text-red-400">{areasError}</p>}
                     {state.error && <p role="alert" className="font-outfit text-sm text-red-400">{state.error}</p>}
-                    {state.success && <p role="status" className="rounded-lg border border-emerald-400/30 bg-emerald-400/10 p-4 font-outfit text-sm text-emerald-200">Your application was submitted successfully. Redirecting you to the portal...</p>}
+                    {state.success && <p role="status" className="rounded-lg border border-emerald-400/30 bg-emerald-400/10 p-4 font-outfit text-sm text-emerald-200">Success!</p>}
                     {isPending && <p className="font-outfit text-sm text-primary/60">Submitting your application...</p>}
                 </form>
             </div>

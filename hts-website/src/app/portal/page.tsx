@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import AccountMenu from "@/components/AccountMenu";
 import { createClient } from "@/lib/supabase/server";
 import { HTS_REF_COOKIE, recordReferral } from "@/lib/referral";
+import { getApplicationAccess } from "@/lib/applications/access";
 import HackerPortal from "./HackerPortal";
 
 type ScheduleItem = {
@@ -31,26 +32,20 @@ export default async function PortalPage() {
 		} catch {}
 	}
 
-	const [{ data: profile, error: profileErr }, { data: application, error: appErr }, { data: hackerApp, error: hackerAppErr }, { data: meals }, { data: workshops }, { data: referralCode }] = await Promise.all([
+	const [{ data: profile }, { data: meals }, { data: workshops }, { data: referralCode }] = await Promise.all([
 		supabase.from("users").select("hacker, points, qr_code_link").eq("id", user.id).maybeSingle(),
-		supabase.from("applications").select("application_type").eq("user_id", user.id).maybeSingle(),
-		supabase.from("hacker_applications").select("user_id").eq("user_id", user.id).maybeSingle(),
 		supabase.from("meals").select("id, name, starts_at, ends_at").order("starts_at"),
 		supabase.from("workshops").select("id, name, description, room, starts_at, ends_at").order("starts_at"),
 		supabase.rpc("get_my_referral_code"),
 	]);
 
-	if (application?.application_type === "judge" || application?.application_type === "mentor") {
+	const access = await getApplicationAccess(supabase, user.id);
+
+	if (access.isJudge || access.isMentor) {
 		redirect("/jm-portal");
 	}
 
-	const hasSubmittedHackerApp = Boolean(
-		profile?.hacker ||
-		application?.application_type === "hacker" ||
-		hackerApp,
-	);
-
-	if (!hasSubmittedHackerApp) {
+	if (!access.isHacker) {
 		redirect("/apply");
 	}
 
