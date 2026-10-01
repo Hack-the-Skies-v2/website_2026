@@ -1,7 +1,9 @@
 import Link from "next/link";
 import OrganizerDashboard from "@/components/OrganizerDashboard";
+import ScheduleManager, { type ScheduleEvent } from "@/components/ScheduleManager";
 import { listOrganizerApplications } from "@/lib/applications/review";
 import { requireOrganizer } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -10,10 +12,23 @@ export default async function OrganizersPage() {
 
     let applications: Awaited<ReturnType<typeof listOrganizerApplications>> = [];
     let loadError: string | null = null;
+    let scheduleEvents: ScheduleEvent[] = [];
+    let scheduleError: string | null = null;
     try {
         applications = await listOrganizerApplications(organizer.id);
     } catch (error) {
         loadError = error instanceof Error ? error.message : "Could not load applications.";
+    }
+    try {
+        const supabase = await createClient();
+        const { data, error } = await supabase
+            .from("schedule_events")
+            .select("id, title, description, type, start_time, end_time, location")
+            .order("start_time");
+        if (error) throw error;
+        scheduleEvents = (data ?? []) as ScheduleEvent[];
+    } catch (error) {
+        scheduleError = error instanceof Error ? error.message : "Could not load schedule events.";
     }
 
     return (
@@ -42,6 +57,14 @@ export default async function OrganizersPage() {
                     </div>
                 ) : (
                     <OrganizerDashboard applications={applications} />
+                )}
+                {scheduleError ? (
+                    <div className="mt-8 rounded-lg border border-neutral-300 bg-neutral-50 px-5 py-4 text-neutral-800">
+                        <p className="font-semibold text-neutral-900">Schedule could not load.</p>
+                        <p className="mt-1 text-sm text-neutral-600">{scheduleError}</p>
+                    </div>
+                ) : (
+                    <ScheduleManager initialEvents={scheduleEvents} />
                 )}
             </div>
         </main>
