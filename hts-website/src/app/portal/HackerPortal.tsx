@@ -3,25 +3,16 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import AccountMenu from "@/components/AccountMenu";
+import PortalSchedule, { type PortalScheduleEvent } from "@/components/PortalSchedule";
 
 type PortalTab = "Application Status" | "Schedule" | "Points" | "Shop" | "QR code";
-
-type ScheduleItem = {
-    id: string;
-    name: string;
-    description: string;
-    startsAt: string;
-    endsAt: string;
-    location: string;
-    type: "Workshop" | "Meal";
-};
 
 type HackerPortalProps = {
     name: string;
     email: string;
     points: number;
     qrCode?: string | null;
-    schedule?: ScheduleItem[];
+    schedule: PortalScheduleEvent[];
     referralCode?: string | null;
 };
 
@@ -74,6 +65,7 @@ export default function HackerPortal({
     email,
     points,
     referralCode,
+	schedule,
 }: HackerPortalProps) {
     const [activeTab, setActiveTab] = useState<PortalTab>("Application Status");
 
@@ -131,9 +123,7 @@ export default function HackerPortal({
                     )}
 
                     {activeTab === "Schedule" && (
-                        <div className="flex min-h-64 max-w-2xl flex-col items-center justify-center rounded-2xl border border-primary/20 bg-[#141123] p-8 text-center sm:p-12">
-                            <h2 className="text-2xl font-semibold text-primary sm:text-3xl">Coming Soon</h2>
-                        </div>
+                <PortalSchedule events={schedule} />
                     )}
 
                     {activeTab === "Points" && (

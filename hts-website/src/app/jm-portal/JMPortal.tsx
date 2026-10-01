@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import AccountMenu from "@/components/AccountMenu";
+import PortalSchedule, { type PortalScheduleEvent } from "@/components/PortalSchedule";
 
 type PortalTab = "Application Status" | "Schedule" | "QR code";
 
@@ -12,6 +13,7 @@ type JMPortalProps = {
     role: "Judge" | "Mentor" | "Judge & Mentor";
     isJudge: boolean;
     status?: string | null;
+    schedule: PortalScheduleEvent[];
 };
 
 const tabs: PortalTab[] = ["Application Status", "Schedule", "QR code"];
@@ -22,6 +24,7 @@ export default function JMPortal({
     role,
     isJudge,
     status,
+    schedule,
 }: JMPortalProps) {
     const [activeTab, setActiveTab] = useState<PortalTab>("Application Status");
     const displayStatus = status ? status.charAt(0).toUpperCase() + status.slice(1) : "Pending";
@@ -93,9 +96,7 @@ export default function JMPortal({
                     )}
 
                     {activeTab === "Schedule" && (
-                        <div className="flex min-h-64 max-w-2xl flex-col items-center justify-center rounded-2xl border border-primary/20 bg-[#141123] p-8 text-center sm:p-12">
-                            <h2 className="text-2xl font-semibold text-primary sm:text-3xl">Coming Soon</h2>
-                        </div>
+                <PortalSchedule events={schedule} />
                     )}
 
                     {activeTab === "QR code" && (

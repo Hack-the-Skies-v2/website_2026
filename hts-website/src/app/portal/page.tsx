@@ -5,17 +5,8 @@ import AccountMenu from "@/components/AccountMenu";
 import { createClient } from "@/lib/supabase/server";
 import { HTS_REF_COOKIE, recordReferral } from "@/lib/referral";
 import { getApplicationAccess } from "@/lib/applications/access";
+import type { PortalScheduleEvent } from "@/components/PortalSchedule";
 import HackerPortal from "./HackerPortal";
-
-type ScheduleItem = {
-	id: string;
-	name: string;
-	description: string;
-	startsAt: string;
-	endsAt: string;
-	location: string;
-	type: "Workshop" | "Meal";
-};
 
 export default async function PortalPage() {
 	const supabase = await createClient();
@@ -48,14 +39,14 @@ export default async function PortalPage() {
 		redirect("/apply");
 	}
 
-	const schedule: ScheduleItem[] = (events ?? []).map((item) => ({
+	const schedule: PortalScheduleEvent[] = (events ?? []).map((item) => ({
 		id: item.id,
-		name: item.title,
+		title: item.title,
 		description: item.description ?? "",
-		startsAt: item.start_time,
-		endsAt: item.end_time,
+		start_time: item.start_time,
+		end_time: item.end_time,
 		location: item.location ?? "",
-		type: item.type === "meal" ? "Meal" : "Workshop",
+		type: item.type,
 	}));
 
 	return (

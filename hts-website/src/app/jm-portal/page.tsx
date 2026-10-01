@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { HTS_REF_COOKIE, recordReferral } from "@/lib/referral";
 import { getApplicationAccess } from "@/lib/applications/access";
+import type { PortalScheduleEvent } from "@/components/PortalSchedule";
 import JMPortal from "./JMPortal";
 
 export default async function JMPortalPage() {
@@ -27,6 +28,20 @@ export default async function JMPortalPage() {
 
 	if (!isJudge && !isMentor) redirect("/apply");
 
+	const { data: events } = await supabase
+		.from("schedule_events")
+		.select("id, title, description, type, start_time, end_time, location")
+		.order("start_time");
+	const schedule: PortalScheduleEvent[] = (events ?? []).map((item) => ({
+		id: item.id,
+		title: item.title,
+		description: item.description ?? "",
+		type: item.type,
+		start_time: item.start_time,
+		end_time: item.end_time,
+		location: item.location ?? "",
+	}));
+
 	const role: "Judge" | "Mentor" | "Judge & Mentor" =
 		isJudge && isMentor
 			? "Judge & Mentor"
@@ -41,6 +56,7 @@ export default async function JMPortalPage() {
 			role={role}
 			isJudge={isJudge}
 			status={access.applicationStatus ?? "pending"}
+				schedule={schedule}
 		/>
 	);
 }
