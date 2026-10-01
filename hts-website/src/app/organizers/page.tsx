@@ -28,12 +28,6 @@ export default async function OrganizersPage() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                         <Link
-                            href="/organizers/preview"
-                            className="rounded-md border border-neutral-300 bg-white px-3.5 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900"
-                        >
-                            Mock preview
-                        </Link>
-                        <Link
                             href="/"
                             className="rounded-md border border-neutral-300 bg-white px-3.5 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900"
                         >

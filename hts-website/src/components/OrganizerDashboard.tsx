@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { decideApplications, type OrganizerDecision } from "@/actions/organizerDecisions";
-import { sendPreviewDecisionEmails } from "@/actions/sendPreviewDecisionEmails";
 import { prioritizeForReview } from "@/lib/grading/queue";
 
 export type OrganizerApplication = {
@@ -56,11 +55,9 @@ const TABLES: {
 export default function OrganizerDashboard({
   applications,
   reviewBasePath = "/organizers/review",
-  preview = false,
 }: {
   applications: OrganizerApplication[];
   reviewBasePath?: string;
-  preview?: boolean;
 }) {
   const [track, setTrack] = useState<Track>("hacker");
   const [statusBucket, setStatusBucket] = useState<StatusBucket>("pending");
@@ -137,9 +134,7 @@ export default function OrganizerDashboard({
     const emailNote =
       decision === "pending"
         ? "No email will be sent."
-        : preview
-          ? "Sends a real Resend email to TEST_DECISION_EMAIL."
-          : "Status updates now. Email sends when Resend is configured.";
+        : "Status updates now. Email sends when Resend is configured.";
 
     if (
       !window.confirm(
@@ -150,37 +145,6 @@ export default function OrganizerDashboard({
     }
 
     setNotice(null);
-    if (preview) {
-      if (decision === "pending") {
-        setSelected(new Set());
-        setNotice(`Preview: marked ${selectedVisible.length} as not sure. No email.`);
-        return;
-      }
-      startTransition(async () => {
-        try {
-          const result = await sendPreviewDecisionEmails({
-            decisions: selectedVisible.map((application) => ({
-              firstName: application.first_name,
-              type: application.type,
-              decision,
-            })),
-          });
-          setSelected(new Set());
-          if (!result.ok) {
-            setNotice(result.error);
-            return;
-          }
-          setNotice(
-            `Sent ${result.emailed} ${decision} email${result.emailed === 1 ? "" : "s"} to ${result.to}.`
-            + (result.emailFailures ? ` ${result.emailFailures} failed.` : ""),
-          );
-        } catch (error) {
-          setNotice(error instanceof Error ? error.message : "Could not send preview emails.");
-        }
-      });
-      return;
-    }
-
     startTransition(async () => {
       try {
         const result = await decideApplications({

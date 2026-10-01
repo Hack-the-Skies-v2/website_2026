@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { clearOrganizerGrade, submitOrganizerGrade } from "@/actions/organizerGrades";
 import { decideApplications, type OrganizerDecision } from "@/actions/organizerDecisions";
-import { sendPreviewDecisionEmails } from "@/actions/sendPreviewDecisionEmails";
 import {
   SCORE_MAX,
   SCORE_POSITIONS,
@@ -45,7 +44,6 @@ export default function OrganizerReviewClient({
   questions,
   initialScores,
   graderCount,
-  preview = false,
   previousHref = null,
   nextHref = null,
   advanceHref = null,
@@ -57,7 +55,6 @@ export default function OrganizerReviewClient({
   questions: Question[];
   initialScores: Record<string, number>;
   graderCount: number;
-  preview?: boolean;
   previousHref?: string | null;
   nextHref?: string | null;
   advanceHref?: string | null;
@@ -122,10 +119,6 @@ export default function OrganizerReviewClient({
     setSaveState("saving");
     pendingSave.current = setTimeout(async () => {
       try {
-        if (preview) {
-          setSaveState("saved");
-          return;
-        }
         if (noneScored) await clearOrganizerGrade(application.id);
         else {
           await submitOrganizerGrade({
@@ -157,37 +150,6 @@ export default function OrganizerReviewClient({
 
   function decide(decision: OrganizerDecision) {
     setNotice(null);
-    if (preview) {
-      if (decision === "pending") {
-        setConfirming(null);
-        setNotice("Preview: marked not sure. Opening next…");
-        window.setTimeout(goAfterDecision, 350);
-        return;
-      }
-      startTransition(async () => {
-        try {
-          const result = await sendPreviewDecisionEmails({
-            decisions: [
-              {
-                firstName: application.first_name,
-                type: application.type,
-                decision,
-              },
-            ],
-          });
-          setConfirming(null);
-          if (!result.ok) {
-            setNotice(result.error);
-            return;
-          }
-          setNotice(`Sent ${decision} email to ${result.to}. Opening next…`);
-          window.setTimeout(goAfterDecision, 600);
-        } catch (error) {
-          setNotice(error instanceof Error ? error.message : "Could not send preview email.");
-        }
-      });
-      return;
-    }
     startTransition(async () => {
       try {
         await decideApplications({
