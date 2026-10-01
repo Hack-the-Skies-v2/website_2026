@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { processReferralCookie } from "@/lib/referral";
+import { ensureQrCodeLink } from "@/lib/qr-code";
 
 function stripHtml(value: string): string {
 	return value.replace(/<[^>]*>/g, "");
@@ -141,6 +142,7 @@ export async function submitHackerApplication(data: unknown) {
 	}
 
 	await processReferralCookie(supabase);
+	await ensureQrCodeLink(user.id);
 
 	return { success: true };
 }

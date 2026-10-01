@@ -5,6 +5,7 @@ import AccountMenu from "@/components/AccountMenu";
 import { createClient } from "@/lib/supabase/server";
 import { HTS_REF_COOKIE, recordReferral } from "@/lib/referral";
 import { getApplicationAccess } from "@/lib/applications/access";
+import { ensureQrCodeLink } from "@/lib/qr-code";
 import type { PortalScheduleEvent } from "@/components/PortalSchedule";
 import HackerPortal from "./HackerPortal";
 
@@ -38,6 +39,7 @@ export default async function PortalPage() {
 	if (!access.isHacker) {
 		redirect("/apply");
 	}
+	const qrCode = profile?.qr_code_link ?? await ensureQrCodeLink(user.id);
 
 	const schedule: PortalScheduleEvent[] = (events ?? []).map((item) => ({
 		id: item.id,
@@ -51,7 +53,7 @@ export default async function PortalPage() {
 
 	return (
 		<>
-			<HackerPortal name={user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "Hacker"} email={user.email ?? ""} points={profile?.points ?? 0} qrCode={profile?.qr_code_link ?? null} schedule={schedule} referralCode={referralCode ?? null} />
+			<HackerPortal name={user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "Hacker"} email={user.email ?? ""} points={profile?.points ?? 0} qrCode={qrCode} schedule={schedule} referralCode={referralCode ?? null} />
 		</>
 	);
 }

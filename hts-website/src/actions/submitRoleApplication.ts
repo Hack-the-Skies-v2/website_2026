@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { processReferralCookie } from "@/lib/referral";
+import { ensureQrCodeLink } from "@/lib/qr-code";
 
 const baseSchema = z.object({
     name: z.string().trim().min(1).max(200),
@@ -111,6 +112,7 @@ export async function submitRoleApplication(
     }
 
     await processReferralCookie(supabase);
+    await ensureQrCodeLink(user.id);
 
     return { success: true };
 }

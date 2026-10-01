@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { HTS_REF_COOKIE, recordReferral } from "@/lib/referral";
 import { getApplicationAccess } from "@/lib/applications/access";
+import { ensureQrCodeLink } from "@/lib/qr-code";
 import type { PortalScheduleEvent } from "@/components/PortalSchedule";
 import JMPortal from "./JMPortal";
 
@@ -27,6 +28,7 @@ export default async function JMPortalPage() {
 	const { isJudge, isMentor } = access;
 
 	if (!isJudge && !isMentor) redirect("/apply");
+	await ensureQrCodeLink(user.id);
 
 	const { data: events } = await supabase
 		.from("schedule_events")
@@ -41,6 +43,11 @@ export default async function JMPortalPage() {
 		end_time: item.end_time,
 		location: item.location ?? "",
 	}));
+	const { data: profile } = await supabase
+		.from("users")
+		.select("qr_code_link")
+		.eq("id", user.id)
+		.maybeSingle();
 
 	const role: "Judge" | "Mentor" | "Judge & Mentor" =
 		isJudge && isMentor
@@ -56,6 +63,7 @@ export default async function JMPortalPage() {
 			role={role}
 			isJudge={isJudge}
 			status={access.applicationStatus ?? "pending"}
+			qrCode={profile?.qr_code_link ?? null}
 				schedule={schedule}
 		/>
 	);

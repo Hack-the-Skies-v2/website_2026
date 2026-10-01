@@ -3,12 +3,14 @@ import OrganizerDashboard from "@/components/OrganizerDashboard";
 import ScheduleManager, { type ScheduleEvent } from "@/components/ScheduleManager";
 import { listOrganizerApplications } from "@/lib/applications/review";
 import { requireOrganizer } from "@/lib/auth";
+import { ensureApplicationQrCodeLinks } from "@/lib/qr-code";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function OrganizersPage() {
     const organizer = await requireOrganizer();
+    await ensureApplicationQrCodeLinks();
 
     let applications: Awaited<ReturnType<typeof listOrganizerApplications>> = [];
     let loadError: string | null = null;
