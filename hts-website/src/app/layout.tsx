@@ -37,8 +37,26 @@ const pixel = Press_Start_2P({
 });
 
 export const metadata: Metadata = {
+	metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.hacktheskies.com"),
 	title: "Hack the Skies 2026",
-	description: "A hackathon founded by high school students, for high school students.",
+	description: "Date: October 17-18 • Location: Humber College North Campus",
+	openGraph: {
+		title: "Hack the Skies 2026",
+		description: "Date: October 17-18 • Location: Humber College North Campus",
+		type: "website",
+		images: [
+			{
+				url: "/Embed.jpeg",
+				alt: "Hack the Skies 2026",
+			},
+		],
+	},
+	twitter: {
+		card: "summary_large_image",
+		title: "Hack the Skies 2026",
+		description: "Date: October 17-18 • Location: Humber College North Campus",
+		images: ["/Embed.jpeg"],
+	},
 };
 
 export default function RootLayout({
