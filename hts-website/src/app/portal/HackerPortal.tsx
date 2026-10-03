@@ -105,11 +105,15 @@ export default function HackerPortal({
         setRedeemingPrizeId(prizeId);
         startTransition(async () => {
             try {
-                const remainingPoints = await redeemPrize(prizeId);
-                setCurrentPoints(remainingPoints);
+                const result = await redeemPrize(prizeId);
+                if (!result.success) {
+                    setRedemptionError(result.error);
+                    return;
+                }
+                setCurrentPoints(result.balance);
                 setRedeemedPrizeIds((ids) => new Set(ids).add(prizeId));
-            } catch (error) {
-                setRedemptionError(error instanceof Error ? error.message : "Unable to redeem this prize.");
+            } catch {
+                setRedemptionError("Unable to redeem this prize right now.");
             } finally {
                 setRedeemingPrizeId(null);
             }
