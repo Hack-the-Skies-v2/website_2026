@@ -22,6 +22,12 @@ type ScannedPerson = {
     accessibilityOther: string;
 };
 
+type AdminResult<T> = { success: true; data: T } | { success: false; error: string };
+
+function adminError(error: unknown, fallback: string): AdminResult<never> {
+    return { success: false, error: error instanceof Error ? error.message : fallback };
+}
+
 async function findUserByQrCode(qrCode: string) {
     const supabase = createAdminClient();
     const { data: user, error: userError } = await supabase
@@ -88,20 +94,21 @@ async function awardCheckInPoints(supabase: ReturnType<typeof createAdminClient>
     if (error) throw new Error(`Check-in points were awarded, but the referral bonus could not be awarded: ${error.message}`);
 }
 
-export async function lookupQrCode(input: unknown): Promise<ScannedPerson> {
-    await requireOrganizer();
-    const parsed = qrCodeSchema.safeParse(input);
-    if (!parsed.success) throw new Error("Invalid QR code.");
+export async function lookupQrCode(input: unknown): Promise<AdminResult<ScannedPerson>> {
+    try {
+        await requireOrganizer();
+        const parsed = qrCodeSchema.safeParse(input);
+        if (!parsed.success) return { success: false, error: "Invalid QR code." };
 
-    const { supabase, userId, type } = await findUserByQrCode(parsed.data.qrCode);
+        const { supabase, userId, type } = await findUserByQrCode(parsed.data.qrCode);
     if (type === "hacker") {
         const { data, error } = await supabase
             .from("hacker_applications")
             .select("first_name, last_name, preferred_name, pronouns, pronouns_other, dietary_restrictions, dietary_other, accessibility_accommodations, accessibility_other")
             .eq("user_id", userId)
             .maybeSingle();
-        if (error || !data) throw new Error("The hacker application could not be found.");
-        return {
+        if (error || !data) return { success: false, error: error?.message ?? "The hacker application could not be found." };
+        return { success: true, data: {
             name: `${data.first_name} ${data.last_name}`,
             role: "Hacker",
             pronouns: data.pronouns ?? [],
@@ -110,7 +117,7 @@ export async function lookupQrCode(input: unknown): Promise<ScannedPerson> {
             dietaryOther: data.dietary_other ?? "",
             accessibilityAccommodations: data.accessibility_accommodations ?? [],
             accessibilityOther: data.accessibility_other ?? "",
-        };
+        } };
     }
 
     if (type === "judge") {
@@ -119,8 +126,8 @@ export async function lookupQrCode(input: unknown): Promise<ScannedPerson> {
             .select("name")
             .eq("user_id", userId)
             .maybeSingle();
-        if (error || !data) throw new Error("The judge application could not be found.");
-        return {
+        if (error || !data) return { success: false, error: error?.message ?? "The judge application could not be found." };
+        return { success: true, data: {
             name: data.name,
             role: "Judge",
             pronouns: [],
@@ -129,7 +136,7 @@ export async function lookupQrCode(input: unknown): Promise<ScannedPerson> {
             dietaryOther: "",
             accessibilityAccommodations: [],
             accessibilityOther: "",
-        };
+        } };
     }
 
     if (type === "mentor") {
@@ -138,8 +145,8 @@ export async function lookupQrCode(input: unknown): Promise<ScannedPerson> {
             .select("name")
             .eq("user_id", userId)
             .maybeSingle();
-        if (error || !data) throw new Error("The mentor application could not be found.");
-        return {
+        if (error || !data) return { success: false, error: error?.message ?? "The mentor application could not be found." };
+        return { success: true, data: {
             name: data.name,
             role: "Mentor",
             pronouns: [],
@@ -148,16 +155,20 @@ export async function lookupQrCode(input: unknown): Promise<ScannedPerson> {
             dietaryOther: "",
             accessibilityAccommodations: [],
             accessibilityOther: "",
-        };
+        } };
     }
 
-    throw new Error("That application type is not supported.");
+        return { success: false, error: "That application type is not supported." };
+    } catch (error) {
+        return adminError(error, "Could not read this QR code.");
+    }
 }
 
-export async function checkInByQrCode(input: unknown) {
+export async function checkInByQrCode(input: unknown): Promise<AdminResult<{ eventTitle: string }>> {
+    try {
     await requireOrganizer();
     const parsed = checkInSchema.safeParse(input);
-    if (!parsed.success) throw new Error("Invalid QR code or event.");
+    if (!parsed.success) return { success: false, error: "Invalid QR code or event." };
 
     const { supabase, userId } = await findUserByQrCode(parsed.data.qrCode);
     const { data: event, error: eventError } = await supabase
@@ -173,7 +184,7 @@ export async function checkInByQrCode(input: unknown) {
     });
 
     if (attendanceError?.code === "23505") {
-        throw new Error(`Already checked in for ${event.title}.`);
+        return { success: false, error: `Already checked in for ${event.title}.` };
     }
     if (attendanceError) throw new Error("Could not record the check-in.");
 
@@ -185,5 +196,8 @@ export async function checkInByQrCode(input: unknown) {
 
     await awardCheckInPoints(supabase, userId);
 
-    return { eventTitle: event.title };
+    return { success: true, data: { eventTitle: event.title } };
+    } catch (error) {
+        return adminError(error, "Could not check in this user.");
+    }
 }

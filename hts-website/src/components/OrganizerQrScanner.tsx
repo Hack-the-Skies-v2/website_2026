@@ -8,7 +8,7 @@ export default function OrganizerQrScanner({ events }: { events: ScheduleEvent[]
     const scannerRef = useRef<{ stop: () => Promise<void>; clear: () => void } | null>(null);
     const [scannedCode, setScannedCode] = useState("");
     const [eventId, setEventId] = useState(events[0]?.id ?? "");
-    const [person, setPerson] = useState<Awaited<ReturnType<typeof lookupQrCode>> | null>(null);
+    const [person, setPerson] = useState<Extract<Awaited<ReturnType<typeof lookupQrCode>>, { success: true }>["data"] | null>(null);
     const [notice, setNotice] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isScanning, setIsScanning] = useState(false);
@@ -42,8 +42,12 @@ export default function OrganizerQrScanner({ events }: { events: ScheduleEvent[]
                     await stopScanner();
                     try {
                         const scannedPerson = await lookupQrCode({ qrCode: decodedText });
+                        if (!scannedPerson.success) {
+                            setError(scannedPerson.error);
+                            return;
+                        }
                         setScannedCode(decodedText);
-                        setPerson(scannedPerson);
+                        setPerson(scannedPerson.data);
                         setNotice("QR code scanned. Choose an event and check them in.");
                     } catch (caught) {
                         setError(caught instanceof Error ? caught.message : "Could not read this QR code.");
@@ -65,7 +69,11 @@ export default function OrganizerQrScanner({ events }: { events: ScheduleEvent[]
         startTransition(async () => {
             try {
                 const result = await checkInByQrCode({ qrCode: scannedCode, eventId });
-                setNotice(`Checked in for ${result.eventTitle}.`);
+                if (!result.success) {
+                    setError(result.error);
+                    return;
+                }
+                setNotice(`Checked in for ${result.data.eventTitle}.`);
                 setScannedCode("");
                 setPerson(null);
             } catch (caught) {

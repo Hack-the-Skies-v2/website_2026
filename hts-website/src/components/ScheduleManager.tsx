@@ -110,10 +110,18 @@ export default function ScheduleManager({ initialEvents }: { initialEvents: Sche
                     endTime: new Date(form.endTime).toISOString(),
                 };
                 if (editingId) {
-                    await updateScheduleEvent({ ...values, id: editingId });
+                    const result = await updateScheduleEvent({ ...values, id: editingId });
+                    if (!result.success) {
+                        setError(result.error);
+                        return;
+                    }
                     setNotice("Event updated.");
                 } else {
-                    await createScheduleEvent(values);
+                    const result = await createScheduleEvent(values);
+                    if (!result.success) {
+                        setError(result.error);
+                        return;
+                    }
                     setNotice("Event added.");
                 }
                 setIsOpen(false);
@@ -130,7 +138,11 @@ export default function ScheduleManager({ initialEvents }: { initialEvents: Sche
         setNotice(null);
         startTransition(async () => {
             try {
-                await deleteScheduleEvent(event.id);
+                const result = await deleteScheduleEvent(event.id);
+                if (!result.success) {
+                    setError(result.error);
+                    return;
+                }
                 setEvents((current) => current.filter((item) => item.id !== event.id));
                 setNotice("Event deleted.");
                 router.refresh();
