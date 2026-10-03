@@ -29,11 +29,6 @@ export default function EmbedPage() {
                     />
                     <span className="drop-shadow-[0_0_15px_rgba(193,185,242,0.8)]">2</span>
                     <span className="drop-shadow-[0_0_15px_rgba(193,185,242,0.8)]">6</span>
-                    {/* <img
-                        src="/favicon.ico"
-                        alt="Hack the Skies logo"
-                        className="absolute left-full top-1/2 ml-4 h-[1em] w-[1em] -translate-y-1/2 object-contain "
-                    /> */}
                 </div>
             </div>
         </main>

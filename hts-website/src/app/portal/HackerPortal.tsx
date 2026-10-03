@@ -1,12 +1,32 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useTransition } from "react";
 import Link from "next/link";
 import AccountMenu from "@/components/AccountMenu";
 import PortalSchedule, { type PortalScheduleEvent } from "@/components/PortalSchedule";
 import PortalQRCode from "@/components/PortalQRCode";
+import { redeemPrize } from "@/actions/redeemPrize";
 
 type PortalTab = "Application Status" | "Schedule" | "Points" | "Shop" | "QR code";
+
+export type PortalPrize = {
+    id: string;
+    name: string;
+    description: string | null;
+    points_required: number;
+    quantity: number | null;
+    max_redemptions: number | null;
+};
+
+export type PortalPointAction = {
+    id: string;
+    name: string;
+    description: string | null;
+    points: number;
+    max_redemptions: number | null;
+    active: boolean;
+    earned_count: number;
+};
 
 type HackerPortalProps = {
     name: string;
@@ -15,6 +35,8 @@ type HackerPortalProps = {
     qrCode?: string | null;
     schedule: PortalScheduleEvent[];
     referralCode?: string | null;
+    prizes: PortalPrize[];
+    pointActions: PortalPointAction[];
 };
 
 const tabs: PortalTab[] = ["Application Status", "Schedule", "Points", "Shop", "QR code"];
@@ -68,8 +90,31 @@ export default function HackerPortal({
     referralCode,
 	qrCode,
 	schedule,
+	prizes,
+	pointActions,
 }: HackerPortalProps) {
     const [activeTab, setActiveTab] = useState<PortalTab>("Application Status");
+    const [currentPoints, setCurrentPoints] = useState(points);
+    const [redeemingPrizeId, setRedeemingPrizeId] = useState<string | null>(null);
+    const [redeemedPrizeIds, setRedeemedPrizeIds] = useState<Set<string>>(new Set());
+    const [redemptionError, setRedemptionError] = useState<string | null>(null);
+    const [, startTransition] = useTransition();
+
+    function handleRedeem(prizeId: string) {
+        setRedemptionError(null);
+        setRedeemingPrizeId(prizeId);
+        startTransition(async () => {
+            try {
+                const remainingPoints = await redeemPrize(prizeId);
+                setCurrentPoints(remainingPoints);
+                setRedeemedPrizeIds((ids) => new Set(ids).add(prizeId));
+            } catch (error) {
+                setRedemptionError(error instanceof Error ? error.message : "Unable to redeem this prize.");
+            } finally {
+                setRedeemingPrizeId(null);
+            }
+        });
+    }
 
     return (
         <main className="relative z-10 min-h-screen bg-[#141123] font-outfit text-primary">
@@ -133,19 +178,114 @@ export default function HackerPortal({
                             <div className="rounded-2xl border border-primary/20 bg-[#141123] p-6 sm:p-8">
                                 <p className="text-sm font-medium text-primary/60">Current Balance</p>
                                 <div className="mt-2 flex items-baseline gap-2">
-                                    <span className="text-4xl font-bold text-primary sm:text-5xl">{points}</span>
+                                    <span className="text-4xl font-bold text-primary sm:text-5xl">{currentPoints}</span>
                                     <span className="text-lg font-medium text-primary/70">Points</span>
                                 </div>
                                 <p className="mt-4 text-sm leading-relaxed text-primary/70">
                                     You will earn points for each referral when they check in, which you can redeem for prizes later at the event. You can also earn points from workshops, games, and other opportunities.
                                 </p>
                             </div>
+                            <div className="space-y-3">
+                                <h2 className="text-xl font-semibold text-primary">Ways to earn points</h2>
+                                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                                    {pointActions.map((action) => (
+                                        <article
+                                            key={action.id}
+                                            className="flex min-h-56 flex-col rounded-2xl border border-primary/20 bg-[#141123] p-5"
+                                        >
+                                            <div className="flex-1">
+                                                <h3 className="font-semibold text-primary">{action.name}</h3>
+                                                {action.description && (
+                                                    <p className="mt-2 text-sm leading-relaxed text-primary/65">
+                                                        {action.description}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <div className="mt-5 border-t border-primary/10 pt-4">
+                                                <p className="text-lg font-semibold text-primary">
+                                                    {action.points.toLocaleString()} points
+                                                </p>
+                                                <div className="mt-2 flex flex-col gap-1 text-sm">
+                                                    <span className="text-primary/60">
+                                                        Earned {action.earned_count} time{action.earned_count === 1 ? "" : "s"}
+                                                    </span>
+                                                    <span className="text-primary/50">
+                                                        {action.max_redemptions === null
+                                                            ? "Unlimited"
+                                                            : `Up to ${action.max_redemptions} per user`}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </article>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
                     )}
 
                     {activeTab === "Shop" && (
-                        <div className="flex min-h-64 max-w-2xl flex-col items-center justify-center rounded-2xl border border-primary/20 bg-[#141123] p-8 text-center sm:p-12">
-                            <h2 className="text-2xl font-semibold text-primary sm:text-3xl">Coming Soon</h2>
+                        <div className="max-w-5xl">
+                            <p className="mb-6 text-sm text-primary/70">
+                                Go to an organizer to actually receive your prize.
+                            </p>
+                            {redemptionError && (
+                                <p role="alert" className="mb-6 rounded-xl border border-red-400/30 bg-red-400/10 p-3 text-sm text-red-200">
+                                    {redemptionError}
+                                </p>
+                            )}
+                            {prizes.length > 0 ? (
+                                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                                    {prizes.map((prize) => (
+                                        <article
+                                            key={prize.id}
+                                            className="flex min-h-48 flex-col rounded-2xl border border-primary/20 bg-[#141123] p-5"
+                                        >
+                                            <img
+                                                src="/favicon.ico"
+                                                alt=""
+                                                className="mb-4 h-16 w-16 rounded-xl object-contain"
+                                            />
+                                            <div className="flex-1">
+                                                <p className="text-lg font-semibold text-primary">{prize.name}</p>
+                                                {prize.description && (
+                                                    <p className="mt-2 text-sm leading-relaxed text-primary/65">
+                                                        {prize.description}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <div className="mt-6 border-t border-primary/10 pt-4">
+                                                <div className="flex items-end justify-between gap-3">
+                                                    <p className="font-semibold text-primary">
+                                                        {prize.points_required.toLocaleString()} points
+                                                    </p>
+                                                    <p className="text-right text-xs text-primary/55">
+                                                        {prize.quantity === null
+                                                            ? "Unlimited quantity"
+                                                            : `${prize.quantity} available`}
+                                                    </p>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    disabled={redeemingPrizeId === prize.id || redeemedPrizeIds.has(prize.id)}
+                                                    onClick={() => handleRedeem(prize.id)}
+                                                    className="mt-4 w-full rounded-xl bg-button px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#8268B4] disabled:cursor-not-allowed disabled:opacity-50"
+                                                    aria-busy={redeemingPrizeId === prize.id}
+                                                >
+                                                    {redeemedPrizeIds.has(prize.id)
+                                                        ? "Redeemed"
+                                                        : redeemingPrizeId === prize.id
+                                                            ? "Redeeming..."
+                                                            : "Redeem"}
+                                                </button>
+                                            </div>
+                                        </article>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="rounded-2xl border border-primary/20 bg-[#141123] p-8 text-center">
+                                    <p className="text-primary/70">No prizes are available right now.</p>
+                                </div>
+                            )}
                         </div>
                     )}
 
