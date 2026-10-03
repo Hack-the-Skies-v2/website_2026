@@ -11,16 +11,24 @@ export const dynamic = "force-dynamic";
 
 export default async function OrganizersPage() {
     const organizer = await requireOrganizer();
-    await ensureApplicationQrCodeLinks();
 
     let applications: Awaited<ReturnType<typeof listOrganizerApplications>> = [];
     let loadError: string | null = null;
     let scheduleEvents: ScheduleEvent[] = [];
     let scheduleError: string | null = null;
     try {
+        await ensureApplicationQrCodeLinks();
+    } catch (error) {
+        loadError = error instanceof Error
+            ? `Could not prepare application QR codes: ${error.message}`
+            : "Could not prepare application QR codes.";
+    }
+    try {
         applications = await listOrganizerApplications(organizer.id);
     } catch (error) {
-        loadError = error instanceof Error ? error.message : "Could not load applications.";
+        loadError = error instanceof Error
+            ? `Could not load applications: ${error.message}`
+            : "Could not load applications.";
     }
     try {
         const supabase = await createClient();

@@ -24,14 +24,14 @@ export default async function PortalPage() {
 		} catch {}
 	}
 
-	const [{ data: profile }, { data: userPoints }, { data: events }, { data: referralCode }, { data: prizes, error: prizesError }, { data: pointActions, error: pointActionsError }, { data: pointEarnings, error: pointEarningsError }] = await Promise.all([
+	const [{ data: profile }, { data: userPoints }, { data: events }, { data: referralCode }, { data: prizes, error: prizesError }, { data: pointActions, error: pointActionsError }, { data: pointEarnings, error: pointEarningsError }, { data: prizeRedemptions, error: prizeRedemptionsError }] = await Promise.all([
 		supabase.from("users").select("hacker, qr_code_link").eq("id", user.id).maybeSingle(),
 		supabase.from("user_points").select("balance").eq("user_id", user.id).maybeSingle(),
 		supabase.from("schedule_events").select("id, title, description, type, start_time, end_time, location").order("start_time"),
 		supabase.rpc("get_my_referral_code"),
 		supabase
-			.from("point_prizes")
-			.select("id, name, description, points_required, quantity, max_redemptions")
+			.from("point_prize_inventory")
+			.select("id, name, description, points_required, quantity, max_redemptions, remaining_quantity")
 			.eq("active", true)
 			.order("points_required")
 			.order("name"),
@@ -43,11 +43,16 @@ export default async function PortalPage() {
 			.from("point_earnings")
 			.select("point_action_id")
 			.eq("user_id", user.id),
+		supabase
+			.from("prize_redemptions")
+			.select("prize_id")
+			.eq("user_id", user.id),
 	]);
 
 	if (prizesError) throw new Error(`Failed to load point prizes: ${prizesError.message}`);
 	if (pointActionsError) throw new Error(`Failed to load point actions: ${pointActionsError.message}`);
 	if (pointEarningsError) throw new Error(`Failed to load point earnings: ${pointEarningsError.message}`);
+	if (prizeRedemptionsError) throw new Error(`Failed to load prize redemptions: ${prizeRedemptionsError.message}`);
 
 	const earnedCounts = new Map<string, number>();
 	for (const earning of pointEarnings ?? []) {
@@ -57,6 +62,10 @@ export default async function PortalPage() {
 		...action,
 		earned_count: earnedCounts.get(action.id) ?? 0,
 	}));
+	const userPrizeRedemptionCounts: Record<string, number> = {};
+	for (const redemption of prizeRedemptions ?? []) {
+		userPrizeRedemptionCounts[redemption.prize_id] = (userPrizeRedemptionCounts[redemption.prize_id] ?? 0) + 1;
+	}
 
 	const access = await getApplicationAccess(supabase, user.id);
 
@@ -81,7 +90,7 @@ export default async function PortalPage() {
 
 	return (
 		<>
-			<HackerPortal name={user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "Hacker"} email={user.email ?? ""} points={userPoints?.balance ?? 0} qrCode={qrCode} schedule={schedule} referralCode={referralCode ?? null} prizes={(prizes ?? []) as PortalPrize[]} pointActions={portalPointActions} />
+			<HackerPortal name={user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "Hacker"} email={user.email ?? ""} points={userPoints?.balance ?? 0} qrCode={qrCode} schedule={schedule} referralCode={referralCode ?? null} prizes={(prizes ?? []) as PortalPrize[]} userPrizeRedemptionCounts={userPrizeRedemptionCounts} pointActions={portalPointActions} />
 		</>
 	);
 }

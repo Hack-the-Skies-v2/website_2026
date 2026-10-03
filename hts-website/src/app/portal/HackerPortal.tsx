@@ -16,6 +16,7 @@ export type PortalPrize = {
     points_required: number;
     quantity: number | null;
     max_redemptions: number | null;
+    remaining_quantity: number | null;
 };
 
 export type PortalPointAction = {
@@ -36,6 +37,7 @@ type HackerPortalProps = {
     schedule: PortalScheduleEvent[];
     referralCode?: string | null;
     prizes: PortalPrize[];
+    userPrizeRedemptionCounts: Record<string, number>;
     pointActions: PortalPointAction[];
 };
 
@@ -91,12 +93,18 @@ export default function HackerPortal({
 	qrCode,
 	schedule,
 	prizes,
+	userPrizeRedemptionCounts,
 	pointActions,
 }: HackerPortalProps) {
     const [activeTab, setActiveTab] = useState<PortalTab>("Application Status");
     const [currentPoints, setCurrentPoints] = useState(points);
     const [redeemingPrizeId, setRedeemingPrizeId] = useState<string | null>(null);
-    const [redeemedPrizeIds, setRedeemedPrizeIds] = useState<Set<string>>(new Set());
+    const [redeemedPrizeIds, setRedeemedPrizeIds] = useState<Set<string>>(
+        () => new Set(prizes.filter((prize) => prize.max_redemptions !== null && (userPrizeRedemptionCounts[prize.id] ?? 0) >= prize.max_redemptions).map((prize) => prize.id)),
+    );
+    const [remainingQuantities, setRemainingQuantities] = useState<Record<string, number | null>>(
+        () => Object.fromEntries(prizes.map((prize) => [prize.id, prize.remaining_quantity])),
+    );
     const [redemptionError, setRedemptionError] = useState<string | null>(null);
     const [, startTransition] = useTransition();
 
@@ -122,6 +130,12 @@ export default function HackerPortal({
                 }
                 setCurrentPoints(result.balance);
                 setRedeemedPrizeIds((ids) => new Set(ids).add(prizeId));
+                setRemainingQuantities((quantities) => ({
+                    ...quantities,
+                    [prizeId]: quantities[prizeId] === null
+                        ? null
+                        : Math.max((quantities[prizeId] ?? 0) - 1, 0),
+                }));
             } catch {
                 setRedemptionError("Unable to redeem this prize right now.");
             } finally {
@@ -279,20 +293,27 @@ export default function HackerPortal({
                                                         {prize.points_required.toLocaleString()} points
                                                     </p>
                                                     <p className="text-right text-xs text-primary/55">
-                                                        {prize.quantity === null
+                                                        {remainingQuantities[prize.id] === null
                                                             ? "Unlimited quantity"
-                                                            : `${prize.quantity} available`}
+                                                            : `${remainingQuantities[prize.id]} available`}
                                                     </p>
                                                 </div>
+                                                {prize.max_redemptions !== null && (
+                                                    <p className="mt-2 text-xs text-primary/55">
+                                                        Max {prize.max_redemptions} per user
+                                                    </p>
+                                                )}
                                                 <button
                                                     type="button"
-                                                    disabled={redeemingPrizeId === prize.id || redeemedPrizeIds.has(prize.id)}
+                                                    disabled={redeemingPrizeId === prize.id || redeemedPrizeIds.has(prize.id) || remainingQuantities[prize.id] === 0}
                                                     onClick={() => handleRedeem(prize.id)}
                                                     className="mt-4 w-full rounded-xl bg-button px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#8268B4] disabled:cursor-not-allowed disabled:opacity-50"
                                                     aria-busy={redeemingPrizeId === prize.id}
                                                 >
                                                     {redeemedPrizeIds.has(prize.id)
                                                         ? "Redeemed"
+                                                        : remainingQuantities[prize.id] === 0
+                                                            ? "Unavailable"
                                                         : redeemingPrizeId === prize.id
                                                             ? "Redeeming..."
                                                             : "Redeem"}
