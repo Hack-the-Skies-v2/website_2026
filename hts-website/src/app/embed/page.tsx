@@ -1,11 +1,26 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+    icons: {
+        icon: "/favicon.ico",
+    },
+};
+
 export default function EmbedPage() {
     return (
         <main className="relative isolate flex min-h-screen items-center justify-center overflow-hidden px-6 text-center">
             <div className="relative z-10">
-                <h1 className="font-outfit text-5xl font-semibold text-primary select-none md:text-6xl lg:text-7xl">
-                    Hack the Skies
-                </h1>
-                <div className="flex items-center justify-center -space-x-1 text-7xl font-libre text-primary select-none md:-space-x-3 md:text-8xl lg:-space-x-4 lg:text-[9.5rem]">
+                <div className="relative">
+                    <img
+                        src="/favicon.ico"
+                        alt="Hack the Skies logo"
+                        className="absolute right-full top-1/2 mr-4 h-12 w-12 -translate-y-1/2 object-contain md:h-16 md:w-16"
+                    />
+                    <h1 className="font-outfit text-5xl font-semibold text-primary select-none md:text-6xl lg:text-7xl">
+                        Hack the Skies
+                    </h1>
+                </div>
+                <div className="relative flex items-center justify-center -space-x-1 text-7xl font-libre text-primary select-none md:-space-x-3 md:text-8xl lg:-space-x-4 lg:text-[9.5rem]">
                     <span className="drop-shadow-[0_0_15px_rgba(193,185,242,0.8)]">2</span>
                     <img
                         src="/MainPlanet.png"
@@ -14,6 +29,11 @@ export default function EmbedPage() {
                     />
                     <span className="drop-shadow-[0_0_15px_rgba(193,185,242,0.8)]">2</span>
                     <span className="drop-shadow-[0_0_15px_rgba(193,185,242,0.8)]">6</span>
+                    {/* <img
+                        src="/favicon.ico"
+                        alt="Hack the Skies logo"
+                        className="absolute left-full top-1/2 ml-4 h-[1em] w-[1em] -translate-y-1/2 object-contain "
+                    /> */}
                 </div>
             </div>
         </main>
