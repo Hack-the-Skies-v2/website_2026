@@ -44,6 +44,50 @@ async function findUserByQrCode(qrCode: string) {
     return { supabase, userId: user.id, type };
 }
 
+async function awardCheckInPoints(supabase: ReturnType<typeof createAdminClient>, userId: string) {
+    const { data: actions, error: actionsError } = await supabase
+        .from("point_actions")
+        .select("id, name")
+        .in("name", ["Check in", "Referral"]);
+    if (actionsError) throw new Error("Check-in was recorded, but point actions could not be loaded.");
+
+    const checkInAction = actions?.find((action) => action.name === "Check in");
+    const referralAction = actions?.find((action) => action.name === "Referral");
+    if (!checkInAction || !referralAction) {
+        throw new Error("Check-in was recorded, but point actions are not configured.");
+    }
+
+    const { count: checkInEarningCount, error: checkInCountError } = await supabase
+        .from("point_earnings")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("point_action_id", checkInAction.id);
+    if (checkInCountError) throw new Error("Check-in was recorded, but its points could not be verified.");
+
+    if (!checkInEarningCount) {
+        const { error } = await supabase.from("point_earnings").insert({
+            user_id: userId,
+            point_action_id: checkInAction.id,
+        });
+        if (error) throw new Error("Check-in was recorded, but its points could not be awarded.");
+    }
+
+    const { data: referral, error: referralError } = await supabase
+        .from("referrals")
+        .select("referrer_user_id")
+        .eq("referred_user_id", userId)
+        .maybeSingle();
+    if (referralError) throw new Error("Check-in points were awarded, but the referral could not be checked.");
+
+    if (!referral) return;
+
+    const { error } = await supabase.from("point_earnings").insert({
+        user_id: referral.referrer_user_id,
+        point_action_id: referralAction.id,
+    });
+    if (error) throw new Error("Check-in points were awarded, but the referral bonus could not be awarded.");
+}
+
 export async function lookupQrCode(input: unknown): Promise<ScannedPerson> {
     await requireOrganizer();
     const parsed = qrCodeSchema.safeParse(input);
@@ -138,6 +182,8 @@ export async function checkInByQrCode(input: unknown) {
         .update({ checked_in: true })
         .eq("id", userId);
     if (userUpdateError) throw new Error("Check-in was recorded, but the user status could not be updated.");
+
+    await awardCheckInPoints(supabase, userId);
 
     return { eventTitle: event.title };
 }
