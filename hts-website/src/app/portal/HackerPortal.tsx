@@ -229,6 +229,12 @@ export default function HackerPortal({
 
                     {activeTab === "Shop" && (
                         <div className="max-w-5xl">
+                            <div className="mb-6 rounded-2xl border border-primary/20 bg-[#141123] p-5">
+                                <p className="text-sm font-medium text-primary/60">Balance</p>
+                                <p className="mt-1 text-3xl font-bold text-primary">
+                                    {currentPoints.toLocaleString()} <span className="text-base font-medium text-primary/70">points</span>
+                                </p>
+                            </div>
                             <p className="mb-6 text-sm text-primary/70">
                                 Go to an organizer to actually receive your prize.
                             </p>

@@ -23,7 +23,7 @@ export async function redeemPrize(input: unknown): Promise<RedeemPrizeResult> {
     });
     if (error) {
         const message = error.message.toLowerCase();
-        if (message.includes("not enough points")) {
+        if (message.includes("enough points")) {
             return { success: false, error: "You don't have enough points for this prize." };
         }
         if (message.includes("quantity exhausted")) {
