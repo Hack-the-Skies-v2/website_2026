@@ -49,12 +49,12 @@ async function awardCheckInPoints(supabase: ReturnType<typeof createAdminClient>
         .from("point_actions")
         .select("id, name")
         .in("name", ["Check in", "Referral"]);
-    if (actionsError) throw new Error("Check-in was recorded, but point actions could not be loaded.");
+    if (actionsError) throw new Error(`Check-in was recorded, but point actions could not be loaded: ${actionsError.message}`);
 
     const checkInAction = actions?.find((action) => action.name === "Check in");
     const referralAction = actions?.find((action) => action.name === "Referral");
     if (!checkInAction || !referralAction) {
-        throw new Error("Check-in was recorded, but point actions are not configured.");
+        throw new Error("Check-in was recorded, but the Check in or Referral point action is missing. Apply the point action migration.");
     }
 
     const { count: checkInEarningCount, error: checkInCountError } = await supabase
@@ -62,14 +62,14 @@ async function awardCheckInPoints(supabase: ReturnType<typeof createAdminClient>
         .select("id", { count: "exact", head: true })
         .eq("user_id", userId)
         .eq("point_action_id", checkInAction.id);
-    if (checkInCountError) throw new Error("Check-in was recorded, but its points could not be verified.");
+    if (checkInCountError) throw new Error(`Check-in was recorded, but its points could not be verified: ${checkInCountError.message}`);
 
     if (!checkInEarningCount) {
         const { error } = await supabase.from("point_earnings").insert({
             user_id: userId,
             point_action_id: checkInAction.id,
         });
-        if (error) throw new Error("Check-in was recorded, but its points could not be awarded.");
+        if (error) throw new Error(`Check-in was recorded, but its points could not be awarded: ${error.message}`);
     }
 
     const { data: referral, error: referralError } = await supabase
@@ -77,7 +77,7 @@ async function awardCheckInPoints(supabase: ReturnType<typeof createAdminClient>
         .select("referrer_user_id")
         .eq("referred_user_id", userId)
         .maybeSingle();
-    if (referralError) throw new Error("Check-in points were awarded, but the referral could not be checked.");
+    if (referralError) throw new Error(`Check-in points were awarded, but the referral could not be checked: ${referralError.message}`);
 
     if (!referral) return;
 
@@ -85,7 +85,7 @@ async function awardCheckInPoints(supabase: ReturnType<typeof createAdminClient>
         user_id: referral.referrer_user_id,
         point_action_id: referralAction.id,
     });
-    if (error) throw new Error("Check-in points were awarded, but the referral bonus could not be awarded.");
+    if (error) throw new Error(`Check-in points were awarded, but the referral bonus could not be awarded: ${error.message}`);
 }
 
 export async function lookupQrCode(input: unknown): Promise<ScannedPerson> {

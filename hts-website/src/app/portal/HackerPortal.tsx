@@ -100,6 +100,16 @@ export default function HackerPortal({
     const [redemptionError, setRedemptionError] = useState<string | null>(null);
     const [, startTransition] = useTransition();
 
+    useEffect(() => {
+        if (!redemptionError) return;
+
+        const timeout = window.setTimeout(() => {
+            setRedemptionError(null);
+        }, 4000);
+
+        return () => window.clearTimeout(timeout);
+    }, [redemptionError]);
+
     function handleRedeem(prizeId: string) {
         setRedemptionError(null);
         setRedeemingPrizeId(prizeId);
