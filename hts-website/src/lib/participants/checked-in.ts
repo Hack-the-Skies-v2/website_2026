@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export type ParticipantRole = "hacker" | "mentor" | "judge";
 
@@ -33,15 +33,11 @@ export type CheckedInDetail = CheckedInPerson & {
 
 type UserRow = {
   id: string;
-  hacker: boolean | null;
-  mentor: boolean | null;
   judge: boolean | null;
 };
 
 function rolesOf(row: UserRow): ParticipantRole[] {
   const roles: ParticipantRole[] = [];
-  if (row.hacker) roles.push("hacker");
-  if (row.mentor) roles.push("mentor");
   if (row.judge) roles.push("judge");
   return roles;
 }
@@ -51,14 +47,51 @@ function displayName(first: string, last: string, fallback: string) {
   return name || fallback;
 }
 
-export async function listCheckedIn(): Promise<CheckedInPerson[]> {
-  const supabase = await createClient();
-  const { data: users, error } = await supabase
-    .from("users")
-    .select("id, hacker, mentor, judge")
-    .eq("checked_in", true);
+function resolveParticipantName(
+  applicationType: string,
+  hacker: { first_name: string | null; last_name: string | null; preferred_name: string | null } | undefined,
+  mentor: { name: string | null } | undefined,
+  judge: { name: string | null } | undefined,
+) {
+  const type = applicationType.toLowerCase();
+  let name = "Participant";
+  if (type === "hacker" && hacker?.preferred_name?.trim()) {
+    name = hacker.preferred_name.trim();
+  } else if (type === "hacker" && displayName(hacker?.first_name || "", hacker?.last_name || "", "")) {
+    name = displayName(hacker?.first_name || "", hacker?.last_name || "", "");
+  } else if (type === "mentor" && mentor?.name?.trim()) {
+    name = mentor.name.trim();
+  } else if (type === "judge" && judge?.name?.trim()) {
+    name = judge.name.trim();
+  } else if (!type && hacker?.preferred_name?.trim()) {
+    name = hacker.preferred_name.trim();
+  } else if (!type && displayName(hacker?.first_name || "", hacker?.last_name || "", "")) {
+    name = displayName(hacker?.first_name || "", hacker?.last_name || "", "");
+  } else if (!type && mentor?.name?.trim()) {
+    name = mentor.name.trim();
+  } else if (!type && judge?.name?.trim()) {
+    name = judge.name.trim();
+  }
 
-  if (error) throw new Error(error.message);
+  return name;
+}
+
+export async function listCheckedIn(): Promise<CheckedInPerson[]> {
+  const supabase = createAdminClient();
+  const { data: attendance, error: attendanceError } = await supabase
+    .from("schedule_attendance")
+    .select("user_id");
+
+  if (attendanceError) throw new Error(attendanceError.message);
+  const checkedInIds = [...new Set((attendance ?? []).map((row) => row.user_id).filter(Boolean))];
+  if (checkedInIds.length === 0) return [];
+
+  const { data: users, error: usersError } = await supabase
+    .from("users")
+    .select("id, judge")
+    .in("id", checkedInIds);
+
+  if (usersError) throw new Error(usersError.message);
   const rows = (users ?? []) as UserRow[];
   if (rows.length === 0) return [];
 
@@ -74,7 +107,7 @@ export async function listCheckedIn(): Promise<CheckedInPerson[]> {
         .from("applications")
         .select("user_id, application_type")
         .in("user_id", ids),
-      supabase.from("hacker_applications").select("user_id, first_name, last_name, email").in("user_id", ids),
+      supabase.from("hacker_applications").select("user_id, first_name, last_name, preferred_name, email").in("user_id", ids),
       supabase.from("mentor_applications").select("user_id, name").in("user_id", ids),
       supabase.from("judge_applications").select("user_id, name").in("user_id", ids),
       supabase.from("user_points").select("user_id, balance").in("user_id", ids),
@@ -91,7 +124,7 @@ export async function listCheckedIn(): Promise<CheckedInPerson[]> {
     ).map((row) => [row.user_id, row]),
   );
   const hackerById = new Map(
-    ((hackers ?? []) as { user_id: string; first_name: string | null; last_name: string | null; email: string | null }[]).map(
+    ((hackers ?? []) as { user_id: string; first_name: string | null; last_name: string | null; preferred_name: string | null; email: string | null }[]).map(
       (row) => [row.user_id, row],
     ),
   );
@@ -117,12 +150,7 @@ export async function listCheckedIn(): Promise<CheckedInPerson[]> {
         roles.push(fromApp);
       }
       const email = hacker?.email || "";
-      const name =
-        displayName(hacker?.first_name || "", hacker?.last_name || "", "") ||
-        mentor?.name?.trim() ||
-        judge?.name?.trim() ||
-        email ||
-        "Participant";
+      const name = resolveParticipantName(fromApp, hacker, mentor, judge);
       return {
         id: row.id,
         name,
@@ -134,60 +162,11 @@ export async function listCheckedIn(): Promise<CheckedInPerson[]> {
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
-export type HackerSearchResult = {
-  id: string;
-  name: string;
-  email: string;
-  points: number;
-  checkedIn: boolean;
-};
-
-export async function listHackers(): Promise<HackerSearchResult[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("hacker_applications")
-    .select("user_id, first_name, last_name, email");
-  if (error) throw new Error(error.message);
-
-  const hackers = (data ?? []) as {
-    user_id: string;
-    first_name: string | null;
-    last_name: string | null;
-    email: string | null;
-  }[];
-  if (hackers.length === 0) return [];
-
-  const ids = hackers.map((row) => row.user_id);
-  const [{ data: balances, error: balancesError }, { data: users, error: usersError }] = await Promise.all([
-    supabase.from("user_points").select("user_id, balance").in("user_id", ids),
-    supabase.from("users").select("id, checked_in").in("id", ids),
-  ]);
-  if (balancesError) throw new Error(balancesError.message);
-  if (usersError) throw new Error(usersError.message);
-
-  const pointsById = new Map(
-    ((balances ?? []) as { user_id: string; balance: number | null }[]).map((row) => [row.user_id, row.balance ?? 0]),
-  );
-  const checkedInById = new Map(
-    ((users ?? []) as { id: string; checked_in: boolean | null }[]).map((row) => [row.id, Boolean(row.checked_in)]),
-  );
-
-  return hackers
-    .map((row) => ({
-      id: row.user_id,
-      name: displayName(row.first_name || "", row.last_name || "", "") || row.email || "Hacker",
-      email: row.email || "",
-      points: pointsById.get(row.user_id) ?? 0,
-      checkedIn: checkedInById.get(row.user_id) ?? false,
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name));
-}
-
 export async function getCheckedInDetail(userId: string): Promise<CheckedInDetail | null> {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { data: user, error } = await supabase
     .from("users")
-    .select("id, hacker, mentor, judge")
+    .select("id, judge")
     .eq("id", userId)
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -196,7 +175,7 @@ export async function getCheckedInDetail(userId: string): Promise<CheckedInDetai
   const [{ data: app }, { data: hacker }, { data: mentor }, { data: judge }, { data: balance }] =
     await Promise.all([
       supabase.from("applications").select("application_type").eq("user_id", userId).maybeSingle(),
-      supabase.from("hacker_applications").select("first_name, last_name, email").eq("user_id", userId).maybeSingle(),
+      supabase.from("hacker_applications").select("first_name, last_name, preferred_name, email").eq("user_id", userId).maybeSingle(),
       supabase.from("mentor_applications").select("name").eq("user_id", userId).maybeSingle(),
       supabase.from("judge_applications").select("name").eq("user_id", userId).maybeSingle(),
       supabase.from("user_points").select("balance").eq("user_id", userId).maybeSingle(),
@@ -204,7 +183,7 @@ export async function getCheckedInDetail(userId: string): Promise<CheckedInDetai
 
   const row = user as UserRow;
   const application = app as { application_type: string | null } | null;
-  const hackerRow = hacker as { first_name: string | null; last_name: string | null; email: string | null } | null;
+  const hackerRow = hacker as { first_name: string | null; last_name: string | null; preferred_name: string | null; email: string | null } | null;
   const mentorRow = mentor as { name: string | null } | null;
   const judgeRow = judge as { name: string | null } | null;
   const fromApp = (application?.application_type || "").toLowerCase();
@@ -215,12 +194,7 @@ export async function getCheckedInDetail(userId: string): Promise<CheckedInDetai
   const email = hackerRow?.email || "";
   const person: CheckedInPerson = {
     id: row.id,
-    name:
-      displayName(hackerRow?.first_name || "", hackerRow?.last_name || "", "") ||
-      mentorRow?.name?.trim() ||
-      judgeRow?.name?.trim() ||
-      email ||
-      "Participant",
+    name: resolveParticipantName(fromApp, hackerRow ?? undefined, mentorRow ?? undefined, judgeRow ?? undefined),
     email,
     roles,
     points: (balance as { balance: number | null } | null)?.balance ?? 0,
@@ -229,6 +203,7 @@ export async function getCheckedInDetail(userId: string): Promise<CheckedInDetai
     { data: attendance, error: attendanceError },
     { data: earnings, error: earningsError },
     { data: adjustments, error: adjustmentsError },
+    { data: prizeRedemptions, error: prizeRedemptionsError },
   ] = await Promise.all([
     supabase
       .from("schedule_attendance")
@@ -242,10 +217,15 @@ export async function getCheckedInDetail(userId: string): Promise<CheckedInDetai
       .from("point_adjustments")
       .select("id, points, reason, created_at")
       .eq("user_id", userId),
+    supabase
+      .from("prize_redemptions")
+      .select("id, points_spent, created_at, point_prizes(name)")
+      .eq("user_id", userId),
   ]);
   if (attendanceError) throw new Error(attendanceError.message);
   if (earningsError) throw new Error(earningsError.message);
   if (adjustmentsError) throw new Error(adjustmentsError.message);
+  if (prizeRedemptionsError) throw new Error(prizeRedemptionsError.message);
 
   const events: AttendedEvent[] = (
     (attendance ?? []) as {
@@ -289,8 +269,25 @@ export async function getCheckedInDetail(userId: string): Promise<CheckedInDetai
     at: row.created_at,
   }));
 
+  const prizes: PointEntry[] = (
+    (prizeRedemptions ?? []) as {
+      id: string;
+      points_spent: number;
+      created_at: string;
+      point_prizes: { name: string } | { name: string }[] | null;
+    }[]
+  ).map((row) => {
+    const prize = Array.isArray(row.point_prizes) ? row.point_prizes[0] : row.point_prizes;
+    return {
+      id: row.id,
+      amount: -row.points_spent,
+      reason: `Prize: ${prize?.name || "Purchase"}`,
+      at: row.created_at,
+    };
+  });
+
   events.sort((a, b) => a.at.localeCompare(b.at));
-  const pointsLog = [...earned, ...adjusted].sort((a, b) => b.at.localeCompare(a.at));
+  const pointsLog = [...earned, ...adjusted, ...prizes].sort((a, b) => b.at.localeCompare(a.at));
 
   return { ...person, events, pointsLog };
 }

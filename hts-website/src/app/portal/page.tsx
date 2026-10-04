@@ -25,7 +25,7 @@ export default async function PortalPage() {
 	}
 
 	const [{ data: profile }, { data: userPoints }, { data: events }, { data: referralCode }, { data: prizes, error: prizesError }, { data: pointActions, error: pointActionsError }, { data: pointEarnings, error: pointEarningsError }, { data: prizeRedemptions, error: prizeRedemptionsError }] = await Promise.all([
-		supabase.from("users").select("hacker, qr_code_link").eq("id", user.id).maybeSingle(),
+		supabase.from("users").select("qr_code_link").eq("id", user.id).maybeSingle(),
 		supabase.from("user_points").select("balance").eq("user_id", user.id).maybeSingle(),
 		supabase.from("schedule_events").select("id, title, description, type, start_time, end_time, location").order("start_time"),
 		supabase.rpc("get_my_referral_code"),
@@ -76,6 +76,16 @@ export default async function PortalPage() {
 	if (!access.isHacker) {
 		redirect("/apply");
 	}
+	const { data: hackerApplication, error: hackerApplicationError } = await supabase
+		.from("hacker_applications")
+		.select("first_name, last_name, preferred_name")
+		.eq("user_id", user.id)
+		.maybeSingle();
+	if (hackerApplicationError) throw new Error(`Failed to load hacker application name: ${hackerApplicationError.message}`);
+	const hackerName =
+		hackerApplication?.preferred_name?.trim() ||
+		[hackerApplication?.first_name, hackerApplication?.last_name].filter(Boolean).join(" ").trim() ||
+		"Hacker";
 	const qrCode = profile?.qr_code_link ?? await ensureQrCodeLink(user.id);
 
 	const schedule: PortalScheduleEvent[] = (events ?? []).map((item) => ({
@@ -90,7 +100,7 @@ export default async function PortalPage() {
 
 	return (
 		<>
-			<HackerPortal name={user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "Hacker"} email={user.email ?? ""} points={userPoints?.balance ?? 0} qrCode={qrCode} schedule={schedule} referralCode={referralCode ?? null} prizes={(prizes ?? []) as PortalPrize[]} userPrizeRedemptionCounts={userPrizeRedemptionCounts} pointActions={portalPointActions} />
+			<HackerPortal name={hackerName} email={user.email ?? ""} points={userPoints?.balance ?? 0} qrCode={qrCode} schedule={schedule} referralCode={referralCode ?? null} prizes={(prizes ?? []) as PortalPrize[]} userPrizeRedemptionCounts={userPrizeRedemptionCounts} pointActions={portalPointActions} />
 		</>
 	);
 }

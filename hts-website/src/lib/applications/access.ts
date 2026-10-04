@@ -45,7 +45,7 @@ export async function getApplicationAccess(
             .maybeSingle(),
         supabase
             .from("users")
-            .select("hacker, judge, mentor")
+            .select("judge")
             .eq("id", userId)
             .maybeSingle(),
     ]);
@@ -55,9 +55,8 @@ export async function getApplicationAccess(
         ? rawType
         : null;
     const isJudge = Boolean(profile?.judge || applicationType === "judge" || judgeApp);
-    const isMentor = Boolean(profile?.mentor || applicationType === "mentor" || mentorApp);
+    const isMentor = Boolean(applicationType === "mentor" || mentorApp);
     const isHacker = Boolean(
-        profile?.hacker ||
         applicationType === "hacker" ||
         hackerApp ||
         (application && !isJudge && !isMentor),

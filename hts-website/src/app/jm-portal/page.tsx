@@ -55,10 +55,35 @@ export default async function JMPortalPage() {
 			: isJudge
 				? "Judge"
 				: "Mentor";
+	const { data: application } = await supabase
+		.from("applications")
+		.select("application_type")
+		.eq("user_id", user.id)
+		.maybeSingle();
+	const applicationType = application?.application_type?.toLowerCase();
+	const { data: judgeApplication, error: judgeApplicationError } = await supabase
+		.from("judge_applications")
+		.select("name")
+		.eq("user_id", user.id)
+		.maybeSingle();
+	const { data: mentorApplication, error: mentorApplicationError } = await supabase
+		.from("mentor_applications")
+		.select("name")
+		.eq("user_id", user.id)
+		.maybeSingle();
+	if (judgeApplicationError || mentorApplicationError) {
+		throw new Error("Failed to load application name.");
+	}
+	const applicationName =
+		applicationType === "mentor"
+			? mentorApplication?.name?.trim()
+			: applicationType === "judge"
+				? judgeApplication?.name?.trim()
+				: judgeApplication?.name?.trim() || mentorApplication?.name?.trim();
 
 	return (
 		<JMPortal
-			name={user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? role}
+			name={applicationName || role}
 			email={user.email ?? ""}
 			role={role}
 			isJudge={isJudge}
@@ -68,4 +93,3 @@ export default async function JMPortalPage() {
 		/>
 	);
 }
-

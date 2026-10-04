@@ -3,8 +3,8 @@ import OrganizerSections from "@/components/OrganizerSections";
 import type { OrganizerApplication } from "@/components/OrganizerDashboard";
 import type { ScheduleEvent } from "@/components/ScheduleManager";
 import { listOrganizerApplications } from "@/lib/applications/review";
-import { listCheckedIn, listHackers } from "@/lib/participants/checked-in";
-import type { CheckedInPerson, HackerSearchResult } from "@/lib/participants/checked-in";
+import { listCheckedIn } from "@/lib/participants/checked-in";
+import type { CheckedInPerson } from "@/lib/participants/checked-in";
 import { requireOrganizer } from "@/lib/auth";
 import { ensureApplicationQrCodeLinks } from "@/lib/qr-code";
 import { createClient } from "@/lib/supabase/server";
@@ -20,8 +20,6 @@ export default async function OrganizersPage() {
     let scheduleError: string | null = null;
     let checkedIn: CheckedInPerson[] = [];
     let checkedInError: string | null = null;
-    let hackers: HackerSearchResult[] = [];
-    let hackersError: string | null = null;
     try {
         await ensureApplicationQrCodeLinks();
     } catch (error) {
@@ -52,12 +50,6 @@ export default async function OrganizersPage() {
     } catch (error) {
         checkedInError = error instanceof Error ? error.message : "Could not load checked-in people.";
     }
-    try {
-        hackers = await listHackers();
-    } catch (error) {
-        hackersError = error instanceof Error ? error.message : "Could not load hackers.";
-    }
-
     return (
         <main className="min-h-screen bg-white px-6 py-10 font-sans text-neutral-900 md:px-12">
             <div className="mx-auto max-w-7xl">
@@ -84,8 +76,6 @@ export default async function OrganizersPage() {
                     loadError={loadError}
                     checkedIn={checkedIn}
                     checkedInError={checkedInError}
-                    hackers={hackers}
-                    hackersError={hackersError}
                 />
             </div>
         </main>

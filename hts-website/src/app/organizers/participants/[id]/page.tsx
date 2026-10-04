@@ -2,7 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import ParticipantPointsForm from "@/components/ParticipantPointsForm";
 import { requireOrganizer } from "@/lib/auth";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getCheckedInDetail } from "@/lib/participants/checked-in";
+import type { PointActionOption } from "@/components/ParticipantPointsForm";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +17,12 @@ export default async function CheckedInPersonPage({
   const { id } = await params;
   const person = await getCheckedInDetail(id);
   if (!person) notFound();
+  const { data: pointActions, error: pointActionsError } = await createAdminClient()
+    .from("point_actions")
+    .select("id, name, description, points, max_redemptions")
+    .eq("active", true)
+    .order("name");
+  if (pointActionsError) throw new Error(`Could not load point actions: ${pointActionsError.message}`);
 
   return (
     <main className="min-h-screen bg-white px-6 py-10 font-sans text-neutral-900 md:px-12">
@@ -30,7 +38,7 @@ export default async function CheckedInPersonPage({
         <section className="mt-8 rounded-lg border border-neutral-200 p-5">
           <h2 className="text-lg font-semibold">Points</h2>
           <p className="mt-1 text-3xl font-semibold">{person.points}</p>
-          <ParticipantPointsForm userId={person.id} />
+          <ParticipantPointsForm userId={person.id} pointActions={(pointActions ?? []) as PointActionOption[]} />
           {person.pointsLog.length === 0 ? (
             <p className="mt-4 text-sm text-neutral-500">No point history.</p>
           ) : (

@@ -99,8 +99,8 @@ export default function HackerPortal({
     const [activeTab, setActiveTab] = useState<PortalTab>("Application Status");
     const [currentPoints, setCurrentPoints] = useState(points);
     const [redeemingPrizeId, setRedeemingPrizeId] = useState<string | null>(null);
-    const [redeemedPrizeIds, setRedeemedPrizeIds] = useState<Set<string>>(
-        () => new Set(prizes.filter((prize) => prize.max_redemptions !== null && (userPrizeRedemptionCounts[prize.id] ?? 0) >= prize.max_redemptions).map((prize) => prize.id)),
+    const [prizeRedemptionCounts, setPrizeRedemptionCounts] = useState<Record<string, number>>(
+        () => ({ ...userPrizeRedemptionCounts }),
     );
     const [remainingQuantities, setRemainingQuantities] = useState<Record<string, number | null>>(
         () => Object.fromEntries(prizes.map((prize) => [prize.id, prize.remaining_quantity])),
@@ -129,7 +129,10 @@ export default function HackerPortal({
                     return;
                 }
                 setCurrentPoints(result.balance);
-                setRedeemedPrizeIds((ids) => new Set(ids).add(prizeId));
+                setPrizeRedemptionCounts((counts) => ({
+                    ...counts,
+                    [prizeId]: (counts[prizeId] ?? 0) + 1,
+                }));
                 setRemainingQuantities((quantities) => ({
                     ...quantities,
                     [prizeId]: quantities[prizeId] === null
@@ -270,8 +273,17 @@ export default function HackerPortal({
                             {prizes.length > 0 ? (
                                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                                     {prizes.map((prize) => (
-                                        <article
-                                            key={prize.id}
+                                        (() => {
+                                            const redemptionCount = prizeRedemptionCounts[prize.id] ?? 0;
+                                            const redemptionLimitReached =
+                                                prize.max_redemptions !== null &&
+                                                redemptionCount >= prize.max_redemptions;
+                                            const isUnavailable =
+                                                redemptionLimitReached ||
+                                                remainingQuantities[prize.id] === 0;
+                                            return (
+                                                <article
+                                                    key={prize.id}
                                             className="flex min-h-48 flex-col rounded-2xl border border-primary/20 bg-[#141123] p-5"
                                         >
                                             <img
@@ -303,23 +315,28 @@ export default function HackerPortal({
                                                         Max {prize.max_redemptions} per user
                                                     </p>
                                                 )}
+                                                <p className="mt-2 text-xs text-primary/70">
+                                                    Redeemed {redemptionCount} time{redemptionCount === 1 ? "" : "s"}
+                                                </p>
                                                 <button
                                                     type="button"
-                                                    disabled={redeemingPrizeId === prize.id || redeemedPrizeIds.has(prize.id) || remainingQuantities[prize.id] === 0}
+                                                    disabled={redeemingPrizeId === prize.id || isUnavailable}
                                                     onClick={() => handleRedeem(prize.id)}
                                                     className="mt-4 w-full rounded-xl bg-button px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#8268B4] disabled:cursor-not-allowed disabled:opacity-50"
                                                     aria-busy={redeemingPrizeId === prize.id}
                                                 >
-                                                    {redeemedPrizeIds.has(prize.id)
-                                                        ? "Redeemed"
-                                                        : remainingQuantities[prize.id] === 0
+                                                    {remainingQuantities[prize.id] === 0
                                                             ? "Unavailable"
+                                                        : redemptionLimitReached
+                                                            ? "Limit reached"
                                                         : redeemingPrizeId === prize.id
                                                             ? "Redeeming..."
                                                             : "Redeem"}
                                                 </button>
                                             </div>
                                         </article>
+                                    );
+                                })()
                                     ))}
                                 </div>
                             ) : (

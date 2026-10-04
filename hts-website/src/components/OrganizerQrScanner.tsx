@@ -4,7 +4,13 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { checkInByQrCode, lookupQrCode } from "@/actions/organizerCheckIn";
 import type { ScheduleEvent } from "@/components/ScheduleManager";
 
-export default function OrganizerQrScanner({ events }: { events: ScheduleEvent[] }) {
+export default function OrganizerQrScanner({
+    events,
+    onCheckedIn,
+}: {
+    events: ScheduleEvent[];
+    onCheckedIn?: () => void;
+}) {
     const scannerRef = useRef<{ stop: () => Promise<void>; clear: () => void } | null>(null);
     const [scannedCode, setScannedCode] = useState("");
     const [eventId, setEventId] = useState(events[0]?.id ?? "");
@@ -76,6 +82,7 @@ export default function OrganizerQrScanner({ events }: { events: ScheduleEvent[]
                 setNotice(`Checked in for ${result.data.eventTitle}.`);
                 setScannedCode("");
                 setPerson(null);
+                onCheckedIn?.();
             } catch (caught) {
                 setError(caught instanceof Error ? caught.message : "Could not check in this user.");
             }

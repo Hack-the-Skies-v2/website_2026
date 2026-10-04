@@ -50,17 +50,22 @@ async function findUserByQrCode(qrCode: string) {
     return { supabase, userId: user.id, type };
 }
 
-async function awardCheckInPoints(supabase: ReturnType<typeof createAdminClient>, userId: string) {
+async function awardCheckInPoints(
+    supabase: ReturnType<typeof createAdminClient>,
+    userId: string,
+    eventType: string,
+) {
     const { data: actions, error: actionsError } = await supabase
         .from("point_actions")
-        .select("id, name")
-        .in("name", ["Check in", "Referral"]);
+        .select("id, name, active")
+        .in("name", ["Check in", "Referral", "Attend a workshop"]);
     if (actionsError) throw new Error(`Check-in was recorded, but point actions could not be loaded: ${actionsError.message}`);
 
     const checkInAction = actions?.find((action) => action.name === "Check in");
     const referralAction = actions?.find((action) => action.name === "Referral");
-    if (!checkInAction || !referralAction) {
-        throw new Error("Check-in was recorded, but the Check in or Referral point action is missing. Apply the point action migration.");
+    const workshopAction = actions?.find((action) => action.name === "Attend a workshop");
+    if (!checkInAction || !referralAction || (eventType === "workshop" && !workshopAction)) {
+        throw new Error("Check-in was recorded, but a required point action is missing. Apply the point action migration.");
     }
 
     const { count: checkInEarningCount, error: checkInCountError } = await supabase
@@ -76,6 +81,14 @@ async function awardCheckInPoints(supabase: ReturnType<typeof createAdminClient>
             point_action_id: checkInAction.id,
         });
         if (error) throw new Error(`Check-in was recorded, but its points could not be awarded: ${error.message}`);
+    }
+
+    if (eventType === "workshop" && workshopAction) {
+        const { error } = await supabase.from("point_earnings").insert({
+            user_id: userId,
+            point_action_id: workshopAction.id,
+        });
+        if (error) throw new Error(`Check-in was recorded, but workshop points could not be awarded: ${error.message}`);
     }
 
     const { data: referral, error: referralError } = await supabase
@@ -109,7 +122,7 @@ export async function lookupQrCode(input: unknown): Promise<AdminResult<ScannedP
             .maybeSingle();
         if (error || !data) return { success: false, error: error?.message ?? "The hacker application could not be found." };
         return { success: true, data: {
-            name: `${data.first_name} ${data.last_name}`,
+            name: data.preferred_name?.trim() || `${data.first_name} ${data.last_name}`,
             role: "Hacker",
             pronouns: data.pronouns ?? [],
             pronounsOther: data.pronouns_other ?? "",
@@ -173,7 +186,7 @@ export async function checkInByQrCode(input: unknown): Promise<AdminResult<{ eve
     const { supabase, userId } = await findUserByQrCode(parsed.data.qrCode);
     const { data: event, error: eventError } = await supabase
         .from("schedule_events")
-        .select("id, title")
+        .select("id, title, type")
         .eq("id", parsed.data.eventId)
         .maybeSingle();
     if (eventError || !event) throw new Error("That event could not be found.");
@@ -188,13 +201,7 @@ export async function checkInByQrCode(input: unknown): Promise<AdminResult<{ eve
     }
     if (attendanceError) throw new Error("Could not record the check-in.");
 
-    const { error: userUpdateError } = await supabase
-        .from("users")
-        .update({ checked_in: true })
-        .eq("id", userId);
-    if (userUpdateError) throw new Error("Check-in was recorded, but the user status could not be updated.");
-
-    await awardCheckInPoints(supabase, userId);
+    await awardCheckInPoints(supabase, userId, event.type);
 
     return { success: true, data: { eventTitle: event.title } };
     } catch (error) {
