@@ -3,6 +3,8 @@ import OrganizerSections from "@/components/OrganizerSections";
 import type { OrganizerApplication } from "@/components/OrganizerDashboard";
 import type { ScheduleEvent } from "@/components/ScheduleManager";
 import { listOrganizerApplications } from "@/lib/applications/review";
+import { listCheckedIn, listHackers } from "@/lib/participants/checked-in";
+import type { CheckedInPerson, HackerSearchResult } from "@/lib/participants/checked-in";
 import { requireOrganizer } from "@/lib/auth";
 import { ensureApplicationQrCodeLinks } from "@/lib/qr-code";
 import { createClient } from "@/lib/supabase/server";
@@ -16,6 +18,10 @@ export default async function OrganizersPage() {
     let loadError: string | null = null;
     let scheduleEvents: ScheduleEvent[] = [];
     let scheduleError: string | null = null;
+    let checkedIn: CheckedInPerson[] = [];
+    let checkedInError: string | null = null;
+    let hackers: HackerSearchResult[] = [];
+    let hackersError: string | null = null;
     try {
         await ensureApplicationQrCodeLinks();
     } catch (error) {
@@ -40,6 +46,16 @@ export default async function OrganizersPage() {
         scheduleEvents = (data ?? []) as ScheduleEvent[];
     } catch (error) {
         scheduleError = error instanceof Error ? error.message : "Could not load schedule events.";
+    }
+    try {
+        checkedIn = await listCheckedIn();
+    } catch (error) {
+        checkedInError = error instanceof Error ? error.message : "Could not load checked-in people.";
+    }
+    try {
+        hackers = await listHackers();
+    } catch (error) {
+        hackersError = error instanceof Error ? error.message : "Could not load hackers.";
     }
 
     return (
@@ -66,6 +82,10 @@ export default async function OrganizersPage() {
                     scheduleEvents={scheduleEvents}
                     scheduleError={scheduleError}
                     loadError={loadError}
+                    checkedIn={checkedIn}
+                    checkedInError={checkedInError}
+                    hackers={hackers}
+                    hackersError={hackersError}
                 />
             </div>
         </main>
