@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { areApplicationsOpen } from "@/lib/applications/deadline";
 
 function stripHtml(value: string): string {
     return value.replace(/<[^>]*>/g, "");
@@ -25,6 +26,10 @@ export async function saveDraftHackerApplication(data: {
     section4?: Record<string, unknown>;
     section5?: Record<string, unknown>;
 }) {
+    if (!areApplicationsOpen()) {
+        return { success: false, error: "Applications are closed." };
+    }
+
     const supabase = await createClient();
     const {
         data: { user },

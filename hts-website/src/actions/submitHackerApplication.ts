@@ -4,6 +4,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { processReferralCookie } from "@/lib/referral";
 import { ensureQrCodeLink } from "@/lib/qr-code";
+import { areApplicationsOpen } from "@/lib/applications/deadline";
 
 function stripHtml(value: string): string {
 	return value.replace(/<[^>]*>/g, "");
@@ -68,6 +69,10 @@ const hackerSchema = z.object({
 });
 
 export async function submitHackerApplication(data: unknown) {
+	if (!areApplicationsOpen()) {
+		return { success: false, error: "Applications are closed." };
+	}
+
 	const result = hackerSchema.safeParse(data);
 
 	if (!result.success) {

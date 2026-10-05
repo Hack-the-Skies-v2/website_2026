@@ -8,6 +8,8 @@ import AccountMenu from "../../components/AccountMenu";
 import ReferralToast from "@/components/ReferralToast";
 import { HTS_REF_COOKIE, recordReferral, getReferrerEmail } from "@/lib/referral";
 import { getApplicationAccess } from "@/lib/applications/access";
+import { areApplicationsOpen } from "@/lib/applications/deadline";
+import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +18,10 @@ export default async function Apply({
 }: {
     searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+    if (!areApplicationsOpen()) {
+        notFound();
+    }
+
     const params = await searchParams;
     const ref = typeof params.ref === "string" ? params.ref : null;
 
