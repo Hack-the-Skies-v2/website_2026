@@ -1,6 +1,3 @@
--- Attendance records are the source of truth for check-in status.
--- Application type and the judge profile flag are the source of truth for roles.
-
 DROP POLICY IF EXISTS update_own_user ON public.users;
 DROP POLICY IF EXISTS schedule_events_select_authorized ON public.schedule_events;
 DROP POLICY IF EXISTS schedule_attendance_select_admin ON public.schedule_attendance;
