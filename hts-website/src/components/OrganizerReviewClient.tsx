@@ -29,8 +29,6 @@ export type ReviewApplication = {
 export default function OrganizerReviewClient({
   application,
   questions,
-  initialScores,
-  graderCount,
   previousHref = null,
   nextHref = null,
   advanceHref = null,
