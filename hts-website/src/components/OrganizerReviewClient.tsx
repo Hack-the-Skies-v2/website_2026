@@ -1,23 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { clearOrganizerGrade, submitOrganizerGrade } from "@/actions/organizerGrades";
 import { decideApplications, type OrganizerDecision } from "@/actions/organizerDecisions";
-import {
-  SCORE_MAX,
-  SCORE_POSITIONS,
-  compositeScore,
-  positionToScore,
-  scoreToPosition,
-} from "@/lib/grading/scoring";
 import type { Question } from "@/lib/grading/types";
-
-const AUTOSAVE_DELAY_MS = 600;
-
-type SaveState = "idle" | "saving" | "saved" | "error";
-type Scores = Record<string, number | null>;
 
 export type ReviewInfoField = {
   label: string;
@@ -53,8 +40,6 @@ export default function OrganizerReviewClient({
 }: {
   application: ReviewApplication;
   questions: Question[];
-  initialScores: Record<string, number>;
-  graderCount: number;
   previousHref?: string | null;
   nextHref?: string | null;
   advanceHref?: string | null;
@@ -63,89 +48,19 @@ export default function OrganizerReviewClient({
   total?: number;
 }) {
   const router = useRouter();
-  const [scores, setScores] = useState<Scores>(() =>
-    Object.fromEntries(questions.map((q) => [q.id, initialScores[q.id] ?? null])),
-  );
-  const [saveState, setSaveState] = useState<SaveState>("idle");
   const [confirming, setConfirming] = useState<OrganizerDecision | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [tab, setTab] = useState<"questions" | "details">("questions");
   const [isPending, startTransition] = useTransition();
-  const pendingSave = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(
-    () => () => {
-      if (pendingSave.current) clearTimeout(pendingSave.current);
-    },
-    [],
-  );
 
   useEffect(() => {
-    setScores(
-      Object.fromEntries(questions.map((q) => [q.id, initialScores[q.id] ?? null])),
-    );
-    setSaveState("idle");
     setConfirming(null);
     setNotice(null);
     setTab("questions");
   }, [application.id]);
 
-  const composite = compositeScore(
-    Object.fromEntries(
-      Object.entries(scores).filter(([, value]) => value != null),
-    ) as Record<string, number>,
-    questions,
-  );
-  const scored = questions.filter((q) => scores[q.id] != null).length;
-  const weightTotal = questions.reduce((sum, q) => sum + q.weight, 0);
-  const gradedNow = composite !== null;
-  const liveCount =
-    graderCount + (gradedNow && Object.keys(initialScores).length === 0 ? 1 : 0)
-    - (!gradedNow && Object.keys(initialScores).length > 0 ? 1 : 0);
-
   function goAfterDecision() {
     router.push(advanceHref ?? listHref);
-  }
-
-  function commit(next: Scores) {
-    if (pendingSave.current) clearTimeout(pendingSave.current);
-    const values = questions.map((q) => next[q.id]);
-    const noneScored = values.every((v) => v == null);
-    const allScored = values.every((v) => v != null);
-    if (!allScored && !noneScored) {
-      setSaveState("idle");
-      return;
-    }
-    setSaveState("saving");
-    pendingSave.current = setTimeout(async () => {
-      try {
-        if (noneScored) await clearOrganizerGrade(application.id);
-        else {
-          await submitOrganizerGrade({
-            applicationId: application.id,
-            scores: Object.fromEntries(
-              questions.map((q) => [q.id, next[q.id] as number]),
-            ),
-          });
-        }
-        setSaveState("saved");
-        router.refresh();
-      } catch {
-        setSaveState("error");
-      }
-    }, AUTOSAVE_DELAY_MS);
-  }
-
-  function setScore(questionId: string, score: number | null) {
-    const next = { ...scores, [questionId]: score };
-    setScores(next);
-    commit(next);
-  }
-
-  function clearAll() {
-    const next = Object.fromEntries(questions.map((q) => [q.id, null]));
-    setScores(next);
-    commit(next);
   }
 
   function decide(decision: OrganizerDecision) {
@@ -219,9 +134,6 @@ export default function OrganizerReviewClient({
           </p>
           <p className={`mt-3 text-sm capitalize ${statusColor}`}>
             {application.status}
-            <span className="ml-3 font-normal text-neutral-400">
-              Rated by {liveCount} organizer{liveCount === 1 ? "" : "s"}
-            </span>
           </p>
 
           <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -273,29 +185,6 @@ export default function OrganizerReviewClient({
           </div>
         </div>
 
-        <div className="flex w-36 flex-col items-end text-right">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
-            {composite != null ? "Final score" : "Composite"}
-          </span>
-          <span className="font-mono text-3xl font-semibold tabular-nums text-neutral-900">
-            {composite != null ? composite.toFixed(2) : "-"}
-          </span>
-          <span className="text-[11px] text-neutral-400">
-            {composite != null ? `out of ${SCORE_MAX}` : `${scored} of ${questions.length} scored`}
-          </span>
-          <div className="mt-2 flex h-4 items-center gap-2">
-            {saveState !== "idle" ? (
-              <span className={`text-[11px] ${saveState === "error" ? "text-neutral-500" : "text-neutral-400"}`}>
-                {saveState === "saving" ? "Saving…" : saveState === "saved" ? "Saved" : "Not saved"}
-              </span>
-            ) : null}
-            {scored > 0 && saveState !== "saving" ? (
-              <button type="button" onClick={clearAll} className="text-[11px] text-neutral-500 underline-offset-2 hover:text-neutral-900 hover:underline">
-                Clear
-              </button>
-            ) : null}
-          </div>
-        </div>
       </section>
 
       <div className="flex rounded-md border border-neutral-200 bg-neutral-100 p-0.5 w-fit">
@@ -332,33 +221,6 @@ export default function OrganizerReviewClient({
             <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-neutral-700">
               {text || <span className="italic text-neutral-400">Not filled</span>}
             </p>
-            <div className="mt-4 border-t border-neutral-200 pt-3">
-              <div className="flex items-baseline justify-between">
-                <span className="text-xs text-neutral-400">
-                  {Math.round((question.weight / weightTotal) * 100)}% of composite
-                </span>
-                <span className="font-mono text-sm tabular-nums text-neutral-900">
-                  {scores[question.id] == null ? (
-                    <span className="text-neutral-400">-</span>
-                  ) : (
-                    scores[question.id]!.toFixed(1)
-                  )}
-                  <span className="text-neutral-400">/{SCORE_MAX}</span>
-                </span>
-              </div>
-              <input
-                type="range"
-                min={0}
-                max={SCORE_POSITIONS}
-                step={1}
-                value={scoreToPosition(scores[question.id] ?? null)}
-                onChange={(event) =>
-                  setScore(question.id, positionToScore(Number(event.target.value)))
-                }
-                aria-label={`Question ${index + 1} score out of ${SCORE_MAX}`}
-                className="mt-2 h-1.5 w-full cursor-pointer accent-neutral-900"
-              />
-            </div>
           </article>
         ))}
       </div>

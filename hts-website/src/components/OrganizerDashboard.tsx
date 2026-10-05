@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { decideApplications, type OrganizerDecision } from "@/actions/organizerDecisions";
-import { prioritizeForReview } from "@/lib/grading/queue";
 
 export type OrganizerApplication = {
   id: string;
@@ -35,7 +34,7 @@ const TABLES: {
   {
     status: "pending",
     title: "Pending",
-    subtitle: "Not sure / still deciding. Least graded apps shown first",
+    subtitle: "Not sure / still deciding",
     activeClass: "bg-white font-medium text-neutral-900 shadow-sm",
   },
   {
@@ -81,12 +80,7 @@ export default function OrganizerDashboard({
             .includes(needle),
         );
 
-    return prioritizeForReview(
-      pool.map((application) => ({
-        ...application,
-        graded_by_me: application.my_score != null,
-      })),
-    );
+    return pool;
   }, [forTrack, query]);
 
   const byStatus = {
@@ -333,7 +327,6 @@ function StatusTable({
                 />
               </th>
               <th className="px-4 py-3">Applicant</th>
-              <th className="px-4 py-3">Score</th>
               <th className="px-4 py-3">Submitted</th>
               <th className="px-4 py-3">Email</th>
               <th className="px-4 py-3" />
@@ -363,14 +356,6 @@ function StatusTable({
                   </Link>
                   <span className="mt-0.5 block text-xs text-neutral-500">
                     {application.school_or_organization || "-"}
-                  </span>
-                </td>
-                <td className="px-4 py-3 font-mono tabular-nums text-neutral-800">
-                  {application.average_score != null ? application.average_score.toFixed(1) : "-"}
-                  <span className="mt-0.5 block text-xs text-neutral-400">
-                    {application.grader_count
-                      ? `${application.grader_count} rating${application.grader_count === 1 ? "" : "s"}`
-                      : "unscored"}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-neutral-600">

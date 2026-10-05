@@ -7,7 +7,6 @@ import {
 } from "@/lib/applications/review";
 import {
   advanceAfterDecision,
-  prioritizeForReview,
   queuePosition,
 } from "@/lib/grading/queue";
 import { requireOrganizer } from "@/lib/auth";
@@ -24,17 +23,8 @@ export default async function OrganizerReviewPage({ params }: PageProps) {
 
   const list = await listOrganizerApplications(organizer.id);
   const trackPeers = list.filter((row) => row.type === loaded.application.type);
-  const prioritized = prioritizeForReview(
-    trackPeers.map((peer) => ({
-      id: peer.id,
-      status: peer.status,
-      submitted_at: peer.submitted_at,
-      grader_count: peer.grader_count,
-      graded_by_me: peer.my_score != null,
-    })),
-  );
-  const allIds = prioritized.map((peer) => peer.id);
-  const pendingIds = prioritized
+  const allIds = trackPeers.map((peer) => peer.id);
+  const pendingIds = trackPeers
     .filter((peer) => peer.status === "pending")
     .map((peer) => peer.id);
   const queue = queuePosition(allIds, id);
@@ -56,8 +46,6 @@ export default async function OrganizerReviewPage({ params }: PageProps) {
         <OrganizerReviewClient
           application={loaded.application}
           questions={loaded.questions}
-          initialScores={loaded.initialScores}
-          graderCount={loaded.graderCount}
           listHref="/organizers"
           previousHref={queue.previousId ? href(queue.previousId) : null}
           nextHref={queue.nextId ? href(queue.nextId) : null}
