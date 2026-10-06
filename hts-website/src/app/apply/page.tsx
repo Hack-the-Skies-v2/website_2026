@@ -21,6 +21,17 @@ export default async function Apply({
 }) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        const params = await searchParams;
+        const ref = typeof params.ref === "string" ? params.ref : null;
+
+        if (ref) {
+            redirect(`/api/referral?ref=${encodeURIComponent(ref)}`);
+        }
+        redirect("/auth?next=/apply");
+    }
+
     const hasApplyException = user ? await isApplyException(supabase, user.email) : false;
 
     if (!areApplicationsOpen() && !hasApplyException) {
@@ -57,29 +68,22 @@ export default async function Apply({
     const params = await searchParams;
     const ref = typeof params.ref === "string" ? params.ref : null;
 
-    if (user) {
-        if (ref) {
-            const cookieStore = await cookies();
-            try { cookieStore.delete(HTS_REF_COOKIE); } catch { }
+    if (ref) {
+        const cookieStore = await cookies();
+        try { cookieStore.delete(HTS_REF_COOKIE); } catch { }
 
-            const result = await recordReferral(ref, supabase);
-            if (result.success || result.isAlreadyReferredByThisUser) {
-                redirect("/apply?referral=success");
-            } else if (result.isAlreadyReferred) {
-                redirect("/apply?referral=already_referred");
-            } else if (result.isSelfReferral) {
-                redirect("/apply?referral=self");
-            } else if (result.isInvalidCode) {
-                redirect("/apply?referral=invalid");
-            } else {
-                redirect("/apply");
-            }
+        const result = await recordReferral(ref, supabase);
+        if (result.success || result.isAlreadyReferredByThisUser) {
+            redirect("/apply?referral=success");
+        } else if (result.isAlreadyReferred) {
+            redirect("/apply?referral=already_referred");
+        } else if (result.isSelfReferral) {
+            redirect("/apply?referral=self");
+        } else if (result.isInvalidCode) {
+            redirect("/apply?referral=invalid");
+        } else {
+            redirect("/apply");
         }
-    } else {
-        if (ref) {
-            redirect(`/api/referral?ref=${encodeURIComponent(ref)}`);
-        }
-        redirect("/auth?next=/apply");
     }
 
     const cookieStore = await cookies();
