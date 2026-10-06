@@ -29,10 +29,10 @@ export default function Footer() {
                             </li>
                             <li>
                                 <Link
-                                    href="/apply"
+                                    href="/portal"
                                     className="hover:text-primary/80 transition-colors"
                                 >
-                                    Apply
+                                    Portal
                                 </Link>
                             </li>
                         </ul>
