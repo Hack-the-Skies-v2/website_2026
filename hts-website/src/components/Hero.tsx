@@ -1,7 +1,16 @@
 import ParallaxLayer from "@/components/ParallaxLayer";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { getApplicationAccess } from "@/lib/applications/access";
 
-export default function Hero() {
+export default async function Hero() {
+    const supabase = await createClient();
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
+    const access = user ? await getApplicationAccess(supabase, user.id) : null;
+    const portalHref = access?.isJudge || access?.isMentor ? "/jm-portal" : "/portal";
+
     return (
         <section
             id="home"
@@ -135,7 +144,7 @@ export default function Hero() {
                 Judge and Mentor applications are open.
             </p>*/}
             <div className="mt-4 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                <Link href="/apply">
+                <Link href={portalHref}>
                     <button
                         type="button"
                         className="
@@ -151,7 +160,7 @@ export default function Hero() {
 							hover:scale-105
                             cursor-pointer
 						"
-                    >Apply Now!
+                    >Portal
                     </button>
                 </Link>
                 {/* <button

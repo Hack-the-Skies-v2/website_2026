@@ -13,7 +13,7 @@ export default async function JMPortalPage() {
 		data: { user },
 	} = await supabase.auth.getUser();
 
-	if (!user) redirect("/auth");
+	if (!user) redirect("/auth?next=/jm-portal");
 
 	const cookieStore = await cookies();
 	const cookieRef = cookieStore.get(HTS_REF_COOKIE)?.value;

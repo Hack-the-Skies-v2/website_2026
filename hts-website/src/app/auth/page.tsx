@@ -122,7 +122,7 @@ function AuthContent() {
     const nextPath =
         nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
             ? nextParam
-            : "/apply";
+            : "/portal";
 
     useEffect(() => {
         if (blockAutoRedirect) return;

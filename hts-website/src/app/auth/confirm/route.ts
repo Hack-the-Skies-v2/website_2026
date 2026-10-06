@@ -14,10 +14,10 @@ function isAllowedOtpType(value: string | null): value is AllowedOtpType {
 function resolveNext(request: NextRequest): string {
   const fromQuery = request.nextUrl.searchParams.get("next");
   const fromCookie = request.cookies.get(AUTH_NEXT_COOKIE)?.value;
-  const candidate = fromQuery || fromCookie || "/apply";
+  const candidate = fromQuery || fromCookie || "/portal";
   return candidate.startsWith("/") && !candidate.startsWith("//")
     ? candidate
-    : "/apply";
+    : "/portal";
 }
 
 function createConfirmClient(request: NextRequest, response: NextResponse) {

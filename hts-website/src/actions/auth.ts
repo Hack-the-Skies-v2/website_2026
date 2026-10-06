@@ -67,7 +67,7 @@ function validationError(result: {
 function safeNextPath(nextPath: string) {
     return nextPath.startsWith("/") && !nextPath.startsWith("//")
         ? nextPath
-        : "/apply";
+        : "/portal";
 }
 
 function formatSiteUrl(url: string): string {
@@ -130,7 +130,7 @@ export async function signInWithEmail(
 }
 
 export async function signInWithGoogle(
-    nextPath = "/apply",
+    nextPath = "/portal",
 ): Promise<OAuthResult> {
     try {
         const supabase = await createClient();

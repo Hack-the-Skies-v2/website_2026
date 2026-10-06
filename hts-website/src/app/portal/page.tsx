@@ -13,7 +13,7 @@ export default async function PortalPage() {
 	const supabase = await createClient();
 	const { data: { user } } = await supabase.auth.getUser();
 
-	if (!user) redirect("/auth");
+	if (!user) redirect("/auth?next=/portal");
 
 	const cookieStore = await cookies();
 	const cookieRef = cookieStore.get(HTS_REF_COOKIE)?.value;
