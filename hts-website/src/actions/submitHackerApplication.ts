@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { processReferralCookie } from "@/lib/referral";
 import { ensureQrCodeLink } from "@/lib/qr-code";
 import { areApplicationsOpen } from "@/lib/applications/deadline";
+import { isApplyException } from "@/lib/applications/exceptions";
 
 function stripHtml(value: string): string {
 	return value.replace(/<[^>]*>/g, "");
@@ -69,10 +70,6 @@ const hackerSchema = z.object({
 });
 
 export async function submitHackerApplication(data: unknown) {
-	if (!areApplicationsOpen()) {
-		return { success: false, error: "Applications are closed." };
-	}
-
 	const result = hackerSchema.safeParse(data);
 
 	if (!result.success) {
@@ -89,6 +86,10 @@ export async function submitHackerApplication(data: unknown) {
 
 	if (!user) {
 		return { success: false, error: "You must be signed in to submit an application." };
+	}
+
+	if (!areApplicationsOpen() && !(await isApplyException(supabase, user.email))) {
+		return { success: false, error: "Applications are closed." };
 	}
 
 	const d = result.data;

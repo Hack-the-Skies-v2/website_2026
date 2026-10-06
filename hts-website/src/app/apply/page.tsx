@@ -8,6 +8,7 @@ import AccountMenu from "../../components/AccountMenu";
 import ReferralToast from "@/components/ReferralToast";
 import { HTS_REF_COOKIE, recordReferral, getReferrerEmail } from "@/lib/referral";
 import { getApplicationAccess } from "@/lib/applications/access";
+import { isApplyException } from "@/lib/applications/exceptions";
 import { areApplicationsOpen } from "@/lib/applications/deadline";
 import { logout } from "@/actions/auth";
 
@@ -18,7 +19,11 @@ export default async function Apply({
 }: {
     searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-    if (!areApplicationsOpen()) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const hasApplyException = user ? await isApplyException(supabase, user.email) : false;
+
+    if (!areApplicationsOpen() && !hasApplyException) {
         return (
             <main className="flex min-h-screen items-center justify-center px-6 py-20">
                 <div className="text-center">
@@ -51,9 +56,6 @@ export default async function Apply({
 
     const params = await searchParams;
     const ref = typeof params.ref === "string" ? params.ref : null;
-
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
 
     if (user) {
         if (ref) {
@@ -103,11 +105,13 @@ export default async function Apply({
 
     const access = await getApplicationAccess(supabase, user.id);
 
-    if (access.isJudge || access.isMentor) {
-        redirect("/jm-portal");
-    }
-    if (access.isHacker) {
-        redirect("/portal");
+    if (!hasApplyException) {
+        if (access.isJudge || access.isMentor) {
+            redirect("/jm-portal");
+        }
+        if (access.isHacker) {
+            redirect("/portal");
+        }
     }
 
     const referrerEmail = await getReferrerEmail();

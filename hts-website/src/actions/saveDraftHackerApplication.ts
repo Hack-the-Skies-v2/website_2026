@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { areApplicationsOpen } from "@/lib/applications/deadline";
+import { isApplyException } from "@/lib/applications/exceptions";
 
 function stripHtml(value: string): string {
     return value.replace(/<[^>]*>/g, "");
@@ -26,10 +27,6 @@ export async function saveDraftHackerApplication(data: {
     section4?: Record<string, unknown>;
     section5?: Record<string, unknown>;
 }) {
-    if (!areApplicationsOpen()) {
-        return { success: false, error: "Applications are closed." };
-    }
-
     const supabase = await createClient();
     const {
         data: { user },
@@ -37,6 +34,10 @@ export async function saveDraftHackerApplication(data: {
 
     if (!user) {
         return { success: false, error: "You must be signed in." };
+    }
+
+    if (!areApplicationsOpen() && !(await isApplyException(supabase, user.email))) {
+        return { success: false, error: "Applications are closed." };
     }
 
     const s1 = data.section1 ?? {};
