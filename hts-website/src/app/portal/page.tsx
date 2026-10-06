@@ -24,11 +24,10 @@ export default async function PortalPage() {
 		} catch {}
 	}
 
-	const [{ data: profile }, { data: userPoints }, { data: events }, { data: referralCode }, { data: prizes, error: prizesError }, { data: pointActions, error: pointActionsError }, { data: pointEarnings, error: pointEarningsError }, { data: prizeRedemptions, error: prizeRedemptionsError }] = await Promise.all([
+	const [{ data: profile }, { data: userPoints }, { data: events }, { data: prizes, error: prizesError }, { data: pointActions, error: pointActionsError }, { data: pointEarnings, error: pointEarningsError }, { data: prizeRedemptions, error: prizeRedemptionsError }] = await Promise.all([
 		supabase.from("users").select("qr_code_link").eq("id", user.id).maybeSingle(),
 		supabase.from("user_points").select("balance").eq("user_id", user.id).maybeSingle(),
 		supabase.from("schedule_events").select("id, title, description, type, start_time, end_time, location").order("start_time"),
-		supabase.rpc("get_my_referral_code"),
 		supabase
 			.from("point_prize_inventory")
 			.select("id, name, description, points_required, quantity, max_redemptions, remaining_quantity")
@@ -100,7 +99,7 @@ export default async function PortalPage() {
 
 	return (
 		<>
-			<HackerPortal name={hackerName} email={user.email ?? ""} points={userPoints?.balance ?? 0} qrCode={qrCode} schedule={schedule} referralCode={referralCode ?? null} prizes={(prizes ?? []) as PortalPrize[]} userPrizeRedemptionCounts={userPrizeRedemptionCounts} pointActions={portalPointActions} />
+			<HackerPortal name={hackerName} email={user.email ?? ""} points={userPoints?.balance ?? 0} qrCode={qrCode} schedule={schedule} prizes={(prizes ?? []) as PortalPrize[]} userPrizeRedemptionCounts={userPrizeRedemptionCounts} pointActions={portalPointActions} />
 		</>
 	);
 }

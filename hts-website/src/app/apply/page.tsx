@@ -9,6 +9,7 @@ import ReferralToast from "@/components/ReferralToast";
 import { HTS_REF_COOKIE, recordReferral, getReferrerEmail } from "@/lib/referral";
 import { getApplicationAccess } from "@/lib/applications/access";
 import { areApplicationsOpen } from "@/lib/applications/deadline";
+import { logout } from "@/actions/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -27,13 +28,21 @@ export default async function Apply({
                     <p className="mt-4 max-w-xl font-outfit text-base leading-relaxed text-primary/80 md:text-lg">
                         Applications for Hack the Skies have closed.
                     </p>
-                    <div className="mt-8">
+                    <div className="mt-8 flex items-center justify-center gap-3">
                         <Link
                             href="/"
                             className="inline-flex rounded-full bg-button px-6 py-3 font-outfit text-base text-white shadow-[0_0_20px_rgba(130,104,180,0.45)] transition-all duration-150 hover:bg-[#8268B4] hover:scale-[1.02]"
                         >
                             Return Home
                         </Link>
+                        <form action={logout}>
+                            <button
+                                type="submit"
+                                className="inline-flex cursor-pointer rounded-full bg-button px-6 py-3 font-outfit text-base text-white shadow-[0_0_20px_rgba(130,104,180,0.45)] transition-all duration-150 hover:bg-[#8268B4] hover:scale-[1.02]"
+                            >
+                                Log out
+                            </button>
+                        </form>
                     </div>
                 </div>
             </main>

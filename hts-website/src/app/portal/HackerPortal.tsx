@@ -35,7 +35,6 @@ type HackerPortalProps = {
     points: number;
     qrCode?: string | null;
     schedule: PortalScheduleEvent[];
-    referralCode?: string | null;
     prizes: PortalPrize[];
     userPrizeRedemptionCounts: Record<string, number>;
     pointActions: PortalPointAction[];
@@ -43,53 +42,10 @@ type HackerPortalProps = {
 
 const tabs: PortalTab[] = ["Application Status", "Schedule", "Points", "Shop", "QR code"];
 
-function ReferralCard({ referralCode }: { referralCode: string }) {
-    const [copied, setCopied] = useState(false);
-    const [origin, setOrigin] = useState("");
-
-    useEffect(() => {
-        setOrigin(window.location.origin);
-    }, []);
-
-    const referralUrl = origin
-        ? `${origin}/apply?ref=${referralCode}`
-        : `/apply?ref=${referralCode}`;
-
-    function handleCopy() {
-        const fullUrl = `${window.location.origin}/apply?ref=${referralCode}`;
-        navigator.clipboard.writeText(fullUrl).then(() => {
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        });
-    }
-
-    return (
-        <div className="rounded-2xl border border-primary/20 bg-[#141123] p-6 space-y-4">
-            <div>
-                <p className="font-semibold text-primary">Your Referral Link</p>
-                <p className="mt-1 text-sm text-primary/60">Share this link to earn points for each referral when they check in to the event, which you can redeem for prizes later at the event.</p>
-            </div>
-            <div className="flex items-center gap-2 rounded-xl border border-primary/20 bg-[#141123] px-4 py-2.5">
-                <span className="min-w-0 flex-1 truncate font-mono text-sm text-primary/80 select-all">
-                    {referralUrl}
-                </span>
-                <button
-                    type="button"
-                    onClick={handleCopy}
-                    className="shrink-0 rounded-lg bg-button px-4 py-1.5 text-sm font-medium text-white transition hover:bg-[#8268B4] cursor-pointer"
-                >
-                    {copied ? "Copied!" : "Copy"}
-                </button>
-            </div>
-        </div>
-    );
-}
-
 export default function HackerPortal({
     name,
     email,
     points,
-    referralCode,
 	qrCode,
 	schedule,
 	prizes,
@@ -196,7 +152,6 @@ export default function HackerPortal({
                                     </span>
                                 </div>
                             </div>
-                            {referralCode && <ReferralCard referralCode={referralCode} />}
                         </div>
                     )}
 
