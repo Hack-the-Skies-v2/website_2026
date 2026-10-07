@@ -32,6 +32,11 @@ export default function JMPortal({
     const [activeTab, setActiveTab] = useState<PortalTab>("Application Status");
     const displayStatus = status ? status.charAt(0).toUpperCase() + status.slice(1) : "Pending";
 
+    console.info("[jm-portal] client status", {
+        status,
+        displayStatus,
+    });
+
     return (
         <main className="relative z-10 min-h-screen bg-[#141123] font-outfit text-primary">
             <div className="grid min-h-screen w-full lg:grid-cols-[15rem_1fr]">

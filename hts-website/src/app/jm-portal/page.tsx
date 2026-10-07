@@ -28,6 +28,12 @@ export default async function JMPortalPage() {
 	const { isJudge, isMentor } = access;
 
 	if (!isJudge && !isMentor) redirect("/apply");
+	console.info("[jm-portal] status passed to client", {
+		userId: user.id,
+		applicationStatus: access.applicationStatus,
+		isJudge,
+		isMentor,
+	});
 	await ensureQrCodeLink(user.id);
 
 	const { data: events } = await supabase

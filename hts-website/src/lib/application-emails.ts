@@ -4,58 +4,9 @@ export type ApplicationDecision = "accepted" | "rejected";
 
 export function applicationDecisionEmail(input: {
   firstName: string;
-  type: "hacker" | "mentor" | "judge";
   decision: ApplicationDecision;
 }) {
   const firstName = escapeHtml(input.firstName);
-
-  if (input.type === "mentor") {
-    if (input.decision === "accepted") {
-      return {
-        subject: "You're in as a mentor for Hack the Skies 2026",
-        html: `
-          <p>Hi ${firstName},</p>
-          <p>We're thrilled to invite you to mentor at Hack the Skies 2026.</p>
-          <p>Watch your inbox for mentor logistics, Discord access, and the weekend schedule. We're excited to have you supporting our hackers.</p>
-          <p>The Hack the Skies team</p>
-        `,
-      };
-    }
-
-    return {
-      subject: "Hack the Skies 2026 mentor application update",
-      html: `
-        <p>Hi ${firstName},</p>
-        <p>Thank you for applying to mentor at Hack the Skies 2026. We're grateful for the time and care you put into your application.</p>
-        <p>We aren't able to offer you a mentor spot this time. We hope you'll stay connected and consider mentoring at a future event.</p>
-        <p>The Hack the Skies team</p>
-      `,
-    };
-  }
-
-  if (input.type === "judge") {
-    if (input.decision === "accepted") {
-      return {
-        subject: "You're in as a judge for Hack the Skies 2026",
-        html: `
-          <p>Hi ${firstName},</p>
-          <p>We're thrilled to invite you to judge at Hack the Skies 2026.</p>
-          <p>Watch your inbox for judging logistics and schedule details for October 18th. We're excited to have your expertise with our hackers.</p>
-          <p>The Hack the Skies team</p>
-        `,
-      };
-    }
-
-    return {
-      subject: "Hack the Skies 2026 judge application update",
-      html: `
-        <p>Hi ${firstName},</p>
-        <p>Thank you for applying to judge at Hack the Skies 2026. We're grateful for the time and care you put into your application.</p>
-        <p>We aren't able to offer you a judge spot this time. We hope you'll stay connected with Hack the Skies.</p>
-        <p>The Hack the Skies team</p>
-      `,
-    };
-  }
 
   if (input.decision === "accepted") {
     return {
@@ -70,7 +21,7 @@ export function applicationDecisionEmail(input: {
   }
 
   return {
-    subject: "Hack the Skies 2026 application update",
+    subject: "Hack the Skies 2026 Application Update",
     html: `
       <p>Hi ${firstName},</p>
       <p>Thank you for applying to Hack the Skies 2026. We're grateful for the time and care you put into your application.</p>

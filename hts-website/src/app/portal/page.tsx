@@ -75,6 +75,10 @@ export default async function PortalPage() {
 	if (!access.isHacker) {
 		redirect("/apply");
 	}
+	console.info("[hacker-portal] status passed to client", {
+		userId: user.id,
+		applicationStatus: access.applicationStatus,
+	});
 	const { data: hackerApplication, error: hackerApplicationError } = await supabase
 		.from("hacker_applications")
 		.select("first_name, last_name, preferred_name")
@@ -99,7 +103,7 @@ export default async function PortalPage() {
 
 	return (
 		<>
-			<HackerPortal name={hackerName} email={user.email ?? ""} points={userPoints?.balance ?? 0} qrCode={qrCode} schedule={schedule} prizes={(prizes ?? []) as PortalPrize[]} userPrizeRedemptionCounts={userPrizeRedemptionCounts} pointActions={portalPointActions} />
+			<HackerPortal name={hackerName} email={user.email ?? ""} status={access.applicationStatus} points={userPoints?.balance ?? 0} qrCode={qrCode} schedule={schedule} prizes={(prizes ?? []) as PortalPrize[]} userPrizeRedemptionCounts={userPrizeRedemptionCounts} pointActions={portalPointActions} />
 		</>
 	);
 }

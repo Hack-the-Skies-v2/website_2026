@@ -17,11 +17,10 @@ export async function getApplicationAccess(
     userId: string,
 ): Promise<ApplicationAccess> {
     const [
-        { data: application },
+        { data: application, error: applicationError },
         { data: hackerApp },
         { data: judgeApp },
         { data: mentorApp },
-        { data: profile },
     ] = await Promise.all([
         supabase
             .from("applications")
@@ -43,24 +42,53 @@ export async function getApplicationAccess(
             .select("user_id")
             .eq("user_id", userId)
             .maybeSingle(),
-        supabase
-            .from("users")
-            .select("judge")
-            .eq("id", userId)
-            .maybeSingle(),
     ]);
+
+    if (applicationError) {
+        console.error("[application-access] applications query failed", {
+            userId,
+            code: applicationError.code,
+            message: applicationError.message,
+            details: applicationError.details,
+            hint: applicationError.hint,
+        });
+    }
 
     const rawType = application?.application_type?.toLowerCase();
     const applicationType = rawType === "hacker" || rawType === "judge" || rawType === "mentor"
         ? rawType
         : null;
-    const isJudge = Boolean(profile?.judge || applicationType === "judge" || judgeApp);
+    const isJudge = Boolean(
+        (applicationType === "judge" || judgeApp) &&
+        application?.status === "accepted",
+    );
     const isMentor = Boolean(applicationType === "mentor" || mentorApp);
     const isHacker = Boolean(
         applicationType === "hacker" ||
         hackerApp ||
         (application && !isJudge && !isMentor),
     );
+
+    console.info("[application-access] status lookup", {
+        userId,
+        application,
+        applicationError: applicationError
+            ? {
+                code: applicationError.code,
+                message: applicationError.message,
+                details: applicationError.details,
+                hint: applicationError.hint,
+            }
+            : null,
+        applicationType,
+        applicationStatus: application?.status ?? null,
+        hasHackerApplication: Boolean(hackerApp),
+        hasJudgeApplication: Boolean(judgeApp),
+        hasMentorApplication: Boolean(mentorApp),
+        isHacker,
+        isJudge,
+        isMentor,
+    });
 
     return {
         applicationType,

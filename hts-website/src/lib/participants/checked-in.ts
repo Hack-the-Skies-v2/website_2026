@@ -31,17 +31,6 @@ export type CheckedInDetail = CheckedInPerson & {
   pointsLog: PointEntry[];
 };
 
-type UserRow = {
-  id: string;
-  judge: boolean | null;
-};
-
-function rolesOf(row: UserRow): ParticipantRole[] {
-  const roles: ParticipantRole[] = [];
-  if (row.judge) roles.push("judge");
-  return roles;
-}
-
 function displayName(first: string, last: string, fallback: string) {
   const name = `${first} ${last}`.trim();
   return name || fallback;
@@ -88,11 +77,11 @@ export async function listCheckedIn(): Promise<CheckedInPerson[]> {
 
   const { data: users, error: usersError } = await supabase
     .from("users")
-    .select("id, judge")
+    .select("id")
     .in("id", checkedInIds);
 
   if (usersError) throw new Error(usersError.message);
-  const rows = (users ?? []) as UserRow[];
+  const rows = (users ?? []) as { id: string }[];
   if (rows.length === 0) return [];
 
   const ids = rows.map((row) => row.id);
@@ -105,7 +94,7 @@ export async function listCheckedIn(): Promise<CheckedInPerson[]> {
   ] = await Promise.all([
       supabase
         .from("applications")
-        .select("user_id, application_type")
+        .select("user_id, application_type, status")
         .in("user_id", ids),
       supabase.from("hacker_applications").select("user_id, first_name, last_name, preferred_name, email").in("user_id", ids),
       supabase.from("mentor_applications").select("user_id, name").in("user_id", ids),
@@ -120,6 +109,7 @@ export async function listCheckedIn(): Promise<CheckedInPerson[]> {
       (apps ?? []) as {
         user_id: string;
         application_type: string | null;
+        status: string | null;
       }[]
     ).map((row) => [row.user_id, row]),
   );
@@ -145,8 +135,10 @@ export async function listCheckedIn(): Promise<CheckedInPerson[]> {
       const mentor = mentorById.get(row.id);
       const judge = judgeById.get(row.id);
       const fromApp = (app?.application_type || "").toLowerCase();
-      const roles = rolesOf(row);
-      if (roles.length === 0 && (fromApp === "hacker" || fromApp === "mentor" || fromApp === "judge")) {
+      const roles: ParticipantRole[] = [];
+      if (fromApp === "judge" && app?.status === "accepted") {
+        roles.push("judge");
+      } else if (fromApp === "hacker" || fromApp === "mentor") {
         roles.push(fromApp);
       }
       const email = hacker?.email || "";
@@ -166,7 +158,7 @@ export async function getCheckedInDetail(userId: string): Promise<CheckedInDetai
   const supabase = createAdminClient();
   const { data: user, error } = await supabase
     .from("users")
-    .select("id, judge")
+    .select("id")
     .eq("id", userId)
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -174,21 +166,23 @@ export async function getCheckedInDetail(userId: string): Promise<CheckedInDetai
 
   const [{ data: app }, { data: hacker }, { data: mentor }, { data: judge }, { data: balance }] =
     await Promise.all([
-      supabase.from("applications").select("application_type").eq("user_id", userId).maybeSingle(),
+      supabase.from("applications").select("application_type, status").eq("user_id", userId).maybeSingle(),
       supabase.from("hacker_applications").select("first_name, last_name, preferred_name, email").eq("user_id", userId).maybeSingle(),
       supabase.from("mentor_applications").select("name").eq("user_id", userId).maybeSingle(),
       supabase.from("judge_applications").select("name").eq("user_id", userId).maybeSingle(),
       supabase.from("user_points").select("balance").eq("user_id", userId).maybeSingle(),
     ]);
 
-  const row = user as UserRow;
-  const application = app as { application_type: string | null } | null;
+  const row = user as { id: string };
+  const application = app as { application_type: string | null; status: string | null } | null;
   const hackerRow = hacker as { first_name: string | null; last_name: string | null; preferred_name: string | null; email: string | null } | null;
   const mentorRow = mentor as { name: string | null } | null;
   const judgeRow = judge as { name: string | null } | null;
   const fromApp = (application?.application_type || "").toLowerCase();
-  const roles = rolesOf(row);
-  if (roles.length === 0 && (fromApp === "hacker" || fromApp === "mentor" || fromApp === "judge")) {
+  const roles: ParticipantRole[] = [];
+  if (fromApp === "judge" && application?.status === "accepted") {
+    roles.push("judge");
+  } else if (fromApp === "hacker" || fromApp === "mentor") {
     roles.push(fromApp);
   }
   const email = hackerRow?.email || "";

@@ -5,7 +5,6 @@ import { z } from "zod";
 import { requireOrganizer } from "@/lib/auth";
 import { applicationDecisionEmail, type ApplicationDecision } from "@/lib/application-emails";
 import { resend } from "@/lib/resend";
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export type OrganizerDecision = "accepted" | "rejected" | "pending";
@@ -15,20 +14,12 @@ const decisionSchema = z.object({
   decision: z.enum(["accepted", "rejected", "pending"]),
 });
 
-function fromAddress() {
-  return process.env.RESEND_FROM || "Hack the Skies <noreply@hacktheskies.com>";
-}
-
 function normalizeType(type: string): "hacker" | "mentor" | "judge" | null {
   const value = type.trim().toLowerCase();
   if (value === "hacker" || value === "mentor" || value === "judge") return value;
   return null;
 }
 
-/**
- * Saves the decision on live portal applications (keyed by applications.id).
- * Emails the applicant when RESEND_KEY is set.
- */
 export async function decideApplications(input: unknown) {
   await requireOrganizer();
   const parsed = decisionSchema.safeParse(input);
@@ -36,7 +27,6 @@ export async function decideApplications(input: unknown) {
 
   const sendsEmail = parsed.data.decision !== "pending";
   const applicationIds = [...new Set(parsed.data.applicationIds)];
-  const supabase = await createClient();
   const admin = createAdminClient();
 
   const { data: knownApplications, error: lookupError } = await admin
@@ -49,7 +39,7 @@ export async function decideApplications(input: unknown) {
     throw new Error("One or more applications could not be found.");
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await admin
     .from("applications")
     .update({
       status: parsed.data.decision,
@@ -59,7 +49,7 @@ export async function decideApplications(input: unknown) {
     .select("user_id");
 
   if (error || (data?.length ?? 0) !== applicationIds.length) {
-    throw new Error("The decision could not be saved.");
+    throw new Error(`The decision could not be saved: ${error?.message ?? "no matching application was updated."}`);
   }
 
   // Re-fetch the updated rows from the view so we have fresh email/first_name
@@ -75,7 +65,7 @@ export async function decideApplications(input: unknown) {
   }
 
   if (!process.env.RESEND_KEY) {
-    await supabase
+    await admin
       .from("applications")
       .update({
         notification_error: "Decision saved. Email skipped because RESEND_KEY is not set.",
@@ -101,6 +91,8 @@ export async function decideApplications(input: unknown) {
       continue;
     }
 
+    if (type !== "hacker") continue;
+
     const email = application.email?.trim();
     if (!email) {
       failedIds.push(application.id);
@@ -112,28 +104,27 @@ export async function decideApplications(input: unknown) {
 
     const content = applicationDecisionEmail({
       firstName,
-      type,
       decision: parsed.data.decision as ApplicationDecision,
     });
 
     const { error: sendError } = await resend.emails.send({
-      from: fromAddress(),
+      from: "Hack the Skies <hello@hacktheskies.com>",
       to: [email],
       subject: content.subject,
-      html: content.html,
+      text: parsed.data.decision,
     });
     if (sendError) failedIds.push(application.id);
     else sentIds.push(application.id);
   }
 
   if (sentIds.length) {
-    await supabase
+    await admin
       .from("applications")
       .update({ notification_sent_at: new Date().toISOString(), notification_error: null })
       .in("user_id", sentIds);
   }
   if (failedIds.length) {
-    await supabase
+    await admin
       .from("applications")
       .update({ notification_error: "Email delivery failed; retry after checking Resend." })
       .in("user_id", failedIds);

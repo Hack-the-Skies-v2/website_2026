@@ -32,6 +32,7 @@ export type PortalPointAction = {
 type HackerPortalProps = {
     name: string;
     email: string;
+    status?: string | null;
     points: number;
     qrCode?: string | null;
     schedule: PortalScheduleEvent[];
@@ -45,6 +46,7 @@ const tabs: PortalTab[] = ["Application Status", "Schedule", "Points", "Shop", "
 export default function HackerPortal({
     name,
     email,
+    status,
     points,
 	qrCode,
 	schedule,
@@ -63,6 +65,12 @@ export default function HackerPortal({
     );
     const [redemptionError, setRedemptionError] = useState<string | null>(null);
     const [, startTransition] = useTransition();
+    const displayStatus = status ? status.charAt(0).toUpperCase() + status.slice(1) : "Pending";
+
+    console.info("[hacker-portal] client status", {
+        status,
+        displayStatus,
+    });
 
     useEffect(() => {
         if (!redemptionError) return;
@@ -148,7 +156,7 @@ export default function HackerPortal({
                                 <div className="flex items-center justify-between">
                                     <p className="font-semibold text-primary">Hacker Application Status</p>
                                     <span className="text-sm font-medium text-neutral-300">
-                                        Pending
+                                        {displayStatus}
                                     </span>
                                 </div>
                             </div>

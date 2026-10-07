@@ -2,7 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import AccountMenu from "@/components/AccountMenu";
 import { createClient } from "@/lib/supabase/server";
-import JudgeForm from "./JudgeForm";
 
 export default async function JudgePage() {
     const supabase = await createClient();
@@ -14,12 +13,16 @@ export default async function JudgePage() {
         redirect("/auth");
     }
 
-    const [{ data: profile }, { data: application }] = await Promise.all([
-        supabase.from("users").select("judge").eq("id", user.id).maybeSingle(),
-        supabase.from("applications").select("application_type").eq("user_id", user.id).maybeSingle(),
+    const [{ data: application }, { data: judgeApplication }] = await Promise.all([
+        supabase.from("applications").select("application_type, status").eq("user_id", user.id).maybeSingle(),
+        supabase.from("judge_applications").select("user_id").eq("user_id", user.id).maybeSingle(),
     ]);
 
-    const isJudge = Boolean(profile?.judge || application?.application_type === "judge");
+    const isJudge = Boolean(
+        application?.application_type === "judge" &&
+        judgeApplication &&
+        application.status === "accepted",
+    );
 
     if (!isJudge) {
         return (
