@@ -95,7 +95,13 @@ export default function JMPortal({
                             <div className="rounded-2xl border border-primary/20 bg-[#141123] p-6">
                                 <div className="flex items-center justify-between">
                                     <p className="font-semibold text-primary">{role} Application Status</p>
-                                    <span className="text-sm font-medium text-neutral-300">
+                                    <span className={`text-sm font-medium ${
+                                        status === "accepted"
+                                            ? "text-emerald-400"
+                                            : status === "rejected"
+                                                ? "text-red-400"
+                                                : "text-neutral-300"
+                                    }`}>
                                         {displayStatus}
                                     </span>
                                 </div>
