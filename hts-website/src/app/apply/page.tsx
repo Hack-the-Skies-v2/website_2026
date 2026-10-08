@@ -41,9 +41,6 @@ export default async function Apply({
                     <h1 className="font-outfit text-4xl font-semibold text-primary drop-shadow-[0_0_12px_rgba(193,185,242,0.5)] md:text-5xl">
                         Applications Closed
                     </h1>
-                    <p className="mt-4 max-w-xl font-outfit text-base leading-relaxed text-primary/80 md:text-lg">
-                        Applications for Hack the Skies have closed.
-                    </p>
                     <div className="mt-8 flex items-center justify-center gap-3">
                         <Link
                             href="/"
