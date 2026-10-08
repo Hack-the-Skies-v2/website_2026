@@ -82,7 +82,7 @@ export default function FAQ() {
                     pointer-events-none
                     absolute
                     right-10
-                    bottom-32
+                    top-[calc(74vh-8rem)]
                     w-36
                     md:right-20
                     md:w-52
