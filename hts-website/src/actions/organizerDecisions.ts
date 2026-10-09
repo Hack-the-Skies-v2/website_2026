@@ -111,7 +111,8 @@ export async function decideApplications(input: unknown) {
       from: "Hack the Skies <hello@hacktheskies.com>",
       to: [email],
       subject: content.subject,
-      text: parsed.data.decision,
+      html: content.html,
+      text: content.text,
     });
     if (sendError) failedIds.push(application.id);
     else sentIds.push(application.id);
