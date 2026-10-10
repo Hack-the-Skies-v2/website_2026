@@ -6,6 +6,7 @@ import CheckedInList from "@/components/CheckedInList";
 import OrganizerDashboard, { type OrganizerApplication } from "@/components/OrganizerDashboard";
 import OrganizerQrScanner from "@/components/OrganizerQrScanner";
 import ScheduleManager, { type ScheduleEvent } from "@/components/ScheduleManager";
+import PrizeManager, { type OrganizerPrize } from "@/components/PrizeManager";
 import type { CheckedInPerson } from "@/lib/participants/checked-in";
 
 export default function OrganizerSections({
@@ -15,6 +16,8 @@ export default function OrganizerSections({
     loadError,
     checkedIn,
     checkedInError,
+    prizes,
+    prizesError,
 }: {
     applications: OrganizerApplication[];
     scheduleEvents: ScheduleEvent[];
@@ -22,6 +25,8 @@ export default function OrganizerSections({
     loadError: string | null;
     checkedIn: CheckedInPerson[];
     checkedInError: string | null;
+    prizes: OrganizerPrize[];
+    prizesError: string | null;
 }) {
     const router = useRouter();
 
@@ -54,6 +59,12 @@ export default function OrganizerSections({
                 <summary className="cursor-pointer px-4 py-4 text-lg font-semibold text-neutral-900">Schedule</summary>
                 <div className="border-t border-neutral-200 p-4 md:p-5">
                     {scheduleError ? <p className="text-sm text-neutral-600">{scheduleError}</p> : <ScheduleManager initialEvents={scheduleEvents} />}
+                </div>
+            </details>
+            <details open className="rounded-lg border border-neutral-200">
+                <summary className="cursor-pointer px-4 py-4 text-lg font-semibold text-neutral-900">Prizes</summary>
+                <div className="border-t border-neutral-200 p-4 md:p-5">
+                    {prizesError ? <p className="text-sm text-neutral-600">{prizesError}</p> : <PrizeManager initialPrizes={prizes} />}
                 </div>
             </details>
         </div>

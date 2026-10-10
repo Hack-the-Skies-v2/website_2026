@@ -17,6 +17,8 @@ export type PortalPrize = {
     quantity: number | null;
     max_redemptions: number | null;
     remaining_quantity: number | null;
+    image_path: string | null;
+    image_url: string | null;
 };
 
 export type PortalPointAction = {
@@ -256,9 +258,13 @@ export default function HackerPortal({
                                             className="flex min-h-48 flex-col rounded-2xl border border-primary/20 bg-[#141123] p-5"
                                         >
                                             <img
-                                                src="/favicon.ico"
+                                                src={prize.image_url ?? "/favicon.ico"}
                                                 alt=""
                                                 className="mb-4 h-16 w-16 rounded-xl object-contain"
+                                                onError={(event) => {
+                                                    event.currentTarget.onerror = null;
+                                                    event.currentTarget.src = "/favicon.ico";
+                                                }}
                                             />
                                             <div className="flex-1">
                                                 <p className="text-lg font-semibold text-primary">{prize.name}</p>

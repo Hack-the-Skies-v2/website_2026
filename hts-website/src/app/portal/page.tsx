@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { HTS_REF_COOKIE, recordReferral } from "@/lib/referral";
 import { getApplicationAccess } from "@/lib/applications/access";
 import { ensureQrCodeLink } from "@/lib/qr-code";
+import { getOrganizerPrizeImageUrl } from "@/actions/organizerPrizes";
 import type { PortalScheduleEvent } from "@/components/PortalSchedule";
 import HackerPortal, { type PortalPointAction, type PortalPrize } from "./HackerPortal";
 
@@ -30,7 +31,7 @@ export default async function PortalPage() {
 		supabase.from("schedule_events").select("id, title, description, type, start_time, end_time, location").order("start_time"),
 		supabase
 			.from("point_prize_inventory")
-			.select("id, name, description, points_required, quantity, max_redemptions, remaining_quantity")
+			.select("id, name, description, points_required, quantity, max_redemptions, remaining_quantity, image_path")
 			.eq("active", true)
 			.order("points_required")
 			.order("name"),
@@ -52,6 +53,11 @@ export default async function PortalPage() {
 	if (pointActionsError) throw new Error(`Failed to load point actions: ${pointActionsError.message}`);
 	if (pointEarningsError) throw new Error(`Failed to load point earnings: ${pointEarningsError.message}`);
 	if (prizeRedemptionsError) throw new Error(`Failed to load prize redemptions: ${prizeRedemptionsError.message}`);
+
+	const portalPrizes: PortalPrize[] = await Promise.all((prizes ?? []).map(async (prize) => ({
+		...prize,
+		image_url: await getOrganizerPrizeImageUrl(prize.image_path),
+	})));
 
 	const earnedCounts = new Map<string, number>();
 	for (const earning of pointEarnings ?? []) {
@@ -103,7 +109,7 @@ export default async function PortalPage() {
 
 	return (
 		<>
-			<HackerPortal name={hackerName} email={user.email ?? ""} status={access.applicationStatus} points={userPoints?.balance ?? 0} qrCode={qrCode} schedule={schedule} prizes={(prizes ?? []) as PortalPrize[]} userPrizeRedemptionCounts={userPrizeRedemptionCounts} pointActions={portalPointActions} />
+				<HackerPortal name={hackerName} email={user.email ?? ""} status={access.applicationStatus} points={userPoints?.balance ?? 0} qrCode={qrCode} schedule={schedule} prizes={portalPrizes} userPrizeRedemptionCounts={userPrizeRedemptionCounts} pointActions={portalPointActions} />
 		</>
 	);
 }
