@@ -1,7 +1,5 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import AccountMenu from "@/components/AccountMenu";
 import { createClient } from "@/lib/supabase/server";
 import { HTS_REF_COOKIE, recordReferral } from "@/lib/referral";
 import { getApplicationAccess } from "@/lib/applications/access";
@@ -23,6 +21,43 @@ export default async function PortalPage() {
 		try {
 			cookieStore.delete(HTS_REF_COOKIE);
 		} catch {}
+	}
+
+	const access = await getApplicationAccess(supabase, user.id);
+
+	if (access.isJudge || access.isMentor) {
+		redirect("/jm-portal");
+	}
+
+	if (!access.isHacker) {
+		redirect("/apply");
+	}
+
+	const { data: hackerApplication, error: hackerApplicationError } = await supabase
+		.from("hacker_applications")
+		.select("first_name, last_name, preferred_name")
+		.eq("user_id", user.id)
+		.maybeSingle();
+	if (hackerApplicationError) throw new Error(`Failed to load hacker application name: ${hackerApplicationError.message}`);
+	const hackerName =
+		hackerApplication?.preferred_name?.trim() ||
+		[hackerApplication?.first_name, hackerApplication?.last_name].filter(Boolean).join(" ").trim() ||
+		"Hacker";
+
+	if (access.isHackerRejected) {
+		return (
+			<HackerPortal
+				name={hackerName}
+				email={user.email ?? ""}
+				status={access.applicationStatus}
+				points={0}
+				schedule={[]}
+				prizes={[]}
+				userPrizeRedemptionCounts={{}}
+				pointActions={[]}
+				restricted
+			/>
+		);
 	}
 
 	const [{ data: profile }, { data: userPoints }, { data: events }, { data: prizes, error: prizesError }, { data: pointActions, error: pointActionsError }, { data: pointEarnings, error: pointEarningsError }, { data: prizeRedemptions, error: prizeRedemptionsError }] = await Promise.all([
@@ -72,29 +107,10 @@ export default async function PortalPage() {
 		userPrizeRedemptionCounts[redemption.prize_id] = (userPrizeRedemptionCounts[redemption.prize_id] ?? 0) + 1;
 	}
 
-	const access = await getApplicationAccess(supabase, user.id);
-
-	if (access.isJudge || access.isMentor) {
-		redirect("/jm-portal");
-	}
-
-	if (!access.isHacker) {
-		redirect("/apply");
-	}
 	console.info("[hacker-portal] status passed to client", {
 		userId: user.id,
 		applicationStatus: access.applicationStatus,
 	});
-	const { data: hackerApplication, error: hackerApplicationError } = await supabase
-		.from("hacker_applications")
-		.select("first_name, last_name, preferred_name")
-		.eq("user_id", user.id)
-		.maybeSingle();
-	if (hackerApplicationError) throw new Error(`Failed to load hacker application name: ${hackerApplicationError.message}`);
-	const hackerName =
-		hackerApplication?.preferred_name?.trim() ||
-		[hackerApplication?.first_name, hackerApplication?.last_name].filter(Boolean).join(" ").trim() ||
-		"Hacker";
 	const qrCode = profile?.qr_code_link ?? await ensureQrCodeLink(user.id);
 
 	const schedule: PortalScheduleEvent[] = (events ?? []).map((item) => ({

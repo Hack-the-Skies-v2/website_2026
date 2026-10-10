@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { getApplicationAccess } from "@/lib/applications/access";
 
 const prizeIdSchema = z.uuid();
 
@@ -17,6 +18,11 @@ export async function redeemPrize(input: unknown): Promise<RedeemPrizeResult> {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: "You must be signed in to redeem a prize." };
+
+    const access = await getApplicationAccess(supabase, user.id);
+    if (!access.isHacker || access.isHackerRejected) {
+        return { success: false, error: "Prize redemption is unavailable for rejected applications." };
+    }
 
     const { data, error } = await supabase.rpc("redeem_point_prize", {
         p_prize_id: parsed.data,

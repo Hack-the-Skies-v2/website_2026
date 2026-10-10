@@ -8,6 +8,7 @@ export type ApplicationAccess = {
     applicationType: "hacker" | "judge" | "mentor" | null;
     applicationStatus: string | null;
     isHacker: boolean;
+    isHackerRejected: boolean;
     isJudge: boolean;
     isMentor: boolean;
 };
@@ -68,6 +69,7 @@ export async function getApplicationAccess(
         hackerApp ||
         (application && !isJudge && !isMentor),
     );
+    const isHackerRejected = isHacker && application?.status?.trim().toLowerCase() === "rejected";
 
     console.info("[application-access] status lookup", {
         userId,
@@ -86,6 +88,7 @@ export async function getApplicationAccess(
         hasJudgeApplication: Boolean(judgeApp),
         hasMentorApplication: Boolean(mentorApp),
         isHacker,
+        isHackerRejected,
         isJudge,
         isMentor,
     });
@@ -94,6 +97,7 @@ export async function getApplicationAccess(
         applicationType,
         applicationStatus: application?.status ?? null,
         isHacker,
+        isHackerRejected,
         isJudge,
         isMentor,
     };

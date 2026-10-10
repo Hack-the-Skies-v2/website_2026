@@ -41,6 +41,7 @@ type HackerPortalProps = {
     prizes: PortalPrize[];
     userPrizeRedemptionCounts: Record<string, number>;
     pointActions: PortalPointAction[];
+    restricted?: boolean;
 };
 
 const tabs: PortalTab[] = ["Application Status", "Schedule", "Points", "Shop", "QR code"];
@@ -55,7 +56,9 @@ export default function HackerPortal({
 	prizes,
 	userPrizeRedemptionCounts,
 	pointActions,
+    restricted = false,
 }: HackerPortalProps) {
+    const availableTabs = restricted ? ["Application Status" as const] : tabs;
     const [activeTab, setActiveTab] = useState<PortalTab>("Application Status");
     const [currentPoints, setCurrentPoints] = useState(points);
     const [redeemingPrizeId, setRedeemingPrizeId] = useState<string | null>(null);
@@ -128,7 +131,7 @@ export default function HackerPortal({
                         </Link>
                     </div>
                     <nav aria-label="Hacker portal sections" className="space-y-1">
-                        {tabs.map((tab) => (
+                        {availableTabs.map((tab) => (
                             <button
                                 key={tab}
                                 type="button"
