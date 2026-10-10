@@ -11,6 +11,7 @@ const scheduleEventTypes = [
     "meal",
     "ceremony",
     "check_in",
+    "activity",
     "other",
 ] as const;
 

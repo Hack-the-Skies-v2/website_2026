@@ -8,7 +8,7 @@ import {
     updateScheduleEvent,
 } from "@/actions/scheduleEvents";
 
-const eventTypes = ["workshop", "event", "meal", "ceremony", "check_in", "other"] as const;
+const eventTypes = ["workshop", "event", "meal", "ceremony", "check_in", "activity", "other"] as const;
 
 export type ScheduleEvent = {
     id: string;
