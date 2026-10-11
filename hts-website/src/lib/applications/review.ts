@@ -123,6 +123,9 @@ const VIEW_COLUMNS =
 const HACKER_DETAIL_COLUMNS =
   "user_id, first_name, last_name, preferred_name, pronouns, pronouns_other, email, teammates, dietary_restrictions, dietary_other, accessibility_accommodations, accessibility_other, school_name, grade, coding_experience, goals, goals_other, want_to_see, favourite_song, heard_about_hts, heard_about_hts_other, application_questions_1, application_questions_2, resume_path, resume_name, linkedin_portfolio, github_devpost, other_comments";
 
+const ORGANIZER_HACKER_COLUMNS =
+  "user_id, first_name, last_name, email, school_name, application_questions_1, application_questions_2";
+
 function hackerAnswerFallback(hacker: HackerRow | null | undefined): string[] | null {
   if (!hacker) return null;
   return [hacker.application_questions_1 || "", hacker.application_questions_2 || ""];
@@ -476,19 +479,22 @@ export async function listOrganizerApplications(
   const ids = [...new Set(rows.map((row) => row.id!).filter(Boolean))];
   const [{ data: hackers }, { data: mentors }, { data: judges }, gradesByApp] =
     await Promise.all([
-      supabase.from("hacker_applications").select(HACKER_DETAIL_COLUMNS).in("user_id", ids),
+      supabase
+        .from("hacker_applications")
+        .select(ORGANIZER_HACKER_COLUMNS)
+        .in("user_id", ids.filter((id) => rows.some((row) => row.id === id && normalizeType(row.type) === "hacker"))),
       supabase
         .from("mentor_applications")
         .select(
           "user_id, name, university_college, program_and_year_of_study, linkedin_portfolio_github_url, mentoring_areas, technologies_and_tools, mentoring_experience, mentoring_goals, available_for_full_event, times_unavailable",
         )
-        .in("user_id", ids),
+        .in("user_id", ids.filter((id) => rows.some((row) => row.id === id && normalizeType(row.type) === "mentor"))),
       supabase
         .from("judge_applications")
         .select(
           "user_id, name, company_organization, job_title, linkedin_url, industry_field, expertise, years_of_professional_experience, strong_project_description, professional_background, judging_experience, available_for_full_judging_period",
         )
-        .in("user_id", ids),
+        .in("user_id", ids.filter((id) => rows.some((row) => row.id === id && normalizeType(row.type) === "judge"))),
       loadGradesByApp(supabase, ids),
     ]);
 

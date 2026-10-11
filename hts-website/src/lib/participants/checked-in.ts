@@ -31,6 +31,11 @@ export type CheckedInDetail = CheckedInPerson & {
   pointsLog: PointEntry[];
 };
 
+export type CheckedInOverview = {
+  people: CheckedInPerson[];
+  eventCheckIns: Record<string, CheckedInPerson[]>;
+};
+
 function displayName(first: string, last: string, fallback: string) {
   const name = `${first} ${last}`.trim();
   return name || fallback;
@@ -65,15 +70,15 @@ function resolveParticipantName(
   return name;
 }
 
-export async function listCheckedIn(): Promise<CheckedInPerson[]> {
+export async function listCheckedInWithAttendance(): Promise<CheckedInOverview> {
   const supabase = createAdminClient();
   const { data: attendance, error: attendanceError } = await supabase
     .from("schedule_attendance")
-    .select("user_id");
+    .select("event_id, user_id");
 
   if (attendanceError) throw new Error(attendanceError.message);
   const checkedInIds = [...new Set((attendance ?? []).map((row) => row.user_id).filter(Boolean))];
-  if (checkedInIds.length === 0) return [];
+  if (checkedInIds.length === 0) return { people: [], eventCheckIns: {} };
 
   const { data: users, error: usersError } = await supabase
     .from("users")
@@ -82,7 +87,7 @@ export async function listCheckedIn(): Promise<CheckedInPerson[]> {
 
   if (usersError) throw new Error(usersError.message);
   const rows = (users ?? []) as { id: string }[];
-  if (rows.length === 0) return [];
+  if (rows.length === 0) return { people: [], eventCheckIns: {} };
 
   const ids = rows.map((row) => row.id);
   const [
@@ -128,7 +133,7 @@ export async function listCheckedIn(): Promise<CheckedInPerson[]> {
     ((balances ?? []) as { user_id: string; balance: number | null }[]).map((row) => [row.user_id, row.balance ?? 0]),
   );
 
-  return rows
+  const people = rows
     .map((row) => {
       const app = appById.get(row.id);
       const hacker = hackerById.get(row.id);
@@ -152,6 +157,21 @@ export async function listCheckedIn(): Promise<CheckedInPerson[]> {
       };
     })
     .sort((a, b) => a.name.localeCompare(b.name));
+
+  const peopleById = new Map(people.map((person) => [person.id, person]));
+  const eventCheckIns = (attendance ?? []).reduce<Record<string, CheckedInPerson[]>>((groups, item) => {
+    const person = peopleById.get(item.user_id);
+    if (!person) return groups;
+    groups[item.event_id] = [...(groups[item.event_id] ?? []), person];
+    return groups;
+  }, {});
+
+  return { people, eventCheckIns };
+}
+
+export async function listCheckedIn(): Promise<CheckedInPerson[]> {
+  const result = await listCheckedInWithAttendance();
+  return result.people;
 }
 
 export async function getCheckedInDetail(userId: string): Promise<CheckedInDetail | null> {

@@ -51,28 +51,3 @@ export async function ensureQrCodeLink(userId: string) {
     if (existingUser?.qr_code_link) return existingUser.qr_code_link;
     throw new Error("Could not save the QR code link.");
 }
-
-export async function ensureApplicationQrCodeLinks() {
-    const admin = createAdminClient();
-    const { data: applications, error: applicationsError } = await admin
-        .from("applications")
-        .select("user_id");
-
-    if (applicationsError) throw applicationsError;
-
-    const userIds = [...new Set((applications ?? []).map((application) => application.user_id))];
-    if (userIds.length === 0) return;
-
-    const { data: users, error: usersError } = await admin
-        .from("users")
-        .select("id, qr_code_link")
-        .in("id", userIds);
-
-    if (usersError) throw usersError;
-
-    await Promise.all(
-        (users ?? [])
-            .filter((user) => !user.qr_code_link)
-            .map((user) => ensureQrCodeLink(user.id)),
-    );
-}

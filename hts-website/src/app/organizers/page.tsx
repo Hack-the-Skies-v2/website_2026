@@ -3,10 +3,9 @@ import OrganizerSections from "@/components/OrganizerSections";
 import type { OrganizerApplication } from "@/components/OrganizerDashboard";
 import type { ScheduleEvent } from "@/components/ScheduleManager";
 import { listOrganizerApplications } from "@/lib/applications/review";
-import { listCheckedIn } from "@/lib/participants/checked-in";
+import { listCheckedInWithAttendance } from "@/lib/participants/checked-in";
 import type { CheckedInPerson } from "@/lib/participants/checked-in";
 import { requireOrganizer } from "@/lib/auth";
-import { ensureApplicationQrCodeLinks } from "@/lib/qr-code";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getOrganizerPrizeImageUrl } from "@/actions/organizerPrizes";
@@ -27,13 +26,6 @@ export default async function OrganizersPage() {
     let prizes: OrganizerPrize[] = [];
     let prizesError: string | null = null;
     try {
-        await ensureApplicationQrCodeLinks();
-    } catch (error) {
-        loadError = error instanceof Error
-            ? `Could not prepare application QR codes: ${error.message}`
-            : "Could not prepare application QR codes.";
-    }
-    try {
         applications = await listOrganizerApplications(organizer.id);
     } catch (error) {
         loadError = error instanceof Error
@@ -52,24 +44,11 @@ export default async function OrganizersPage() {
         scheduleError = error instanceof Error ? error.message : "Could not load schedule events.";
     }
     try {
-        checkedIn = await listCheckedIn();
+        const checkedInResult = await listCheckedInWithAttendance();
+        checkedIn = checkedInResult.people;
+        eventCheckIns = checkedInResult.eventCheckIns;
     } catch (error) {
         checkedInError = error instanceof Error ? error.message : "Could not load checked-in people.";
-    }
-    try {
-        const admin = createAdminClient();
-        const { data, error } = await admin
-            .from("schedule_attendance")
-            .select("event_id, user_id");
-        if (error) throw error;
-        const peopleById = new Map(checkedIn.map((person) => [person.id, person]));
-        eventCheckIns = (data ?? []).reduce<Record<string, CheckedInPerson[]>>((groups, attendance) => {
-            const person = peopleById.get(attendance.user_id);
-            if (person) groups[attendance.event_id] = [...(groups[attendance.event_id] ?? []), person];
-            return groups;
-        }, {});
-    } catch (error) {
-        scheduleError = scheduleError ?? (error instanceof Error ? error.message : "Could not load event check-ins.");
     }
     try {
         const admin = createAdminClient();

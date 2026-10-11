@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import CheckedInList from "@/components/CheckedInList";
 import OrganizerDashboard, { type OrganizerApplication } from "@/components/OrganizerDashboard";
 import OrganizerQrScanner from "@/components/OrganizerQrScanner";
@@ -31,12 +30,6 @@ export default function OrganizerSections({
     prizesError: string | null;
 }) {
     const router = useRouter();
-
-    useEffect(() => {
-        const refresh = () => router.refresh();
-        const interval = window.setInterval(refresh, 5000);
-        return () => window.clearInterval(interval);
-    }, [router]);
     return (
         <div className="space-y-4">
             <details open className="rounded-lg border border-neutral-200">

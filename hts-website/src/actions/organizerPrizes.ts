@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireOrganizer } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { unstable_cache } from "next/cache";
 
 const prizeIdSchema = z.uuid();
 const prizeFieldsSchema = z.object({
@@ -219,8 +220,15 @@ export async function deleteOrganizerPrizeImage(id: string): Promise<PrizeResult
 
 export async function getOrganizerPrizeImageUrl(path: string | null) {
     if (!path) return null;
-    const supabase = createAdminClient();
-    const { data, error } = await supabase.storage.from(imageBucket).createSignedUrl(path, 60 * 60);
-    if (error) throw new Error(`Could not load prize image: ${error.message}`);
-    return data.signedUrl;
+    const getCachedUrl = unstable_cache(
+        async () => {
+            const supabase = createAdminClient();
+            const { data, error } = await supabase.storage.from(imageBucket).createSignedUrl(path, 60 * 60);
+            if (error) throw new Error(`Could not load prize image: ${error.message}`);
+            return data.signedUrl;
+        },
+        ["prize-image-url", path],
+        { revalidate: 50 * 60 },
+    );
+    return getCachedUrl();
 }
