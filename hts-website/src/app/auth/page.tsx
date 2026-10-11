@@ -118,7 +118,7 @@ function AuthContent() {
     const authError = searchParams.get("error");
     const authErrorEmail = searchParams.get("email");
     const blockAutoRedirect =
-        authError === "not_admin" || authError === "config";
+        authError === "not_allowlisted" || authError === "config";
     const nextPath =
         nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
             ? nextParam
@@ -343,13 +343,12 @@ function AuthContent() {
                 </div>
 
                 <div className="rounded-3xl border border-primary/25 bg-[#171329] p-6 sm:p-8">
-                    {authError === "not_admin" ? (
+                    {authError === "not_allowlisted" ? (
                         <div className="mb-5 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm font-outfit text-amber-100">
                             {authErrorEmail
-                                ? `${authErrorEmail} is signed in but is not marked admin.`
-                                : "This account is not marked admin."}{" "}
-                            Ask another admin to set <code className="text-star">admin = true</code> for
-                            your user, or sign in with an organizer account.
+                                ? `${authErrorEmail} is signed in but is not on the organizer allowlist.`
+                                : "This account is not on the organizer allowlist."}{" "}
+                            Ask an organizer to add your email, or sign in with an organizer account.
                         </div>
                     ) : null}
                     {authError === "config" ? (

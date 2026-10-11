@@ -8,7 +8,7 @@ export type Organizer = {
   email: string;
 };
 
-/** Organizer console uses the existing admin flag on public.users. */
+/** Organizer console access is controlled by the normalized email allowlist. */
 export async function getOrganizer(): Promise<Organizer | null> {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
     return null;
@@ -20,13 +20,13 @@ export async function getOrganizer(): Promise<Organizer | null> {
   } = await supabase.auth.getUser();
   if (!user?.email) return null;
 
-  const { data: profile } = await supabase
-    .from("users")
-    .select("id, admin")
-    .eq("id", user.id)
+  const { data: organizer } = await supabase
+    .from("organizer_allowlist")
+    .select("email")
+    .ilike("email", user.email.trim())
     .maybeSingle();
 
-  if (!profile?.admin) return null;
+  if (!organizer) return null;
   return { id: user.id, email: user.email };
 }
 
@@ -44,15 +44,15 @@ export async function requireOrganizer(): Promise<Organizer> {
     redirect("/auth?next=/organizers");
   }
 
-  const { data: profile } = await supabase
-    .from("users")
-    .select("id, admin")
-    .eq("id", user.id)
+  const { data: organizer } = await supabase
+    .from("organizer_allowlist")
+    .select("email")
+    .ilike("email", user.email.trim())
     .maybeSingle();
 
-  if (!profile?.admin) {
+  if (!organizer) {
     redirect(
-      `/organizers/sign-in?error=not_admin&email=${encodeURIComponent(user.email)}`,
+      `/organizers/sign-in?error=not_allowlisted&email=${encodeURIComponent(user.email)}`,
     );
   }
 
