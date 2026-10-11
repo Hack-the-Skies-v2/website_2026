@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import type { CheckedInPerson } from "@/lib/participants/checked-in";
 import {
     createScheduleEvent,
     deleteScheduleEvent,
@@ -59,7 +60,13 @@ function formFromEvent(event: ScheduleEvent): EventForm {
     };
 }
 
-export default function ScheduleManager({ initialEvents }: { initialEvents: ScheduleEvent[] }) {
+export default function ScheduleManager({
+    initialEvents,
+    eventCheckIns,
+}: {
+    initialEvents: ScheduleEvent[];
+    eventCheckIns: Record<string, CheckedInPerson[]>;
+}) {
     const router = useRouter();
     const [events, setEvents] = useState(initialEvents);
     const [form, setForm] = useState<EventForm>(emptyForm);
@@ -68,6 +75,7 @@ export default function ScheduleManager({ initialEvents }: { initialEvents: Sche
     const [notice, setNotice] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
+    const [visibleCheckIns, setVisibleCheckIns] = useState<string | null>(null);
 
     useEffect(() => {
         setEvents(initialEvents);
@@ -211,10 +219,34 @@ export default function ScheduleManager({ initialEvents }: { initialEvents: Sche
                                         {event.description ? <p className="mt-3 whitespace-pre-wrap text-sm text-neutral-700">{event.description}</p> : null}
                                     </div>
                                     <div className="flex shrink-0 gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setVisibleCheckIns((current) => current === event.id ? null : event.id)}
+                                            className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+                                        >
+                                            {visibleCheckIns === event.id ? "Hide checked in" : `View checked in (${eventCheckIns[event.id]?.length ?? 0})`}
+                                        </button>
                                         <button type="button" disabled={isPending} onClick={() => openEdit(event)} className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50">Edit</button>
                                         <button type="button" disabled={isPending} onClick={() => remove(event)} className="rounded-md border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50">Delete</button>
                                     </div>
                                 </div>
+                                {visibleCheckIns === event.id ? (
+                                    <div className="mt-4 rounded-md bg-neutral-50 p-3">
+                                        <h4 className="text-sm font-semibold text-neutral-900">Checked in ({eventCheckIns[event.id]?.length ?? 0})</h4>
+                                        {(eventCheckIns[event.id]?.length ?? 0) === 0 ? (
+                                            <p className="mt-2 text-sm text-neutral-500">No one has checked in to this event yet.</p>
+                                        ) : (
+                                            <ul className="mt-2 divide-y divide-neutral-200 text-sm">
+                                                {eventCheckIns[event.id].map((person) => (
+                                                    <li key={person.id} className="flex flex-wrap justify-between gap-2 py-2 first:pt-0 last:pb-0">
+                                                        <span className="font-medium text-neutral-900">{person.name}</span>
+                                                        <span className="text-neutral-600">{person.email || "No email"}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </div>
+                                ) : null}
                             </article>
                         ))}
                     </div>

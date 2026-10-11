@@ -23,6 +23,7 @@ export default async function OrganizersPage() {
     let scheduleError: string | null = null;
     let checkedIn: CheckedInPerson[] = [];
     let checkedInError: string | null = null;
+    let eventCheckIns: Record<string, CheckedInPerson[]> = {};
     let prizes: OrganizerPrize[] = [];
     let prizesError: string | null = null;
     try {
@@ -58,8 +59,23 @@ export default async function OrganizersPage() {
     try {
         const admin = createAdminClient();
         const { data, error } = await admin
-            .from("point_prizes")
-            .select("id, name, description, points_required, quantity, max_redemptions, active, image_path")
+            .from("schedule_attendance")
+            .select("event_id, user_id");
+        if (error) throw error;
+        const peopleById = new Map(checkedIn.map((person) => [person.id, person]));
+        eventCheckIns = (data ?? []).reduce<Record<string, CheckedInPerson[]>>((groups, attendance) => {
+            const person = peopleById.get(attendance.user_id);
+            if (person) groups[attendance.event_id] = [...(groups[attendance.event_id] ?? []), person];
+            return groups;
+        }, {});
+    } catch (error) {
+        scheduleError = scheduleError ?? (error instanceof Error ? error.message : "Could not load event check-ins.");
+    }
+    try {
+        const admin = createAdminClient();
+        const { data, error } = await admin
+            .from("point_prize_inventory")
+            .select("id, name, description, points_required, quantity, max_redemptions, remaining_quantity, active, image_path")
             .order("points_required")
             .order("name");
         if (error) throw error;
@@ -96,6 +112,7 @@ export default async function OrganizersPage() {
                     loadError={loadError}
                     checkedIn={checkedIn}
                     checkedInError={checkedInError}
+                    eventCheckIns={eventCheckIns}
                     prizes={prizes}
                     prizesError={prizesError}
                 />

@@ -16,6 +16,7 @@ export default function OrganizerSections({
     loadError,
     checkedIn,
     checkedInError,
+    eventCheckIns,
     prizes,
     prizesError,
 }: {
@@ -25,6 +26,7 @@ export default function OrganizerSections({
     loadError: string | null;
     checkedIn: CheckedInPerson[];
     checkedInError: string | null;
+    eventCheckIns: Record<string, CheckedInPerson[]>;
     prizes: OrganizerPrize[];
     prizesError: string | null;
 }) {
@@ -58,7 +60,7 @@ export default function OrganizerSections({
             <details open className="rounded-lg border border-neutral-200">
                 <summary className="cursor-pointer px-4 py-4 text-lg font-semibold text-neutral-900">Schedule</summary>
                 <div className="border-t border-neutral-200 p-4 md:p-5">
-                    {scheduleError ? <p className="text-sm text-neutral-600">{scheduleError}</p> : <ScheduleManager initialEvents={scheduleEvents} />}
+                    {scheduleError ? <p className="text-sm text-neutral-600">{scheduleError}</p> : <ScheduleManager initialEvents={scheduleEvents} eventCheckIns={eventCheckIns} />}
                 </div>
             </details>
             <details open className="rounded-lg border border-neutral-200">

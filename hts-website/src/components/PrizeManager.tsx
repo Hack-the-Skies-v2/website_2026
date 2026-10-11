@@ -15,6 +15,7 @@ export type OrganizerPrize = {
     description: string | null;
     points_required: number;
     quantity: number | null;
+    remaining_quantity: number | null;
     max_redemptions: number | null;
     active: boolean;
     image_path: string | null;
@@ -233,7 +234,7 @@ export default function PrizeManager({ initialPrizes }: { initialPrizes: Organiz
                                     {prize.image_url ? <img src={prize.image_url} alt="" className="h-20 w-20 rounded-md border border-neutral-200 object-cover" /> : <div className="h-20 w-20 rounded-md bg-neutral-100" />}
                                     <div>
                                         <h3 className="font-semibold text-neutral-900">{prize.name}</h3>
-                                        <p className="mt-1 text-sm text-neutral-600">{prize.points_required} points · {prize.quantity == null ? "Unlimited quantity" : `${prize.quantity} available`} · {prize.active ? "Active" : "Inactive"}</p>
+                                        <p className="mt-1 text-sm text-neutral-600">{prize.points_required} points · {prize.remaining_quantity == null ? "Unlimited quantity" : `${prize.remaining_quantity} remaining${prize.quantity == null ? "" : ` of ${prize.quantity}`}`} · {prize.active ? "Active" : "Inactive"}</p>
                                         {prize.description ? <p className="mt-2 max-w-2xl text-sm text-neutral-600">{prize.description}</p> : null}
                                     </div>
                                 </div>
