@@ -92,7 +92,6 @@ export default async function JMPortalPage() {
 			name={applicationName || role}
 			email={user.email ?? ""}
 			role={role}
-			isJudge={isJudge}
 			status={access.applicationStatus ?? "pending"}
 			qrCode={profile?.qr_code_link ?? null}
 				schedule={schedule}
