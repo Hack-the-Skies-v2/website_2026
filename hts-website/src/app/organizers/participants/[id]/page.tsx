@@ -47,7 +47,13 @@ export default async function CheckedInPersonPage({
                 <li key={entry.id} className="flex items-baseline justify-between gap-4 py-3 text-sm">
                   <span>
                     {entry.reason}
-                    <span className="ml-2 text-neutral-400">{new Date(entry.at).toLocaleString()}</span>
+                    <span className="ml-2 text-neutral-400">
+                      {new Date(entry.at).toLocaleString([], {
+                        timeZone: "America/Toronto",
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      })}
+                    </span>
                   </span>
                   <span>{entry.amount > 0 ? `+${entry.amount}` : entry.amount}</span>
                 </li>
