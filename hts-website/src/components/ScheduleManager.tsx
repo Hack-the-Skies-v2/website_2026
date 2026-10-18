@@ -8,6 +8,12 @@ import {
     deleteScheduleEvent,
     updateScheduleEvent,
 } from "@/actions/scheduleEvents";
+import {
+    eventDateTimeInput,
+    eventDateTimeLabel,
+    eventLocalDateTimeToUtc,
+    EVENT_TIME_ZONE,
+} from "@/lib/event-time";
 
 const eventTypes = ["workshop", "event", "meal", "ceremony", "check_in", "activity", "other"] as const;
 
@@ -39,23 +45,13 @@ const emptyForm: EventForm = {
     location: "",
 };
 
-function dateTimeValue(value: string) {
-    const date = new Date(value);
-    const pad = (part: number) => String(part).padStart(2, "0");
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
-
-function displayDate(value: string) {
-    return new Date(value).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
-}
-
 function formFromEvent(event: ScheduleEvent): EventForm {
     return {
         title: event.title,
         type: event.type,
         description: event.description ?? "",
-        startTime: dateTimeValue(event.start_time),
-        endTime: dateTimeValue(event.end_time),
+        startTime: eventDateTimeInput(event.start_time),
+        endTime: eventDateTimeInput(event.end_time),
         location: event.location ?? "",
     };
 }
@@ -105,7 +101,16 @@ export default function ScheduleManager({
             setError("Title, start time, and end time are required.");
             return;
         }
-        if (new Date(form.endTime) <= new Date(form.startTime)) {
+        let startTime: string;
+        let endTime: string;
+        try {
+            startTime = eventLocalDateTimeToUtc(form.startTime);
+            endTime = eventLocalDateTimeToUtc(form.endTime);
+        } catch (caught) {
+            setError(caught instanceof Error ? caught.message : "Event times must be valid.");
+            return;
+        }
+        if (new Date(endTime) <= new Date(startTime)) {
             setError("End time must be after start time.");
             return;
         }
@@ -114,8 +119,8 @@ export default function ScheduleManager({
             try {
                 const values = {
                     ...form,
-                    startTime: new Date(form.startTime).toISOString(),
-                    endTime: new Date(form.endTime).toISOString(),
+                    startTime,
+                    endTime,
                 };
                 if (editingId) {
                     const result = await updateScheduleEvent({ ...values, id: editingId });
@@ -192,8 +197,8 @@ export default function ScheduleManager({
                     <div className="grid gap-4 md:grid-cols-2">
                         <label className="text-sm font-medium text-neutral-700">Title<input value={form.title} onChange={(event) => updateField("title", event.target.value)} className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 font-normal text-neutral-900 outline-none focus:border-neutral-500" required /></label>
                         <label className="text-sm font-medium text-neutral-700">Type<select value={form.type} onChange={(event) => updateField("type", event.target.value)} className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 font-normal text-neutral-900 outline-none focus:border-neutral-500">{eventTypes.map((type) => <option key={type} value={type}>{type.replace("_", " ")}</option>)}</select></label>
-                        <label className="text-sm font-medium text-neutral-700">Start time<input type="datetime-local" value={form.startTime} onChange={(event) => updateDateTimeField("startTime", event.target.value)} min="0001-01-01T00:00" max="9999-12-31T23:59" className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 font-normal text-neutral-900 outline-none focus:border-neutral-500" required /></label>
-                        <label className="text-sm font-medium text-neutral-700">End time<input type="datetime-local" value={form.endTime} onChange={(event) => updateDateTimeField("endTime", event.target.value)} min="0001-01-01T00:00" max="9999-12-31T23:59" className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 font-normal text-neutral-900 outline-none focus:border-neutral-500" required /></label>
+                        <label className="text-sm font-medium text-neutral-700">Start time ({EVENT_TIME_ZONE})<input type="datetime-local" value={form.startTime} onChange={(event) => updateDateTimeField("startTime", event.target.value)} min="0001-01-01T00:00" max="9999-12-31T23:59" className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 font-normal text-neutral-900 outline-none focus:border-neutral-500" required /></label>
+                        <label className="text-sm font-medium text-neutral-700">End time ({EVENT_TIME_ZONE})<input type="datetime-local" value={form.endTime} onChange={(event) => updateDateTimeField("endTime", event.target.value)} min="0001-01-01T00:00" max="9999-12-31T23:59" className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 font-normal text-neutral-900 outline-none focus:border-neutral-500" required /></label>
                         <label className="text-sm font-medium text-neutral-700 md:col-span-2">Location<input value={form.location} onChange={(event) => updateField("location", event.target.value)} className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 font-normal text-neutral-900 outline-none focus:border-neutral-500" /></label>
                         <label className="text-sm font-medium text-neutral-700 md:col-span-2">Description<textarea value={form.description} onChange={(event) => updateField("description", event.target.value)} rows={3} className="mt-1 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 font-normal text-neutral-900 outline-none focus:border-neutral-500" /></label>
                     </div>
@@ -214,7 +219,7 @@ export default function ScheduleManager({
                                             <h3 className="font-semibold text-neutral-900">{event.title}</h3>
                                             <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs capitalize text-neutral-600">{event.type.replace("_", " ")}</span>
                                         </div>
-                                        <p className="mt-1 text-sm text-neutral-600">{displayDate(event.start_time)} - {displayDate(event.end_time)}</p>
+                                        <p className="mt-1 text-sm text-neutral-600">{eventDateTimeLabel(event.start_time)} - {eventDateTimeLabel(event.end_time)}</p>
                                         {event.location ? <p className="mt-1 text-sm text-neutral-500">{event.location}</p> : null}
                                         {event.description ? <p className="mt-3 whitespace-pre-wrap text-sm text-neutral-700">{event.description}</p> : null}
                                     </div>
