@@ -1,5 +1,3 @@
-import { eventDateTimeLabel } from "@/lib/event-time";
-
 export type PortalScheduleEvent = {
     id: string;
     title: string;
@@ -11,7 +9,7 @@ export type PortalScheduleEvent = {
 };
 
 function formatDate(value: string) {
-    return eventDateTimeLabel(value);
+    return new Date(value).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
 }
 
 export default function PortalSchedule({ events }: { events: PortalScheduleEvent[] }) {

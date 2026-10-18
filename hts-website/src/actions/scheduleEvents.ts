@@ -15,18 +15,13 @@ const scheduleEventTypes = [
     "other",
 ] as const;
 
-const utcDateTime = z.string().refine(
-    (value) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(value) && !Number.isNaN(Date.parse(value)),
-    "Event time must be a UTC timestamp.",
-);
-
 const eventSchema = z
     .object({
         title: z.string().trim().min(1, "Title is required.").max(200),
         type: z.enum(scheduleEventTypes),
         description: z.string().trim().max(5000),
-        startTime: utcDateTime,
-        endTime: utcDateTime,
+        startTime: z.string().refine((value) => !Number.isNaN(Date.parse(value)), "Start time is required."),
+        endTime: z.string().refine((value) => !Number.isNaN(Date.parse(value)), "End time is required."),
         location: z.string().trim().max(200),
     })
     .refine((value) => new Date(value.endTime) > new Date(value.startTime), {

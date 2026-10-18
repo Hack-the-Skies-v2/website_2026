@@ -68,7 +68,13 @@ export default async function CheckedInPersonPage({
                     {event.name}
                     <span className="ml-2 text-neutral-400">{event.kind}</span>
                   </span>
-                  <span className="text-neutral-500">{new Date(event.at).toLocaleString()}</span>
+                  <span className="text-neutral-500">
+                    {new Date(event.at).toLocaleString([], {
+                      timeZone: "America/Toronto",
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    })}
+                  </span>
                 </li>
               ))}
             </ul>
