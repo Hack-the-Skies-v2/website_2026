@@ -6,9 +6,13 @@ import { getApplicationAccess } from "@/lib/applications/access";
 import { ensureQrCodeLink } from "@/lib/qr-code";
 import { getOrganizerPrizeImageUrl } from "@/actions/organizerPrizes";
 import type { PortalScheduleEvent } from "@/components/PortalSchedule";
+import EventEnded from "@/components/EventEnded";
+import { isEventPortalOpen } from "@/lib/event";
 import HackerPortal, { type PortalPointAction, type PortalPrize } from "./HackerPortal";
 
 export default async function PortalPage() {
+	if (!isEventPortalOpen()) return <EventEnded />;
+
 	const supabase = await createClient();
 	const { data: { user } } = await supabase.auth.getUser();
 

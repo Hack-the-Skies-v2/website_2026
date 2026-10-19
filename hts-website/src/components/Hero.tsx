@@ -144,7 +144,7 @@ export default async function Hero() {
                 Judge and Mentor applications are open.
             </p>*/}
             <div className="mt-4 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                <Link href={portalHref}>
+                {/* <Link href={portalHref}>
                     <button
                         type="button"
                         className="
@@ -162,7 +162,7 @@ export default async function Hero() {
 						"
                     >Portal
                     </button>
-                </Link>
+                </Link> */}
                 {/* <button
                     type="button"
                     disabled

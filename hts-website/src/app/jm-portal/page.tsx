@@ -5,9 +5,13 @@ import { HTS_REF_COOKIE, recordReferral } from "@/lib/referral";
 import { getApplicationAccess } from "@/lib/applications/access";
 import { ensureQrCodeLink } from "@/lib/qr-code";
 import type { PortalScheduleEvent } from "@/components/PortalSchedule";
+import EventEnded from "@/components/EventEnded";
+import { isEventPortalOpen } from "@/lib/event";
 import JMPortal from "./JMPortal";
 
 export default async function JMPortalPage() {
+	if (!isEventPortalOpen()) return <EventEnded />;
+
 	const supabase = await createClient();
 	const {
 		data: { user },
